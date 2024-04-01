@@ -1,0 +1,28 @@
+{
+  // "compilerOptions": {
+  //   "target": "esnext",
+  //   "module": "esnext",
+  //   "baseUrl": ".",
+  //   "paths": {
+  //     "@/*": ["./src/*"]
+  //   },
+  //   "jsx": "preserve",
+  //   "moduleResolution": "node",
+  //   "resolveJsonModule": true,
+  //   "esModuleInterop": true,
+  //   "strict": true,
+  //   "noImplicitAny": true,
+  //   "strictNullChecks": true,
+  //   "strictFunctionTypes": true,
+  //   "noImplicitThis": true,
+  //   "alwaysStrict": true,
+  //   "noUnusedLocals": true,
+  //   "noUnusedParameters": true,
+  //   "noImplicitReturns": true,
+  //   "noFallthroughCasesInSwitch": true,
+  //   "inlineSourceMap": true,
+  //   "inlineSources": true,
+  //   "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  // },
+  // "exclude": ["node_modules", "dist"]
+}

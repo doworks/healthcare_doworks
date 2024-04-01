@@ -1,0 +1,15 @@
+{
+  "name": "healthcare_doworks",
+  "version": "1.0.0",
+  "description": "An extention for the healthcare frappe app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "cd vue && yarn install",
+    "dev": "cd vue && yarn dev",
+    "build": "cd vue && yarn build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
