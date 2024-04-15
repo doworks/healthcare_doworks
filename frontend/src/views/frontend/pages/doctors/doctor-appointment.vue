@@ -6,7 +6,7 @@
       <div class="col-md-12">
         <div class="appointment-tab">
           <!-- Clock And Other Filters -->
-          <div class="flex-wrap flex-column flex-xxl-row gap-3 nav nav-tabs nav-tabs-solid pb-0">
+          <div class="flex-wrap flex-column flex-xxl-row gap-3 nav nav-tabs nav-tabs-solid pb-2">
             <div class="d-flex flex-wrap flex-column flex-lg-row gap-3 flex-auto order-2 order-xxl-1">
               <div class="flex-auto" style="width: 15rem">
                 <Calendar
@@ -22,75 +22,56 @@
                   inputClass="text-center"
                   @date-select="onDateClick"
                 />
-                <span class="d-flex justify-content-center fw-bolder text-dark" style="padding-right: 1.7rem">{{ formattedDayOfWeek }}</span>
+                <span class="d-flex justify-content-center fw-bolder text-dark">{{ formattedDayOfWeek }}</span>
               </div>
               <div class="flex-auto" style="width: 15rem">
-                <v-autocomplete
-                  v-model="selectedDepartments"
-                  density="compact"
-                  multiple 
-                  chips
-                  closable-chips
-                  class="w-100"
-                  label="Department"
-                  :items="departmentsOptions"
-                  variant="outlined"
-                ></v-autocomplete>
+                <a-select
+                  v-model:value="selectedDepartments"
+                  mode="multiple"
+                  style="width: 100%; align-items: center; max-height: 62px;"
+                  placeholder="Departments"
+                  max-tag-count="responsive"
+                  :options="departmentsOptions"
+                  size="large"
+                >
+                </a-select>
               </div>
               <div class="flex-auto" style="width: 15rem">
-                <v-text-field
-                  density="compact"
-                  class="w-100"
-                  v-model="searchValue"
-                  label="Search"
-                  prepend-inner-icon="pi pi-search"
-                  variant="outlined"
-                ></v-text-field>
+                <a-input v-model:value="searchValue" placeholder="Search" size="large">
+                  <template #prefix>
+                    <v-icon icon="mdi mdi-magnify" color="grey"></v-icon>
+                  </template>
+                </a-input>
               </div>
             </div>
-            <div class="clock ms-xxl-auto order-1 order-xxl-2" v-if="currentHourtime != ''" style="width: fit-content">
-              <div class="clock__hours">
-                <span class="clock__hourtime" v-text="currentHourtime"></span>
-                <span v-text="currentHour"></span>
-              </div>
-              <div class="clock__minutes" v-text="currentMinutes"></div>
-              <div class="clock__seconds" v-text="seconds"></div>
+            <div class="ms-xxl-auto order-1 order-xxl-2" style="width: fit-content">
+              <Clock/>
             </div>
           </div>
+          
+          <!-- Toolbar Actions -->
+          <v-toolbar color="blue-lighten-5">
+            <v-btn icon="mdi mdi-plus" @click="newAppointment()" rounded="0"></v-btn>
+          </v-toolbar>
 
           <!-- Appointment Tab -->
-          <!-- <ul class="nav nav-tabs nav-tabs-solid nav-tabs-rounded">
-            <li class="nav-item" v-for="(value, key) in groupedAppointments">
-              <a
-                :class="{'active' : key === 'Scheduled', 'nav-link': true}"
-                :href="`#${key.replace(/\s+/g, '').toLowerCase()}-appointments`"
-                data-bs-toggle="tab"
-                >
-                  {{key}}
-                  <Badge :value="getBadgeNumber(key)" severity="secondary"/>
-                </a
-              >
-            </li>
-          </ul> -->
-          
-          <!-- status Appointment Tab -->
-          <!-- <appointmenttab 
-            v-for="(value, key) in groupedAppointments" 
-            :searchValue="searchValue" 
-            :appointment="groupedAppointments[key]" 
-            :tab="key.replace(/\s+/g, '').toLowerCase()"
-          /> -->
-          <!-- status Appointment Tab -->
-
           <v-tabs v-model="tab" align-tabs="center" color="indigo" bg-color="white" show-arrows>
             <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key">
               {{ key }}
+              <v-badge color="indigo" :content="getBadgeNumber(key)" inline></v-badge>
             </v-tab>
           </v-tabs>
           <div class="tab-content">
             <v-window v-model="tab" disabled>
               <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
-                <appointmenttab :searchValue="searchValue" :selectedDepartments="selectedDepartments" :appointment="value" :tab="key.toLowerCase()"/>
+                <appointmenttab 
+                  :searchValue="searchValue" 
+                  :selectedDepartments="selectedDepartments" 
+                  :appointments="value" 
+                  :tab="key.toLowerCase()"
+                  :loading="loading"
+                  ref="appointmentTabRef"
+                />
               </v-window-item>
             </v-window>
           </div>
@@ -104,58 +85,46 @@
 </template>
 
 <script >
-import appointment from "@/assets/json/doctor/myappointments.json";
-
+import { ref } from 'vue';
 import Calendar from 'primevue/calendar';
-import IconField from 'primevue/iconfield';
-import InputIcon from 'primevue/inputicon';
-import InputText from 'primevue/inputtext';
-import InputMask from 'primevue/inputmask';
-import TabView from 'primevue/tabview';
-import TabPanel from 'primevue/tabpanel';
-import Badge from 'primevue/badge';
-import MultiSelect from 'primevue/multiselect';
-import {VTextField} from 'vuetify/components/VTextField';
-import {VAutocomplete} from 'vuetify/components/VAutocomplete';
+import Clock from '@/components/clock/Clock.vue';
+import moment from "moment";
+
+import {VBadge} from 'vuetify/components/VBadge';
 import {VTab, VTabs} from 'vuetify/components/VTabs';
-import {VContainer, VCol, VRow} from 'vuetify/components/VGrid';
 import {VWindow, VWindowItem} from 'vuetify/components/VWindow';
+import {VIcon} from 'vuetify/components/VIcon';
+import {VToolbar, VToolbarItems} from 'vuetify/components/VToolbar';
+import {VBtn} from 'vuetify/components/VBtn';
 
 
 export default {
   inject: ['$socket', '$call'],
   components: {
-    Calendar, IconField, InputIcon, InputText, InputMask, TabView, TabPanel,
-    Badge, MultiSelect, VTextField, VAutocomplete, VTabs, VTab, VContainer,
-    VCol, VRow, VWindow, VWindowItem,
+    Clock, Calendar,VBadge, VTabs, VTab, VWindow, VWindowItem, VIcon, VToolbar, VToolbarItems, VBtn,
   },
   data() {
     return {
       tab: null,
-      appointments: appointment,
-      groupedAppointments: {
-        Scheduled:[],
-        Arrived:[],
-        Ready:[],
-        'In Room':[],
-        Completed:[],
-        'No Show':[],
-      },
-      icondisplay: null,
+      appointments: [],
+      groupedAppointments: {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],},
       selectedDate: new Date(),
       today: new Date(),
       searchValue: '',
-      timer: null,
-      departmentsOptions: ['Neurology', 'Dermatology', 'Orthopedics', 'Pediatrics', 'Cardiology', 'Ophthalmology', 'Endocrinology', 'Gastroenterology', 'Urology', 'Rheumatology', 'Dentistry'],
-      selectedDepartments: null,
-
-      // Clock vars
-      currentHour: 0,
-      currentMinutes: 0,
-      seconds: 0,
-      currentHourtime: '',
-      SECOND: 1000,
-      HOUR: 12,
+      departmentsOptions: [
+        {label: 'Neurology', value: 'Neurology'},
+        {label: 'Dermatology', value: 'Dermatology'},
+        {label: 'Orthopedics', value: 'Orthopedics'},
+        {label: 'Pediatrics', value: 'Pediatrics'},
+        {label: 'Ophthalmology', value: 'Ophthalmology'},
+        {label: 'Endocrinology', value: 'Endocrinology'},
+        {label: 'Gastroenterology', value: 'Gastroenterology'},
+        {label: 'Urology', value: 'Urology'},
+        {label: 'Rheumatology', value: 'Rheumatology'},
+        {label: 'Dentistry', value: 'Dentistry'},
+      ],
+      selectedDepartments: undefined,
+      loading: true,
     };
   },
   computed: {
@@ -169,11 +138,16 @@ export default {
       return dayOfWeek;
     }
   },
-  mounted() {
-    this.timer = window.setTimeout(this.updateClock, this.SECOND);
-    this.groupAppointmentsByStatus();
+  created() {
     this.fetchRecords();
-    // console.log(this.$socket)
+    this.$socket.on('patient_appointments', response => {
+      if(response){
+        this.appointments = this.adjustAppointments(response)
+        this.groupAppointmentsByStatus();
+      }
+    })
+  },
+  mounted() {
   },
   beforeUnmount() {
     // Clear the timeout before unmounting the component
@@ -181,25 +155,41 @@ export default {
   },
   methods: {
     fetchRecords() {
-      this.$call('healthcare_doworks.api.methods.fetch_appointments')
+      this.loading = true;
+      this.$call('healthcare_doworks.api.methods.fetch_patient_appointments')
       .then(response => {
-        console.log(response)
+        this.appointments = this.adjustAppointments(response)
+        this.groupAppointmentsByStatus();
+        this.loading = false; 
       })
       .catch(error => {
+        this.loading = false;
         console.error('Error fetching records:', error);
       });
     },
+    adjustAppointments(data) {
+			return [...(data || [])].map((d) => {
+        try {
+          d.patient_details = JSON.parse(d.patient_details)
+          d.visit_notes = JSON.parse(d.visit_notes)
+          d.status_log = JSON.parse(d.status_log)
+        } catch (error) {
+          console.error('Error parsing JSON:', error);
+        }
+
+				d.appointment_time_moment = moment(d.appointment_date + ' ' + d.appointment_time).format('LT');
+				d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
+
+				return d;
+			});
+		},
     getBadgeNumber(tab){
       if(this.groupedAppointments[tab])
         return this.groupedAppointments[tab].length
       return 0
     },
-
-    // Clock methods
-    onDateClick(date) {
-      console.log(date)
-    },
     groupAppointmentsByStatus() {
+      this.groupedAppointments = {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],}
       this.appointments.forEach(appointment => {
         const status = appointment.visit_status;
         if (!this.groupedAppointments[status])
@@ -207,24 +197,15 @@ export default {
         this.groupedAppointments[status].push(appointment);
       });
     },
-    updateClock() {
-      const now = new Date();
-      this.currentHour = now.getHours();
-      this.currentMinutes = this.getZeroPad(now.getMinutes());
-      this.seconds = this.getZeroPad(now.getSeconds());
-      this.currentHourtime = this.getHourTime(this.currentHour);
-      this.currentHour = this.currentHour % this.HOUR || this.HOUR;
-      this.$options.timer = window.setTimeout(this.updateClock, this.SECOND);
+    newAppointment() {
+      // const appointmentTab = this.$refs.appointmentTabRef;
+      // console.log(appointmentTab)
+      // appointmentTab.appointmentDialog('New Appointment', true)
     },
-    getHourTime(h) {
-      return h >= 12 ? 'PM' : 'AM'
+
+    onDateClick(date) {
+      console.log(date)
     },
-    getZeroPad(n) {
-      return (parseInt(n, 10) >= 10 ? '' : '0') + n
-    }
-  },
-  beforeUnmount(){
-    window.clearTimeout(this.timer)
   },
   name: 'Appointments',
 };
@@ -234,44 +215,5 @@ export default {
 .p-datepicker-trigger-icon{
   top:12.5px
 }
-.clock {
-  background: #5fa4df;
-  border: 0.3rem solid #5fa4df;
-  border-radius: 0.5rem;
-  display: inline-block;
-}
 
-.clock__hours,
-.clock__minutes,
-.clock__seconds {
-  background: linear-gradient(to bottom, #26303b 50%, #2c3540 50%);
-  display: inline-block;
-  color: #fff;
-  font-family: 'Nunito', sans-serif;
-  font-size: 2rem;
-  font-weight: 300;
-  padding: 0.5rem 1rem;
-  text-align: center;
-  position: relative;
-}
-
-.clock__hours {
-  border-right: 0.15rem solid #5fa4df;
-  border-radius: 0.3rem 0 0 0.3rem;
-}
-
-.clock__minutes {
-  border-right: 0.15rem solid #5fa4df;
-}
-
-.clock__seconds {
-  border-radius: 0 0.3rem 0.3rem 0;
-}
-
-.clock__hourtime {
-  font-size: 1rem;
-  position: absolute;
-  top: 2px;
-  left: 8px;
-}
 </style>

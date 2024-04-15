@@ -1,5 +1,5 @@
 <template>
-	<div :class="{'active' : tab === 'scheduled', ' tab-pane show' : true}" :id="tab + '-appointments'">
+	<div class="tab-pane" :id="tab + '-appointments'">
 		<div class="card">
 			<DataTable
 				v-model:filters="filters"
@@ -15,353 +15,319 @@
 				:rows="10"
 				:rowsPerPageOptions="[10, 20, 50]"
 				:value="appointments"
-				:bodyRow="{'name': 'onImageRightClick'}"
 				@row-contextmenu="handleRowContextMenu"
 			>
 				<template #empty> No Appointments found. </template>
 				<template #loading> Loading Appointments data. Please wait.</template>
-				<Column field="patient_cpr" header="Patient" :showFilterMenu="false" style="width: 20%">
+				<Column field="patient_cpr" header="Patient" :showFilterMenu="false" :showClearButton="false" style="width: 20%">
 					<template #body="{ data }">
 						<!-- <router-link to="patient-profile"> -->
-							<img
-							class="float-start avatar-img rounded-circle avatar avatar-sm me-2 "
-							:src="data.image"
-							:alt="data.patient_name"
-							/>
-							<div class="float-start position-relative vstack">
-								{{ data.patient_name }}
-								<span class="fw-light text-secondary position-absolute ms-3 top-100" style="font-size: smaller">{{ data.cpr }}</span>
-							</div><br/>
+							<div class="d-flex align-items-center gap-2">
+								<v-avatar :color="!data.patient_details.image ? currentColor : ''">
+									<img
+										class="h-100 w-100"
+										:src="data.patient_details.image ? 
+											data.patient_details.image :
+											data.patient_details.gender === 'Male' ? maleImage : femaleImage"
+									/>
+									<!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
+								</v-avatar>
+								<div class="position-relative vstack">
+									{{ data.patient_name }}
+									<span class="fw-light text-teal ms-3" style="font-size: smaller">{{ data.patient_details.cpr }}</span>
+								</div><br/>
+							</div>
 
 						<!-- </router-link> -->
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
-						<InputText 
-							v-model="filterModel.value" 
-							type="text" 
-							@input="filterCallback()" 
-							class="p-column-filter" 
-							style="height: 35px; align-items: center;"
+						<a-input 
+							v-model:value="filterModel.value"
+							@change="filterCallback()"
 							placeholder="Search by Patient" 
+							class="p-column-filter"
+							style="width: 100%; align-items: center;"
 						/>
 					</template>
 				</Column>
-				<Column header="Time" field="appointment_time" :showFilterMenu="false" filterField="appointment_time_moment" style="width: 10%">
+				<Column header="Time" field="appointment_time" :showFilterMenu="false" :showClearButton="false" filterField="appointment_time_moment" style="width: 10%">
 					<template #body="{ data }">
 						{{ data.appointment_time_moment }}
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
-						<InputText 
-							v-model="filterModel.value" 
-							type="text" 
-							@input="filterCallback()" 
-							class="p-column-filter"
-							style="height: 35px; align-items: center;"
+						<a-input 
+							v-model:value="filterModel.value"
+							@change="filterCallback()"
 							placeholder="Search by Time" 
+							class="p-column-filter"
+							style="width: 100%; align-items: center;"
 						/>
 					</template>
 				</Column>
-				<Column field="status" header="Status" :showFilterMenu="false"  style="width: 10%">
+				<Column field="status" header="Status" :showFilterMenu="false" :showClearButton="false" style="width: 10%">
 					<template #body="{ data }">
-						<Tag :value="data.status" :severity="getSeverity(data.status)" />
+						<v-chip class="ma-2" label size="small" :color="getSeverity(data.status)">{{ data.status }}</v-chip>
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
-						<Dropdown
-							v-model="filterModel.value"
-							@change="filterCallback()"
-							:options="statuses" 
-							placeholder="Any" 
+						<a-select
+							v-model:value="filterModel.value"
+							@change="(filterCallback())"
 							class="p-column-filter"
-							style="height: 35px; align-items: center;"
-							:showClear="true"
+							style="width: 100%; align-items: center;"
+							placeholder="Any"
+							:options="statuses"
+							allowClear
 						>
-							<template #option="slotProps">
-								<Tag :value="slotProps.option" :severity="getSeverity(slotProps.option)" />
+							<template #option="{ value: val }">
+								<v-chip class="ma-2" label size="small" :color="getSeverity(val)">{{ val }}</v-chip>
 							</template>
-						</Dropdown>
+						</a-select>
 					</template>
 				</Column>
-				<Column header="Mobile" field="mobile" :showFilterMenu="false" style="width: 10%">
+				<Column header="Mobile" field="mobile" :showFilterMenu="false" :showClearButton="false" style="width: 10%">
 					<template #body="{ data }">
-						{{ data.mobile }}
+						{{ data.patient_details.mobile }}
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
-						<InputText 
-							size="small" 
-							v-model="filterModel.value" 
-							type="text" 
-							@input="filterCallback()" 
-							class="p-column-filter" 
-							style="height: 35px; align-items: center;"
-							placeholder="Search by Mobile" />
+						<a-input 
+							v-model:value="filterModel.value"
+							@change="filterCallback()"
+							placeholder="Search by Mobile" 
+							class="p-column-filter"
+							style="width: 100%; align-items: center;"
+						/>
 					</template>
 				</Column>
-				<Column header="Practitioner" field="practitioner_name" filterField="practitioner_name" :showFilterMenu="false"  style="width: 20%">
+				<Column header="Practitioner" field="practitioner_name" filterField="practitioner_name" :showFilterMenu="false" :showClearButton="false" style="width: 20%">
 					<template #body="{ data }">
 						<div class="d-flex align-items-center gap-2">
-							<img
-								class="avatar-img rounded-circle avatar avatar-sm me-2"
-								:src="data.practitioner_image"
-								:alt="data.practitioner_name"
-								style="width: 40px"
-							/>
+							<v-avatar :color="!data.practitioner_image ? colorCache[data.practitioner_name] || '': ''">
+								<img
+									v-if="data.practitioner_image"
+									class="h-100 w-100"
+									:src="data.practitioner_image"
+								/>
+								<span v-if="!data.practitioner_image" class="text-h6">{{ getInitials(data.practitioner_name) }}</span>
+							</v-avatar>
 							<span>{{ data.practitioner_name }}</span>
 						</div>
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
-						<MultiSelect
-							filter
-							v-model="filterModel.value"
-							@change="filterCallback()"
-							optionLabel="name"
-							placeholder="Any Practitioner"
-							class="p-column-filter"
-							style="height: 35px; align-items: center;"
-							:maxSelectedLabels="2"
-							:options="representatives"
-							optionValue="name"
+						<a-select
+						v-model:value="filterModel.value"
+						@change="(filterCallback())"
+						mode="multiple"
+						class="p-column-filter"
+						style="width: 100%; align-items: center;"
+						placeholder="Any Practitioner"
+						max-tag-count="responsive"
+						:options="$resources.practitioners"
+						:fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
 						>
-							<template #option="slotProps">
-								<div class="d-flex align-items-center gap-2">
-									<!-- <img
-										class="avatar-img rounded-circle avatar avatar-sm me-2"
-										:src="slotProps.option.image"
-										:alt="slotProps.option.name"
-										style="width: 32px; height: 32px"
-									/> -->
-									<img :alt="slotProps.option.name" :src="`https://primefaces.org/cdn/primevue/images/avatar/${slotProps.option.image}`" style="width: 32px" />
-									<span>{{ slotProps.option.name }}</span>
-								</div>
+							<template #option="{ practitioner_name, image }">
+								<v-avatar size="25" :color="!image ? colorCache[practitioner_name] : ''">
+									<img
+										v-if="image"
+										class="h-100 w-100"
+										:src="image"
+									/>
+									<span v-if="!image" style="font-size: small;">{{ getInitials(practitioner_name) }}</span>
+								</v-avatar>
+								<span class="ms-2">{{ practitioner_name }}</span>
 							</template>
-						</MultiSelect>
+							<template #tagRender="{ option, onClose }">
+								<v-chip size="small" closable @click:close="onClose">
+									<v-avatar size="20" :color="!option.image ? colorCache[option.practitioner_name] : ''">
+										<img
+											v-if="option.image"
+											class="h-100 w-100"
+											:src="option.image"
+										/>
+										<span v-if="!option.image" style="font-size: xx-small;">{{ getInitials(option.practitioner_name) }}</span>
+									</v-avatar>
+									<span>{{ option.practitioner_name }}</span>
+								</v-chip>
+							</template>
+						</a-select>
 					</template>
 				</Column>
-				<Column field="department" hidden :showFilterMenu="false">
+				<Column field="department" hidden :showFilterMenu="false" :showClearButton="false">
 					<template #filter="{ filterModel, filterCallback }">
-						<MultiSelect
-							v-model="filterModel.value"
-							@change="filterCallback()"
+						<a-select
+							v-model:value="filterModel.value"
+							@change="(filterCallback())"
 							class="p-column-filter"
-							style="height: 35px; align-items: center;"
-						/>
+							style="width: 100%; align-items: center;"
+							placeholder="Any"
+							allowClear
+						>
+							<template #option="{ value: val }">
+								<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
+							</template>
+						</a-select>
 					</template>
 				</Column>
-				<Column field="appointment_type" header="For" :showFilterMenu="false"  style="width: 10%">
+				<Column field="appointment_type" header="For" :showFilterMenu="false" :showClearButton="false" style="width: 10%">
 					<template #body="{ data }">
-						<Tag :value="data.appointment_type" severity="secondary" />
+						<v-chip class="ma-2" label size="small">{{ data.appointment_type }}</v-chip>
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
-						<Dropdown 
-							v-model="filterModel.value" 
-							@change="filterCallback()" 
-							:options="purposes" 
-							placeholder="Any" 
-							class="p-column-filter" 
-							style="height: 35px; align-items: center;"
-							:showClear="true"
+						<a-select
+							v-model:value="filterModel.value"
+							@change="(filterCallback())"
+							class="p-column-filter"
+							style="width: 100%; align-items: center;"
+							placeholder="Any"
+							:options="purposes"
+							allowClear
 						>
-							<template #option="slotProps">
-								<Tag :value="slotProps.option" severity="secondary" />
+							<template #option="{ value: val }">
+								<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
 							</template>
-						</Dropdown>
+						</a-select>
 					</template>
 				</Column>
-				<!-- <Column field="actions" frozen alignFrozen="right" style="width: 20%">
-					<template #body="{ data }">
-						<div class="p-buttonset" v-if="this.tab == 'scheduled'">
-							<SplitButton
-								label="Arrived"
-								:model="scheduledStatusOptions"
-								@click="save"
-								:buttonProps="{style:{'padding': '.25rem .5rem', 'font-size': '.85rem'}}"
-								:menuButtonProps="{style:{
-									padding: '.25rem .5rem',
-									'font-size': '.85rem',
-									width: 'auto',
-									'border-top-right-radius': 0,
-									'border-bottom-right-radius': 0,
-								}}"
-							/>
-							<Button severity="info" icon="pi pi-comment" type="button" label="Notes" badge="2" style="padding: .25rem .5rem; font-size: .85rem; border-radius: 0"/>
-							<Button severity="warning" type="button" label="Room" style="padding: .25rem .5rem; font-size: .85rem"/>
-
-							<Button
-								severity="secondary"
-								type="button"
-								icon="pi pi-ellipsis-v"
-								@click="toggleActions"
-								aria-haspopup="true"
-								:aria-controls="'scheduledActionsMenu'"
-								style="padding: .25rem .2rem; width: auto; font-size: .85rem"
-							/>
-							<Menu ref="menu" :key="data.name" :id="'scheduledActionsMenu'" :model="scheduledActionsOptions" :popup="true" />
-						</div>
-						<div class="p-buttonset" v-if="this.tab == 'arrived'">
-							<SplitButton
-								label="Ready"
-								:model="arrivedStatusOptions"
-								@click="save"
-								:buttonProps="{style:{'padding': '.25rem .5rem', 'font-size': '.85rem'}}"
-								:menuButtonProps="{style:{
-									padding: '.25rem .5rem',
-									'font-size': '.85rem',
-									width: 'auto',
-									'border-top-right-radius': 0,
-									'border-bottom-right-radius': 0,
-								}}"
-							/>
-							<Button severity="info" icon="pi pi-comment" type="button" label="Notes" badge="2" style="padding: .25rem .5rem; font-size: .85rem; border-radius: 0"/>
-							<Button severity="help" type="button" label="Vital Signs" style="padding: .25rem .5rem; font-size: .85rem"/>
-
-							<Button
-								severity="secondary"
-								type="button"
-								icon="pi pi-ellipsis-v"
-								@click="toggleActions"
-								aria-haspopup="true"
-								:aria-controls="'arrivedActionsMenu'"
-								style="padding: .25rem .2rem; width: auto; font-size: .85rem"
-							/>
-							<Menu ref="menu" :key="data.name" :id="'arrivedActionsMenu'" :model="arrivedActionsOptions" :popup="true" />
-						</div>
-						<div class="p-buttonset" v-if="this.tab == 'ready'">
-							<SplitButton
-								label="In Room"
-								:model="readyStatusOptions"
-								@click="save"
-								:buttonProps="{style:{'padding': '.25rem .5rem', 'font-size': '.85rem'}}"
-								:menuButtonProps="{style:{
-									padding: '.25rem .5rem',
-									'font-size': '.85rem',
-									width: 'auto',
-									'border-top-right-radius': 0,
-									'border-bottom-right-radius': 0,
-								}}"
-							/>
-							<Button severity="info" icon="pi pi-comment" type="button" label="Notes" badge="2" style="padding: .25rem .5rem; font-size: .85rem; border-radius: 0"/>
-							<Button severity="help" type="button" label="Vital Signs" style="padding: .25rem .5rem; font-size: .85rem"/>
-
-							<Button
-								severity="secondary"
-								type="button"
-								icon="pi pi-ellipsis-v"
-								@click="toggleActions"
-								aria-haspopup="true"
-								:aria-controls="'readyActionsMenu'"
-								style="padding: .25rem .2rem; width: auto; font-size: .85rem"
-							/>
-							<Menu ref="menu" :key="data.name" :id="'readyActionsMenu'" :model="readyActionsOptions" :popup="true" />
-						</div>
-						<div class="p-buttonset" v-if="this.tab == 'inroom'">
-							<SplitButton
-								label="Completed"
-								:model="inroomStatusOptions"
-								@click="save"
-								:buttonProps="{style:{'padding': '.25rem .5rem', 'font-size': '.85rem'}}"
-								:menuButtonProps="{style:{
-										padding: '.25rem .5rem',
-										'font-size': '.85rem',
-										width: 'auto',
-										'border-top-right-radius': 0,
-										'border-bottom-right-radius': 0,
-									}}"
-							/>
-							<Button severity="info" type="button" label="Patient Encounter" style="padding: .25rem .5rem; font-size: .85rem; border-radius: 0"/>
-
-							<Button
-								severity="secondary"
-								type="button"
-								icon="pi pi-ellipsis-v"
-								@click="toggleActions"
-								aria-haspopup="true"
-								:aria-controls="'inroomActionsMenu'"
-								style="padding: .25rem .2rem; width: auto; font-size: .85rem"
-							/>
-							<Menu ref="menu" :key="data.name" :id="'inroomActionsMenu'" :model="inroomActionsOptions" :popup="true" />
-						</div>
-						<div class="p-buttonset" v-if="this.tab == 'completed'">
-							<SplitButton
-								label="Ready"
-								:model="completedStatusOptions"
-								@click="save"
-								:buttonProps="{style:{'padding': '.25rem .5rem', 'font-size': '.85rem'}}"
-								:menuButtonProps="{style:{
-									padding: '.25rem .5rem',
-									'font-size': '.85rem',
-									width: 'auto',
-									'border-top-right-radius': 0,
-									'border-bottom-right-radius': 0,
-								}}"
-							/>
-							<Button severity="info" type="button" label="Make Payment" style="padding: .25rem .5rem; font-size: .85rem; border-radius: 0"/>
-							<Button severity="danger" type="button" label="Bill" style="padding: .25rem .5rem; font-size: .85rem"/>
-							<Button severity="secondary" type="button" icon="pi pi-plus" style="padding: .25rem .5rem; font-size: .85rem"/>
-						</div>
-					</template>
-				</Column> -->
-				<ContextMenu ref="menu" :model="contextItems" field="actions"/>
 				<Column style="width: 5%">
 					<template #body="{ data }">
-						<v-btn size="small" variant="text" icon="mdi mdi-bell-outline">
-							<img :src="bellImage"/>
+						<v-btn size="small" variant="text" icon>
+							<!-- <img :src="bellImage"/> -->
+							<i class="mdi mdi-bell-outline" style="font-size: 25px;"></i>
+							<div class="zzz zzz-zzz">Z</div>
+							<div class="zzz zzz-zz">Z</div>
+							<div class="zzz zzz-z">Z</div>
 						</v-btn>
 					</template>
 				</Column>
+				<ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = null"/>
 			</DataTable>
 		</div>
-	</div>
+		<v-dialog
+			v-model="appointmentOpen"
+			width="auto"
+			id="new-appointment-dialog"
+		>
+			<template v-slot:default="{ isActive }">
+				<v-card rounded="lg">
+					<v-card-title class="d-flex justify-space-between align-center">
+						<div class="text-h5 text-medium-emphasis ps-2">{{ appointmentForm.type }}</div>
+						<v-btn icon="mdi mdi-close" variant="text" @click="isActive.value = false"></v-btn>
+					</v-card-title>
+					<v-divider class="m-0"></v-divider>
+					<v-card-text>
+						<a-form layout="vertical" >
+							<v-container>
+								<v-row>
+									<v-col cols="12" md="6">
+										<a-form-item label="Appointment Type">
+											<a-select
+												v-model:value="appointmentForm.appointment_type"
+												:options="$resources.appointmentTypes"
+												@change="(value, option) => {appointmentForm.appointment_for = option.allow_booking_for}"
+												:fieldNames="{label: 'appointment_type', value: 'appointment_type'}"
+											></a-select>
+										</a-form-item>
+										<a-form-item label="Appointment Category">
+											<a-input v-model:value="appointmentForm.custom_appointment_category" />
+										</a-form-item>
+										<a-form-item v-if="appointmentForm.appointment_for === 'Practitioner'" label="Practitioner">
+											<a-select
+												v-model:value="appointmentForm.practitioner"
+												:options="$resources.practitioners"
+												:fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
+												show-search
+											></a-select>
+										</a-form-item>
+										<a-form-item v-if="appointmentForm.appointment_for === 'Department'" label="Department">
+											<a-input v-model:value="appointmentForm.department" />
+										</a-form-item>
+										<a-form-item v-if="appointmentForm.appointment_for === 'Service Unit'" label="Service Unit">
+											<a-input v-model:value="appointmentForm.service_unit" />
+										</a-form-item>
+									</v-col>
+									<v-col cols="12" md="6">
+										<a-form-item label="Appointment For">
+											<a-input v-model:value="appointmentForm.appointment_for" disabled/>
+										</a-form-item>
+										<a-form-item label="Patient">
+											<a-select
+												v-model:value="appointmentForm.patient_name"
+												:options="$resources.patients"
+												:fieldNames="{label: 'patient_name', value: 'patient_name'}"
+												@change="(value, option) => {appointmentForm.patient_sex = option.patient_sex;}"
+												show-search
+											></a-select>
+										</a-form-item>
+										<a-form-item label="Patient Gender">
+											<a-input v-model:value="appointmentForm.patient_sex" disabled/>
+										</a-form-item>
+										<a-form-item label="Appointment Duration">
+											<a-input v-model:value="appointmentForm.duration" />
+										</a-form-item>
+										<a-form-item label="Appointment Date Range">
+											<a-date-picker v-model:value="reschduleWeek" @change="(val)=>{console.log(val.week())}" :format="customWeekStartEndFormat" style="z-index: 3000" picker="week" />
+										</a-form-item>
+									</v-col>
+								</v-row>
+							
+							</v-container>
+						</a-form>
+					</v-card-text>
 
+					<v-divider class="mt-2"></v-divider>
+
+					<v-card-actions class="my-2 d-flex justify-end">
+						<v-btn
+						class="text-none"
+						text="Cancel"
+						@click="isActive.value = false"
+						></v-btn>
+
+						<v-btn
+						class="text-none"
+						color="indigo"
+						
+						text="submit"
+						variant="tonal"
+						@click="isActive.value = false"
+						></v-btn>
+					</v-card-actions>
+				</v-card>
+			</template>
+		</v-dialog>
+	</div>
 </template>
 
 <script >
-import Calendar from 'primevue/calendar';
-import IconField from 'primevue/iconfield';
-import InputIcon from 'primevue/inputicon';
-import InputText from 'primevue/inputtext';
+import { ref } from 'vue';
+import colors from '@/assets/json/colors.json';
+import dayjs from 'dayjs';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
-import MultiSelect from 'primevue/multiselect';
-import Tag from 'primevue/tag';
-import Dropdown from 'primevue/dropdown';
-import TriStateCheckbox from 'primevue/tristatecheckbox';
-import SplitButton from 'primevue/splitbutton';
-import Button from 'primevue/button';
-import Menu from 'primevue/menu';
 import ContextMenu from 'primevue/contextmenu';
-
-import { watchEffect } from 'vue';
 import { FilterMatchMode } from 'primevue/api';
-import moment from "moment";
+
 import { VBtn } from 'vuetify/components/VBtn'
+import { VAvatar } from 'vuetify/components/VAvatar';
+import { VChip } from 'vuetify/components/VChip';
+import { VListItem } from 'vuetify/components/VList';
+import { VDialog } from 'vuetify/components/VDialog';
+import { VCard, VCardTitle, VCardText, VCardActions } from 'vuetify/components/VCard';
+import { VContainer, VCol, VRow } from 'vuetify/components/VGrid';
+import { VDivider } from 'vuetify/components/VDivider';
 
 import bellImage from '@/assets/img/animations/alarm.gif';
+import maleImage from '@/assets/img/male.png';
+import femaleImage from '@/assets/img/female.png';
 
 export default {
+	inject: ['$call'],
 	components: {
-		Calendar, IconField, InputIcon, InputText, DataTable, MultiSelect,
-		Tag, Dropdown, TriStateCheckbox, Column, SplitButton, Button, Menu,
-		ContextMenu, VBtn,
+		DataTable, Column, ContextMenu, VBtn, VAvatar, VChip, VListItem, VDialog, VCard,
+		VCardTitle, VCardText, VCardActions, VDivider, VContainer, VCol, VRow,
 	},
 	props: {
-		appointment: {
-			default: [{
-				"name": "HLC-APP-2024-00001",
-				"appointment_type": "General",
-				"patient_name": "Sayed Mohamed Adnan",
-				"mobile": "1234567890",
-				"practitioner_name": "Sayed Hassan",
-				"cpr": 123576342,
-				"department": "Neurology",
-				"status": "Scheduled",
-				"invoiced": 100,
-				"paid_amount": 0,
-				"duration": 20,
-				"visit_status": "Scheduled",
-				"image": "https://randomuser.me/api/portraits/men/1.jpg",
-				"practitioner_image": "https://randomuser.me/api/portraits/men/30.jpg",
-				"appointment_time": "09:45:00",
-				"appointment_date": "2024-02-21"
-			}],
+		appointments: {
+			default: []
 		},
 		tab:{
 			type: String,
@@ -373,19 +339,56 @@ export default {
 		},
 		selectedDepartments: {
 			default: []
+		},
+		loading: {
+			type: Boolean,
+			defaul: true
 		}
 	},
 	data() {
 		return {
 			bellImage:bellImage,
-			appointments: null,
+			maleImage:maleImage,
+			femaleImage:femaleImage,
+			rescheduleOpen: false,
+			appointmentOpen: false,
+			dialogForm: {
+				docname: '',
+				appointment_type: '',
+				appointment_for: '',
+				duration: '',
+				custom_appointment_category: '',
+				practitioner: '',
+				patient: '',
+				patient_name: '',
+				department: '',
+				service_unit: '',
+				appointment_date: new Date(),
+				appointment_time: new Date(),
+			},
+			appointmentForm: {
+				docname: '',
+				appointment_type: '',
+				appointment_for: '',
+				duration: '',
+				custom_appointment_category: '',
+				practitioner: '',
+				department: '',
+				service_unit: '',
+				patient: '',
+				patient_name: '',
+				patient_sex: '',
+				appointment_date: new Date(),
+				appointment_time: new Date(),
+			},
+			reschduleWeek: ref(dayjs()),
 			filters: {
 				global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 				patient_name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				cpr: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				department: { value: null, matchMode: FilterMatchMode.IN },
 				patient_cpr: { value: null, matchMode: FilterMatchMode.CONTAINS },
-				practitioner_name: { value: null, matchMode: FilterMatchMode.IN },
+				practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN },
 				appointment_time: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				appointment_time_moment: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				appointment_date: { value: null, matchMode: FilterMatchMode.EQUALS },
@@ -393,275 +396,82 @@ export default {
 				status: { value: null, matchMode: FilterMatchMode.EQUALS },
 				mobile: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 			},
-			representatives: [
-				{ name: 'Mia Lopez', image: 'amyelsner.png' },
-				{ name: 'Ella Clark', image: 'annafali.png' },
-				{ name: 'Sayed Hassan', image: 'asiyajavayant.png' },
-				{ name: 'Emma Wilson', image: 'bernardodominic.png' },
-				{ name: 'Elwin Sharvill', image: 'elwinsharvill.png' },
-				{ name: 'Ioni Bowcher', image: 'ionibowcher.png' },
-				{ name: 'Ivan Magalhaes', image: 'ivanmagalhaes.png' },
-				{ name: 'Onyama Limba', image: 'onyamalimba.png' },
-				{ name: 'Stephen Shaw', image: 'stephenshaw.png' },
-				{ name: 'XuXue Feng', image: 'xuxuefeng.png' }
-			],
-			statuses: ['Scheduled', 'Rescheduled', 'Walked In'],
-			purposes: ['General', 'Follow-up', 'Consultation'],
-			loading: true,
-
-			// scheduledStatusOptions: [
-			// 	{
-			// 		label: 'Ready',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'In Room',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Transferred',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Completed',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// ],
-			// arrivedStatusOptions: [
-			// 	{
-			// 		label: 'In Room',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Transferred',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Completed',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Scheduled',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// ],
-			// readyStatusOptions: [
-			// 	{
-			// 		label: 'Transferred',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Completed',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Scheduled',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Arrived',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// ],
-			// inroomStatusOptions: [
-			// 	{
-			// 		label: 'Transferred',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Scheduled',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Arrived',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Ready',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// ],
-			// completedStatusOptions: [
-			// 	{
-			// 		label: 'Transferred',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Scheduled',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'Arrived',
-			// 		command: () => {
-			// 			window.location.href = 'https://vuejs.org/';
-			// 		}
-			// 	},
-			// 	{
-			// 		label: 'In Room',
-			// 		command: () => {
-			// 		}
-			// 	},
-			// ],
-
-			scheduledActionsOptions: [
-				{
-					label: 'Reschedule Appointment',
-					icon: 'pi pi-history'
-				},
-				{
-					label: 'Add CPR Reading',
-					icon: 'pi pi-id-card'
-				},
-				{
-					label: 'Update Payment Type',
-					icon: 'pi pi-wallet'
-				},
-			],
-			arrivedActionsOptions: [
-				{
-					label: 'Update Room',
-					icon: 'pi pi-window-maximize'
-				},
-				{
-					label: 'Add CPR Reading',
-					icon: 'pi pi-id-card'
-				},
-				{
-					label: 'Update Payment Type',
-					icon: 'pi pi-wallet'
-				},
-			],
-			readyActionsOptions: [
-				{
-					label: 'Patient Encounter',
-					icon: 'pi pi-users'
-				},
-				{
-					label: 'Add CPR Reading',
-					icon: 'pi pi-id-card'
-				},
-				{
-					label: 'Update Payment Type',
-					icon: 'pi pi-wallet'
-				},
-			],
-			inroomActionsOptions: [
-				{
-					label: 'Required Service',
-					icon: 'pi pi-file-edit'
-				},
-				{
-					label: 'Bill',
-					icon: 'pi pi-money-bill'
-				},
-				{
-					label: 'Update Payment Type',
-					icon: 'pi pi-wallet'
-				},
+			statuses: [{label: 'Scheduled', value: 'Scheduled'}, {label: 'Rescheduled', value: 'Rescheduled'}, {label: 'Walked In', value: 'Walked In'}],
+			purposes: [{label: 'General', value: 'General'}, {label: 'Follow-up', value: 'Follow-up'}, {label: 'Consultation', value: 'Consultation'}],
+			selectedRow: null,
+			contextItems: [
 				{
 					label: 'New Appointment',
-					icon: 'pi pi-users'
+					icon: 'mdi mdi-account-multiple-plus-outline',
+					command: () => this.appointmentDialog('New Appointment')
 				},
-			],
-			contextItems: [
 				{
 					label: 'Status',
 					icon: 'mdi mdi-clipboard-edit-outline',
 					items: [
-						{
-							label: 'Arrived',
-							command: (e) => {
-								console.log(e)
-							}
-						},
-						{
-							label: 'Ready',
-							command: () => {
-								selectedUser.value.role = 'Member';
-							}
-						},
-						{
-							label: 'In Room',
-							command: () => {
-								selectedUser.value.role = 'Member';
-							}
-						},
-						{
-							label: 'Completed',
-							command: () => {
-								selectedUser.value.role = 'Member';
-							}
-						},
-						{
-							label: 'Transferred',
-							command: () => {
-								selectedUser.value.role = 'Member';
-							}
-						},
+						{label: 'Arrived', command: ({ item }) => this.updateStatus(item)},
+						{label: 'Ready', command: ({ item }) => this.updateStatus(item)},
+						{label: 'In Room', command: ({ item }) => this.updateStatus(item)},
+						{label: 'Completed', command: ({ item }) => this.updateStatus(item)},
+						{label: 'Transferred', command: ({ item }) => this.updateStatus(item)},
 					]
 				},
+				{separator: true},
 				{
-					separator: true
+					label: 'Reschedule Appointment',
+					icon: 'mdi mdi-pulse',
+					command: () => this.appointmentDialog('Reschedule Appointment')
 				},
 				{
-                    label: 'Favorite',
-                    icon: 'pi pi-star',
-                    shortcut: '⌘+D'
-                },
-                {
-                    label: 'Add',
-                    icon: 'pi pi-shopping-cart',
-                    shortcut: '⌘+A'
-                },
-            ]
+					label: 'Add CPR Reading',
+					icon: 'mdi mdi-card-account-details-outline',
+					disabled: true
+				},
+				{
+					label: 'Vital Signs',
+					icon: 'mdi mdi-update',
+				},
+				{
+					label: 'Update Room',
+					icon: 'mdi mdi-door-open'
+				},
+				{
+					label: 'Update Payment Type',
+					icon: 'pi pi-wallet',
+					disabled: true
+				},
+				{
+					label: 'Patient Encounter',
+					icon: 'mdi mdi-bandage',
+				},
+				{
+					label: 'Required Service',
+					icon: 'mdi mdi-needle'
+				},
+            ],
+			colorCache: {},
 		};
 	},
-	created() {
-		watchEffect(() => {
-			this.appointments = this.getAppointments(this.appointment)
-			this.loading = false;
+	watch: {
+		'$resources.practitioners': {
+			handler(newValue) {
+				if(newValue)
+					newValue.forEach(value => {
+						if(!this.colorCache[value.practitioner_name])
+							this.colorCache[value.practitioner_name] = this.randomColors()
+					})
+			},
+			immediate: true,
+		},
+		searchValue() {
 			this.filters['global'].value = this.searchValue
+		},
+		selectedDepartments() {
 			this.filters['department'].value = this.selectedDepartments
-		})
-	},
-	mounted() {
+		},
 	},
 	methods: {
-		getAppointments(data) {
-			return [...(data || [])].map((d) => {
-				d.appointment_time_moment = moment(d.appointment_date + ' ' + d.appointment_time).format('LT');
-				d.patient_cpr = d.patient_name + ' ' + d.cpr
-
-				return d;
-			});
-		},
+		customWeekStartEndFormat: value => `${dayjs(value).startOf('week').format('MMMM D, YYYY')} -> ${dayjs(value).endOf('week').format('MMMM D, YYYY')}`,
 		getSeverity(status) {
 			switch (status) {
 				case 'Scheduled':
@@ -677,14 +487,125 @@ export default {
 					return 'danger';
 			}
 		},
-		save() {
-		},
-		toggleActions(event) {
-			this.$refs.menu.toggle(event);
-		},
 		handleRowContextMenu({ originalEvent, data, index }) {
+			this.selectedRow = data
 			this.$refs.menu.show(originalEvent);
+		},
+		randomColors() {
+			return colors[Math.floor(Math.random() * colors.length)];
+		},
+		getInitials(name) {
+			let names = name.split(' '),
+				initials = names[0].substring(0, 1).toUpperCase();
+			
+			if (names.length > 1) {
+				initials += names[names.length - 1].substring(0, 1).toUpperCase();
+			}
+			return initials;
+		},
+		updateStatus(item) {
+			this.$call('frappe.client.set_value',
+				{doctype: 'Patient Appointment', name: this.selectedRow.appointment_id, fieldname: 'custom_visit_status', value: item.label}
+			)
+		},
+		appointmentDialog(formType, isNew = false) {
+			if(isNew){
+				this.appointmentForm.docname = '';
+				this.appointmentForm.duration = '';
+				this.appointmentForm.appointment_type = '';
+				this.appointmentForm.appointment_for = '';
+				this.appointmentForm.custom_appointment_category = '';
+				this.appointmentForm.practitioner = '';
+				this.appointmentForm.patient = '';
+				this.appointmentForm.patient_name = '';
+				this.appointmentForm.patient_sex = '';
+				this.appointmentForm.department = '';
+				this.appointmentForm.service_unit = '';
+			}
+			else{
+				this.appointmentForm.docname = this.selectedRow.appointment_id;
+				this.appointmentForm.duration = this.selectedRow.duration;
+				this.appointmentForm.appointment_type = this.selectedRow.appointment_type;
+				this.appointmentForm.appointment_for = this.selectedRow.appointment_for;
+				this.appointmentForm.custom_appointment_category = this.selectedRow.appointment_category;
+				this.appointmentForm.practitioner = this.selectedRow.practitioner_name;
+				this.appointmentForm.patient = this.selectedRow.patient_details.name;
+				this.appointmentForm.patient_name = this.selectedRow.patient_name;
+				this.appointmentForm.patient_sex = this.selectedRow.patient_details.gender;
+				this.appointmentForm.department = this.selectedRow.department;
+				this.appointmentForm.service_unit = this.selectedRow.service_unit;
+			}
+			this.appointmentForm.type = formType
+			this.appointmentOpen = true
+		},
+		getTimeSlots() {
+			this.$call()
 		}
 	},
 };
 </script>
+
+<style>
+.ant-picker-dropdown,.ant-select-dropdown{
+	z-index: 3000;
+}
+</style>
+
+<style scoped>
+.zzz {
+    animation-name: zzz;
+    animation-duration: 1.5s;
+    animation-timing-function: ease-out;
+    animation-iteration-count: infinite;
+    animation-direction: forwards;
+    color: rgba(160,84,246,1);
+    font-weight: bold;
+    position: absolute;
+    z-index: 100;
+    transform: translateY(0%);
+    font-family: 'Concert One', cursive;
+}
+
+.zzz-z {
+    animation-delay: 0s;
+    right: 10px;
+}
+.zzz-zz {
+    animation-delay: 0.35s;
+    right: 2.5px;
+}
+.zzz-zzz {
+    animation-delay: 0.75s;
+    right: 5;
+}
+
+@-webkit-keyframes zzz {
+	0% {
+        color: rgba(160,84,246,0);
+        font-size: 5px;
+        -webkit-transform: translateY(0%);
+        transform: translateY(0%);
+    }
+    100% {
+        color: rgba(160,84,246,1);
+        font-size: 15px;
+        -webkit-transform: translateY(-150%);
+        transform: translateY(-150%);
+    }
+}
+
+@keyframes zzz {
+    0% {
+        color: rgba(160,84,246,0);
+        font-size: 5px;
+        -webkit-transform: translateY(0%);
+        transform: translateY(0%);
+    }
+    100% {
+        color: rgba(160,84,246,1);
+        font-size: 15px;
+        -webkit-transform: translateY(-150%);
+        transform: translateY(-150%);
+    }
+}
+</style>

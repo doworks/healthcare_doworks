@@ -6,10 +6,17 @@
       mobile-breakpoint="none"
     >
       <v-list>
-        <v-list-item
-          prepend-avatar="https://randomuser.me/api/portraits/women/85.jpg"
-          title="Sandra Adams"
-        >
+        <v-list-item :title="$resources.user.name">
+          <template #prepend>
+            <v-avatar :color="!$resources.user.image ? currenColor : ''">
+              <img
+                v-if="$resources.user.image"
+                class="h-100 w-100"
+                :src="$resources.user.image"
+              />
+              <span v-if="!$resources.user.image" class="text-h5">{{ getInitials($resources.user.name) }}</span>
+            </v-avatar>
+          </template>
         </v-list-item>
       </v-list>
 
@@ -24,11 +31,14 @@
 </template>
 
 <script>
-  import { VNavigationDrawer } from 'vuetify/components/VNavigationDrawer'
-  import { VList, VListItem } from 'vuetify/components/VList'
-  import { VDivider } from 'vuetify/components/VDivider'
+  import colors from '@/assets/json/colors.json';
+  import { VNavigationDrawer } from 'vuetify/components/VNavigationDrawer';
+  import { VList, VListItem } from 'vuetify/components/VList';
+  import { VDivider } from 'vuetify/components/VDivider';
+  import { VAvatar } from 'vuetify/components/VAvatar';
 
   export default{
+    inject:['$call'],
     props:{
       drawer:{
         type: Boolean,
@@ -40,11 +50,32 @@
       VList,
       VListItem,
       VDivider,
+      VAvatar,
     },
     data() {
       return {
+        currenColor: '',
       };
     },
+    mounted() {
+      this.currenColor = this.randomColors()
+    },
+    methods:{
+      getInitials(name) {
+        if(name){
+          let names = name.split(' '),
+            initials = names[0].substring(0, 1).toUpperCase();
+          
+          if (names.length > 1) {
+            initials += names[names.length - 1].substring(0, 1).toUpperCase();
+          }
+          return initials;
+        }
+      },
+      randomColors() {
+        return colors[Math.floor(Math.random() * colors.length)];
+      },
+    }
   };
 </script>
 

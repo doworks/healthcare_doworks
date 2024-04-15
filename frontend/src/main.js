@@ -25,8 +25,8 @@ import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 import 'vuetify/styles'
-import 'primevue/resources/themes/aura-light-green/theme.css'
-import 'primeicons/primeicons.css'
+import 'primevue/resources/themes/aura-light-blue/theme.css'
+import 'primeicons/primeicons.css' 
 
 import '@mdi/font/css/materialdesignicons.css'
 import { fa } from 'vuetify/iconsets/fa'
@@ -108,5 +108,44 @@ router.beforeEach(async (to, from, next) => {
 		}
 	}
 });
+
+// Handle Global Resources
+let resources = reactive({
+	practitioners: [],
+	patients: [],
+	user: {},
+	appointmentTypes: [],
+});
+call('frappe.auth.get_logged_user').then(user => {
+	resources.user.name = user
+	call('frappe.client.get', {doctype:'User', name: user}).then(response => {
+		resources.user.image = response.user_image
+	})
+})
+call('frappe.client.get_list', {doctype: 'Healthcare Practitioner', fields: ['practitioner_name', 'image', 'department', 'name']})
+	.then(response => {
+		if(response)
+			resources.practitioners = response
+	})
+	.catch(error => {
+		console.error('Error fetching records:', error);
+	});
+call('frappe.client.get_list', {doctype: 'Patient', fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile']})
+	.then(response => {
+		if(response)
+			resources.patients = response
+	})
+	.catch(error => {
+		console.error('Error fetching records:', error);
+	});
+call('frappe.client.get_list', {doctype: 'Appointment Type', fields: ['appointment_type', 'allow_booking_for']})
+	.then(response => {
+		if(response)
+			resources.appointmentTypes = response
+	})
+	.catch(error => {
+		console.error('Error fetching records:', error);
+	});
+app.config.globalProperties.$resources = resources;
 
 app.mount("#app");

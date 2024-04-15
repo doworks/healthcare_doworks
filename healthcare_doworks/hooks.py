@@ -124,13 +124,16 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
+doc_events = {
 # 	"*": {
 # 		"on_update": "method",
 # 		"on_cancel": "method",
 # 		"on_trash": "method"
 # 	}
-# }
+    'Patient Appointment':{
+        "on_update": "healthcare_doworks.api.methods.get_appointments"
+    }
+}
 
 # Scheduled Tasks
 # ---------------
@@ -230,4 +233,6 @@ app_license = "mit"
 # }
 
 
-website_route_rules = [{'from_route': '/frontend/appointments', 'to_route': 'frontend'},]
+website_route_rules = [{'from_route': '/frontend/<path:app_path>', 'to_route': 'frontend'},]
+
+socketio_debug = True
