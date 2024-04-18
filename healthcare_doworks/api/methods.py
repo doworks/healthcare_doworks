@@ -8,6 +8,10 @@ def fetch_patient_appointments():
 def reschedule_appointment():
 	pass
 
+@frappe.whitelist()
+def change_status():
+	pass
+
 def get_appointments(*args):
 	appointments = frappe.db.sql("""
 		SELECT
@@ -19,6 +23,7 @@ def get_appointments(*args):
 			pa.`appointment_type` AS `appointment_type`,
 			pa.`appointment_for` AS `appointment_for`,
 			pa.`practitioner_name` AS `practitioner_name`,
+			pa.`practitioner` AS `practitioner`,
 			hp.image AS `practitioner_image`,
 			pa.`department` AS `department`,
 			pa.`service_unit` AS `service_unit`,
