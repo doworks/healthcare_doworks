@@ -27,10 +27,11 @@ def reschedule_appointment(form):
 def change_status(docname, status):
 	doc = frappe.get_doc('Patient Appointment', docname)
 	doc.custom_visit_status = status
-	doc.append("Appointment Time Logs", {
+	doc.append("custom_appointment_time_logs", {
 		"status": status,
 		"time": datetime.datetime.now()
 	})
+	doc.save()
 
 def get_appointments(*args):
 	appointments = frappe.db.sql("""
