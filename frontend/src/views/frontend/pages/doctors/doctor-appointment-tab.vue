@@ -84,7 +84,7 @@
 						</a-select>
 					</template>
 				</Column>
-				<Column header="Mobile" field="mobile" :showFilterMenu="false" :showClearButton="false" style="width: 10%">
+				<Column header="Mobile" field="mobile" filterField="patient_details.mobile" :showFilterMenu="false" :showClearButton="false" style="width: 10%">
 					<template #body="{ data }">
 						{{ data.patient_details.mobile }}
 					</template>
@@ -189,13 +189,44 @@
 				</Column>
 				<Column style="width: 5%">
 					<template #body="{ data }">
-						<v-btn size="small" variant="text" icon>
-							<!-- <img :src="bellImage"/> -->
+						<v-btn 
+							v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0].note)" 
+							size="small" 
+							variant="text" 
+							icon
+							@click="toggleOP"
+						>
+							<v-badge color="success" :content="getNotesCount(data)" :offset-y="5" :offset-x="6">
+								<img :src="bellImage"/>
+							</v-badge>
+						</v-btn>
+						<v-btn v-else size="small" variant="text" icon >
 							<i class="mdi mdi-bell-outline" style="font-size: 25px;"></i>
 							<div class="zzz zzz-zzz">Z</div>
 							<div class="zzz zzz-zz">Z</div>
 							<div class="zzz zzz-z">Z</div>
 						</v-btn>
+						<OverlayPanel ref="op">
+							<div class="d-flex flex-column gap-3 w-25rem">
+								<div v-if="data.notes">
+									<span class="fw-semibold d-block mb-2">Appointment Notes</span>
+									<a-textarea v-model:value="data.notes" disabled/>
+								</div>
+								<div v-if="data.visit_notes.length > 0 && data.visit_notes[0].note">
+									<span class="fw-semibold d-block mb-2">Visit Notes</span>
+									<ul class="list-none p-0 m-0 flex flex-column gap-3">
+										<li v-for="(note, index) in data.visit_notes" :key="index" class="d-flex align-items-center gap-2">
+											<div>
+												<a-textarea v-model:value="note.note" disabled/>
+											</div>
+											<div class="d-flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
+												<span>{{ note.provider }}</span>
+											</div>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</OverlayPanel>
 					</template>
 				</Column>
 				<ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = null"/>
@@ -206,15 +237,17 @@
 
 <script >
 import colors from '@/assets/json/colors.json';
+import { FilterMatchMode } from 'primevue/api';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import ContextMenu from 'primevue/contextmenu';
-import { FilterMatchMode } from 'primevue/api';
+import OverlayPanel from 'primevue/overlaypanel';
 
 import { VBtn } from 'vuetify/components/VBtn'
 import { VAvatar } from 'vuetify/components/VAvatar';
 import { VChip } from 'vuetify/components/VChip';
 import { VListItem } from 'vuetify/components/VList';
+import { VBadge } from 'vuetify/components/VBadge';
 
 import bellImage from '@/assets/img/animations/alarm.gif';
 import maleImage from '@/assets/img/male.png';
@@ -223,7 +256,7 @@ import femaleImage from '@/assets/img/female.png';
 export default {
 	inject: ['$call'],
 	components: {
-		DataTable, Column, ContextMenu, VBtn, VAvatar, VChip, VListItem,
+		DataTable, Column, ContextMenu, VBtn, VAvatar, VChip, VListItem, VBadge, OverlayPanel,
 	},
 	props: {
 		appointments: {
@@ -262,7 +295,7 @@ export default {
 				appointment_date: { value: null, matchMode: FilterMatchMode.EQUALS },
 				appointment_type: { value: null, matchMode: FilterMatchMode.EQUALS },
 				status: { value: null, matchMode: FilterMatchMode.EQUALS },
-				mobile: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+				'patient_details.mobile': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 			},
 			statuses: [{label: 'Scheduled', value: 'Scheduled'}, {label: 'Rescheduled', value: 'Rescheduled'}, {label: 'Walked In', value: 'Walked In'}],
 			purposes: [{label: 'General', value: 'General'}, {label: 'Follow-up', value: 'Follow-up'}, {label: 'Consultation', value: 'Consultation'}],
@@ -301,20 +334,23 @@ export default {
 				},
 				{
 					label: 'Update Room',
-					icon: 'mdi mdi-door-open'
+					icon: 'mdi mdi-door-open',
+					command: () => this.$emit('service-unit-dialog', this.selectedRow)
 				},
 				{
 					label: 'Update Payment Type',
 					icon: 'pi pi-wallet',
-					disabled: true
+					command: () => this.$emit('payment-type-dialog', this.selectedRow)
 				},
 				{
 					label: 'Patient Encounter',
 					icon: 'mdi mdi-bandage',
+					url: '/patient-encounter'
 				},
 				{
 					label: 'Required Service',
-					icon: 'mdi mdi-needle'
+					icon: 'mdi mdi-needle',
+					disabled: true
 				},
             ],
 			colorCache: {},
@@ -371,9 +407,22 @@ export default {
 			return initials;
 		},
 		updateStatus(item) {
-			this.$call('frappe.client.set_value',
-				{doctype: 'Patient Appointment', name: this.selectedRow.appointment_id, fieldname: 'custom_visit_status', value: item.label}
+			this.$call('healthcare_doworks.api.methods.change_status',
+				{docname: this.selectedRow.appointment_id, status: item.label}
 			)
+		},
+		getNotesCount(data) {
+			let count = data.visit_notes.reduce((total, value) => {
+				if(value.note)
+					return ++total;
+				return total;
+			}, 0)
+			if(data.notes)
+				++count;
+			return count;
+		},
+		toggleOP(event) {
+			this.$refs.op.toggle(event)
 		},
 	},
 };

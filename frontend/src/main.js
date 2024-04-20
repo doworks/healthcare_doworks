@@ -116,6 +116,7 @@ let resources = reactive({
 	user: {},
 	appointmentTypes: [],
 	departments: [],
+	serviceUnits: [],
 });
 call('frappe.auth.get_logged_user').then(user => {
 	resources.user.name = user
@@ -139,7 +140,7 @@ call('frappe.client.get_list', {doctype: 'Patient', fields: ['sex', 'patient_nam
 	.catch(error => {
 		console.error('Error fetching records:', error);
 	});
-call('frappe.client.get_list', {doctype: 'Appointment Type', fields: ['appointment_type', 'allow_booking_for']})
+call('frappe.client.get_list', {doctype: 'Appointment Type', fields: ['appointment_type', 'allow_booking_for', 'default_duration']})
 	.then(response => {
 		if(response)
 			resources.appointmentTypes = response
@@ -151,6 +152,14 @@ call('frappe.client.get_list', {doctype: 'Medical Department', fields: ['departm
 	.then(response => {
 		if(response)
 			resources.departments = response
+	})
+	.catch(error => {
+		console.error('Error fetching records:', error);
+	});
+call('frappe.client.get_list', {doctype: 'Healthcare Service Unit', fields: ['name'],filters: {allow_appointments: 1}})
+	.then(response => {
+		if(response)
+			resources.serviceUnits = response
 	})
 	.catch(error => {
 		console.error('Error fetching records:', error);

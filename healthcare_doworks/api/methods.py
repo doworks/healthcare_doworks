@@ -1,16 +1,36 @@
 import frappe
+import datetime
+from healthcare.healthcare.doctype.patient_appointment.patient_appointment import update_status
 
 @frappe.whitelist()
 def fetch_patient_appointments():
 	return get_appointments()
 
 @frappe.whitelist()
-def reschedule_appointment():
-	pass
+def new_appointment(form):
+	form['appointment_date'] = datetime.datetime.strptime(form['appointment_date'].split('T')[0], '%Y-%m-%d').date()
+	doc = frappe.get_doc(form)
+	doc.insert()
 
 @frappe.whitelist()
-def change_status():
-	pass
+def reschedule_appointment(form):
+	form['appointment_date'] = datetime.datetime.strptime(form['appointment_date'].split('T')[0], '%Y-%m-%d').date()
+	update_status(form['name'], 'Cancelled')
+
+	form['name'] = ''
+	new_doc = frappe.get_doc(form)
+	new_doc.insert()
+	update_status(new_doc.name, 'Rescheduled')
+	get_appointments()
+
+@frappe.whitelist()
+def change_status(docname, status):
+	doc = frappe.get_doc('Patient Appointment', docname)
+	doc.custom_visit_status = status
+	doc.append("Appointment Time Logs", {
+		"status": status,
+		"time": datetime.datetime.now()
+	})
 
 def get_appointments(*args):
 	appointments = frappe.db.sql("""
@@ -29,12 +49,11 @@ def get_appointments(*args):
 			pa.`service_unit` AS `service_unit`,
 			pa.`duration` AS `duration`,
 			pa.`notes` AS `notes`,
-			pa.`custom_visit_note` AS `visit_note`,
 			pa.`appointment_date` AS `appointment_date`,
 			pa.`appointment_time` AS `appointment_time`,
 			pa.`custom_appointment_category` AS `appointment_category`,
 			pa.`service_unit` AS `service_unit`,
-			
+			pa.`custom_payment_type` AS `payment_type`,
 
 			JSON_OBJECT(
 				'id', `tabPatient`.`name`,
@@ -71,10 +90,13 @@ def get_appointments(*args):
 			ON vn.`parent` = pa.`name`
 		LEFT JOIN `tabAppointment Time Logs` tl
 			ON tl.`parent` = pa.`name`
-		
+		WHERE
+			pa.`status` IN ('Scheduled', 'Rescheduled', 'Walked In')
+		GROUP BY
+    		pa.`name`
 		ORDER BY
-			pa.`appointment_date` DESC,
-			pa.`appointment_time` DESC
+			pa.`appointment_date` ASC,
+    		pa.`appointment_time` ASC
 	""", as_dict=True)
 	frappe.publish_realtime("patient_appointments", appointments)
 	return appointments
