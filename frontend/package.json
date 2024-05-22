@@ -12,6 +12,7 @@
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
     "@fortawesome/fontawesome-free": "^6.5.1",
+    "@vueup/vue-quill": "^1.2.0",
     "@vueuse/components": "^10.9.0",
     "ant-design-vue": "^4.1.0",
     "aos": "^2.3.4",
@@ -26,6 +27,7 @@
     "normalize.css": "^8.0.1",
     "primeicons": "^6.0.1",
     "primevue": "^3.48.1",
+    "quill": "^2.0.2",
     "socket.io-client": "^4.7.1",
     "vue": "^3.3.8",
     "vue-feather": "^2.0.0",

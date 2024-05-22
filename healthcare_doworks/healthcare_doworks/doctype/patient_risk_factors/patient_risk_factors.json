@@ -1,0 +1,46 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-05-01 16:59:03.005363",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "type",
+  "severity",
+  "note"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "severity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Severity (0 - 5)"
+  },
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Occupation\nLiving Place\nOthers"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-05-11 13:10:59.788253",
+ "modified_by": "Administrator",
+ "module": "Healthcare Doworks",
+ "name": "Patient Risk Factors",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,46 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-04-29 17:23:40.252768",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "type",
+  "note",
+  "severity"
+ ],
+ "fields": [
+  {
+   "fieldname": "type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Food\nMedication\nAnimal\nEnvironmental\nOther"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  },
+  {
+   "default": "0",
+   "fieldname": "severity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Severity (0 - 5)"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-05-11 13:08:10.377284",
+ "modified_by": "Administrator",
+ "module": "Healthcare Doworks",
+ "name": "Patient Allergies Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

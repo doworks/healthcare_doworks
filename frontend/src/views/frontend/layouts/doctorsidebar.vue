@@ -25,7 +25,7 @@
       <v-list nav>
         <v-list-item prepend-icon="fa fa-display" title="Dashboard" value="myfiles" nav to="/doctor-dashboard"></v-list-item>
         <v-list-item prepend-icon="fa fa-calendar-check" title="Appointments" value="shared" to="/appointments"></v-list-item>
-        <v-list-item prepend-icon="fa fa-user-injured" title="Patient Encounter" value="starred" to="/patient-encounter"></v-list-item>
+        <!-- <v-list-item prepend-icon="fa fa-user-injured" title="Patient Encounter" value="starred" :to="{ name: 'patient-encounter' }"></v-list-item> -->
       </v-list>
     </v-navigation-drawer>
 </template>

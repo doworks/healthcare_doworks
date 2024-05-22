@@ -320,7 +320,7 @@ export default {
 				{separator: true},
 				{
 					label: 'Reschedule Appointment',
-					icon: 'mdi mdi-pulse',
+					icon: 'mdi clock-outline',
 					command: () => this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)
 				},
 				{
@@ -330,7 +330,8 @@ export default {
 				},
 				{
 					label: 'Vital Signs',
-					icon: 'mdi mdi-update',
+					icon: 'mdi mdi-pulse',
+					command: () => this.$emit('vital-sign-dialog', this.selectedRow)
 				},
 				{
 					label: 'Update Room',
@@ -345,12 +346,20 @@ export default {
 				{
 					label: 'Patient Encounter',
 					icon: 'mdi mdi-bandage',
-					url: '/patient-encounter'
+					command: () => {
+						const appointmentId = this.selectedRow.appointment_id;
+						this.$router.push({ name: 'patient-encounter', params: { appointmentId } });
+					}
 				},
 				{
-					label: 'Required Service',
+					label: 'Request a Service',
 					icon: 'mdi mdi-needle',
 					disabled: true
+				},
+				{
+					label: 'Tranfer To Practitioner',
+					icon: 'mdi mdi-transit-transfer',
+					command: () => this.$emit('transfer-practitioner-dialog', this.selectedRow)
 				},
             ],
 			colorCache: {},

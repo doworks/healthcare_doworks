@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-05-11 13:18:29.167756",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "habit",
+  "note"
+ ],
+ "fields": [
+  {
+   "fieldname": "habit",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Habit",
+   "options": "Smoking\nAlcohol\nVegetarian\nIn Regime\nExercise\nOverweight\nOther"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Note"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-05-11 13:20:32.552083",
+ "modified_by": "Administrator",
+ "module": "Healthcare Doworks",
+ "name": "Patient Habits Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

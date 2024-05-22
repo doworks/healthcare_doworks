@@ -9,24 +9,24 @@ import Appointments from '@/views/frontend/pages/doctors/doctor-appointment.vue'
 
 const routes = [
   {
-	path: "/",
-	name: "Home",
-	component: Home,
+    path: "/",
+    name: "Home",
+    component: Home,
   },
   {
-  path: '/patient-encounter',
-  name: 'patient-encounter',
-  component: PatientEncounter
+    path: '/patient-encounter/:appointmentId?',
+    name: 'patient-encounter',
+    component: PatientEncounter
   },
   {
-  path: '/doctor-dashboard',
-  name: 'doctor-dashboard',
-  component: DoctorDashBoard
+    path: '/doctor-dashboard',
+    name: 'doctor-dashboard',
+    component: DoctorDashBoard
   },
   {
-  path: '/appointments',
-  name: 'appointments',
-  component: Appointments 
+    path: '/appointments',
+    name: 'appointments',
+    component: Appointments 
   },
   ...authRoutes,
 ];

@@ -1,0 +1,52 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-04-29 17:29:31.881430",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "surgery",
+  "date",
+  "practitioner",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "surgery",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Surgery"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date"
+  },
+  {
+   "fieldname": "practitioner",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Practitioner"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-05-01 16:57:14.561110",
+ "modified_by": "Administrator",
+ "module": "Healthcare Doworks",
+ "name": "Patient Surgical History",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

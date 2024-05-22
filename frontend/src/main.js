@@ -19,12 +19,12 @@ import VueFeather from 'vue-feather';
 
 // Import styles
 import 'normalize.css';
+import 'vuetify/styles'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-vue/dist/bootstrap-vue.css';
 import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
-import 'vuetify/styles'
 import 'primevue/resources/themes/aura-light-blue/theme.css'
 import 'primeicons/primeicons.css' 
 
@@ -46,6 +46,12 @@ import patientappointment from '@/views/frontend/pages/patients/dashboard/patien
 import DoctorSidebar from '@/views/frontend/layouts/doctorsidebar.vue'
 import Dappointment from '@/views/frontend/pages/doctors/patient-profile/dappointment.vue'
 import AppointmentTab from '@/views/frontend/pages/doctors/doctor-appointment-tab.vue'
+
+//Dialogs
+import PatientAppointmentDialog from '@/components/dialogs/patientAppointment.vue'
+import VitalSignsDialog from '@/components/dialogs/vitalSigns.vue'
+import MedicationRequestDialog from '@/components/dialogs/medicationRequest.vue'
+import LabTestDialog from '@/components/dialogs/labTest.vue'
 						  // My App End //
 
 
@@ -61,6 +67,10 @@ app.component('patientappointment',patientappointment)
 app.component('doctorsidebar',DoctorSidebar)
 app.component('dappointment',Dappointment)
 app.component('appointmenttab',AppointmentTab)
+app.component('patientAppointmentDialog',PatientAppointmentDialog)
+app.component('vitalSignsDialog',VitalSignsDialog)
+app.component('medicationRequestDialog',MedicationRequestDialog)
+app.component('labTestDialog',LabTestDialog)
 // Use other UI libraries and plugins
 app.use(Antd);
 
@@ -74,6 +84,17 @@ const vuetify = createVuetify({
 		  mdi,
         },
     },
+	display: {
+		mobileBreakpoint: 'sm',
+		thresholds: {
+			xs: 0,
+			sm: 576,
+			md: 768,
+			lg: 992,
+			xl: 1200,
+  			xxl: 1400
+		},
+	},
 	$reset: false
 })
 app.use(PrimeVue).use(vuetify);
@@ -111,55 +132,28 @@ router.beforeEach(async (to, from, next) => {
 
 // Handle Global Resources
 let resources = reactive({
+	user: {},
 	practitioners: [],
 	patients: [],
-	user: {},
 	appointmentTypes: [],
 	departments: [],
 	serviceUnits: [],
+	complaints: [],
+	diagnosis: [],
+	medications: [],
+	items: [],
+	dosageForms: [],
+	prescriptionDosages: [],
+	prescriptionDurations: [],
+	labTestTemplates: [],
 });
-call('frappe.auth.get_logged_user').then(user => {
-	resources.user.name = user
-	call('frappe.client.get', {doctype:'User', name: user}).then(response => {
-		resources.user.image = response.user_image
-	})
-})
-call('frappe.client.get_list', {doctype: 'Healthcare Practitioner', fields: ['practitioner_name', 'image', 'department', 'name']})
+call('healthcare_doworks.api.methods.fetch_resources')
 	.then(response => {
-		if(response)
-			resources.practitioners = response
-	})
-	.catch(error => {
-		console.error('Error fetching records:', error);
-	});
-call('frappe.client.get_list', {doctype: 'Patient', fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile']})
-	.then(response => {
-		if(response)
-			resources.patients = response
-	})
-	.catch(error => {
-		console.error('Error fetching records:', error);
-	});
-call('frappe.client.get_list', {doctype: 'Appointment Type', fields: ['appointment_type', 'allow_booking_for', 'default_duration']})
-	.then(response => {
-		if(response)
-			resources.appointmentTypes = response
-	})
-	.catch(error => {
-		console.error('Error fetching records:', error);
-	});
-call('frappe.client.get_list', {doctype: 'Medical Department', fields: ['department']})
-	.then(response => {
-		if(response)
-			resources.departments = response
-	})
-	.catch(error => {
-		console.error('Error fetching records:', error);
-	});
-call('frappe.client.get_list', {doctype: 'Healthcare Service Unit', fields: ['name'],filters: {allow_appointments: 1}})
-	.then(response => {
-		if(response)
-			resources.serviceUnits = response
+		if(response){
+			for (let key in resources) {
+				resources[key] = response[key]
+			}
+		}
 	})
 	.catch(error => {
 		console.error('Error fetching records:', error);
