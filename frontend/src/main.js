@@ -149,17 +149,17 @@ let resources = reactive({
 	prescriptionDurations: [],
 	labTestTemplates: [],
 });
-call('healthcare_doworks.api.methods.fetch_resources')
-	.then(response => {
-		if(response){
-			for (let key in resources) {
-				resources[key] = response[key]
-			}
+
+call('healthcare_doworks.api.methods.fetch_resources').then(response => {
+	if(response){
+		for (let key in resources) {
+			resources[key] = response[key]
 		}
-	})
-	.catch(error => {
-		console.error('Error fetching records:', error);
-	});
+	}
+}).catch(error => {
+	console.error('Error fetching records:', error);
+});
+
 app.config.globalProperties.$resources = resources;
 
 app.mount("#app");

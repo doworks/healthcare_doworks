@@ -138,18 +138,19 @@
                       v-slot="{ isSelected, selectedClass, toggle }"
                     >
                       <v-btn
-                        :class="`${selectedClass} text-center`"
-                        :data-name="slot.from_time"
-                        :data-service-unit="slotInfo.service_unit || ''"
-                        :data-day-appointment=" slot.maximum_appointments ? 1 : ''"
-                        :data-duration="slot.maximum_appointments ? slot.duration : slot.interval"
-                        :disabled="slot.disabled"
-                        :data-tele-conf="slot.maximum_appointments ? '' : slotInfo.tele_conf || 0"
-                        :data-overlap-appointments="slot.maximum_appointments ? '' : slotInfo.service_unit_capacity || 0"
-                        style="margin: 0 10px 10px 0; width: auto"
-                        :data-toggle="slot.maximum_appointments ? '' : 'tooltip'"
-                        :title="slot.maximum_appointments ? '' : slot.tool_tip || ''"
-                        @click="handleSlotClick(toggle, slot.from_time, slotInfo.service_unit)"
+                      class="text-center"
+                      :class="selectedClass"
+                      :data-name="slot.from_time"
+                      :data-service-unit="slotInfo.service_unit || ''"
+                      :data-day-appointment=" slot.maximum_appointments ? 1 : ''"
+                      :data-duration="slot.maximum_appointments ? slot.duration : slot.interval"
+                      :disabled="slot.disabled"
+                      :data-tele-conf="slot.maximum_appointments ? '' : slotInfo.tele_conf || 0"
+                      :data-overlap-appointments="slot.maximum_appointments ? '' : slotInfo.service_unit_capacity || 0"
+                      style="margin: 0 10px 10px 0; width: auto"
+                      :data-toggle="slot.maximum_appointments ? '' : 'tooltip'"
+                      :title="slot.maximum_appointments ? '' : slot.tool_tip || ''"
+                      @click="handleSlotClick(toggle, slot.from_time, slotInfo.service_unit)"
                       >
                         {{ slot.maximum_appointments ? `${slot.from_time} - ${slot.to_time}` : slot.from_time.substring(0, slot.from_time.length - 3)}}
                         &nbsp

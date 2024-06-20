@@ -340,8 +340,13 @@ export default {
     },
     appointmentDialog(formType, isNew, row) {
       if(isNew){
+        let duration = 0
+        this.$resources.appointmentTypes.forEach(value => {
+          if(value.appointment_type === 'Practitioner')
+            duration = value.default_duration
+        })
         this.appointmentForm.name = 'new-patient-appointment';
-				this.appointmentForm.duration = '';
+				this.appointmentForm.duration = duration;
 				this.appointmentForm.appointment_type = 'Practitioner';
 				this.appointmentForm.appointment_for = 'Practitioner';
 				this.appointmentForm.custom_appointment_category = 'Primary';
