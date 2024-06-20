@@ -6,7 +6,6 @@
 				size="small"
 				sortField="appointment_time"
 				paginator
-				stripedRows
 				dataKey="id"
 				filterDisplay="row"
 				resizableColumns
@@ -15,6 +14,8 @@
 				:rows="10"
 				:rowsPerPageOptions="[10, 20, 50]"
 				:value="appointments"
+				selectionMode="single" 
+				:metaKeySelection="true" 
 				@row-contextmenu="handleRowContextMenu"
 			>
 				<template #empty> No Appointments found. </template>
@@ -200,12 +201,7 @@
 								<img :src="bellImage"/>
 							</v-badge>
 						</v-btn>
-						<v-btn v-else size="small" variant="text" icon >
-							<i class="mdi mdi-bell-outline" style="font-size: 25px;"></i>
-							<div class="zzz zzz-zzz">Z</div>
-							<div class="zzz zzz-zz">Z</div>
-							<div class="zzz zzz-z">Z</div>
-						</v-btn>
+						<i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
 						<OverlayPanel ref="op">
 							<div class="d-flex flex-column gap-3 w-25rem">
 								<div v-if="data.notes">
@@ -236,6 +232,7 @@
 </template>
 
 <script >
+import dayjs from 'dayjs';
 import colors from '@/assets/json/colors.json';
 import { FilterMatchMode } from 'primevue/api';
 import DataTable from 'primevue/datatable';
@@ -270,6 +267,9 @@ export default {
 			type: String,
 			default: ''
 		},
+		selectedDate: {
+			default: dayjs().format('YYYY-MM-DD')
+		},
 		selectedDepartments: {
 			default: []
 		},
@@ -292,7 +292,7 @@ export default {
 				practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN },
 				appointment_time: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				appointment_time_moment: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
-				appointment_date: { value: null, matchMode: FilterMatchMode.EQUALS },
+				appointment_date: { value: dayjs().format('YYYY-MM-DD'), matchMode: FilterMatchMode.EQUALS },
 				appointment_type: { value: null, matchMode: FilterMatchMode.EQUALS },
 				status: { value: null, matchMode: FilterMatchMode.EQUALS },
 				'patient_details.mobile': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
@@ -382,6 +382,9 @@ export default {
 		selectedDepartments() {
 			this.filters['department'].value = this.selectedDepartments
 		},
+		selectedDate() {
+			this.filters['appointment_date'].value = dayjs(this.selectedDate).format('YYYY-MM-DD')
+		},
 	},
 	methods: {
 		getSeverity(status) {
@@ -440,64 +443,5 @@ export default {
 <style>
 .ant-picker-dropdown,.ant-select-dropdown{
 	z-index: 3000;
-}
-</style>
-
-<style scoped>
-.zzz {
-    animation-name: zzz;
-    animation-duration: 1.5s;
-    animation-timing-function: ease-out;
-    animation-iteration-count: infinite;
-    animation-direction: forwards;
-    color: rgba(160,84,246,1);
-    font-weight: bold;
-    position: absolute;
-    z-index: 100;
-    transform: translateY(0%);
-    font-family: 'Concert One', cursive;
-}
-
-.zzz-z {
-    animation-delay: 0s;
-    right: 10px;
-}
-.zzz-zz {
-    animation-delay: 0.35s;
-    right: 2.5px;
-}
-.zzz-zzz {
-    animation-delay: 0.75s;
-    right: 5;
-}
-
-@-webkit-keyframes zzz {
-	0% {
-        color: rgba(160,84,246,0);
-        font-size: 5px;
-        -webkit-transform: translateY(0%);
-        transform: translateY(0%);
-    }
-    100% {
-        color: rgba(160,84,246,1);
-        font-size: 15px;
-        -webkit-transform: translateY(-150%);
-        transform: translateY(-150%);
-    }
-}
-
-@keyframes zzz {
-    0% {
-        color: rgba(160,84,246,0);
-        font-size: 5px;
-        -webkit-transform: translateY(0%);
-        transform: translateY(0%);
-    }
-    100% {
-        color: rgba(160,84,246,1);
-        font-size: 15px;
-        -webkit-transform: translateY(-150%);
-        transform: translateY(-150%);
-    }
 }
 </style>

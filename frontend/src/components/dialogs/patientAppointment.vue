@@ -138,7 +138,7 @@
                       v-slot="{ isSelected, selectedClass, toggle }"
                     >
                       <v-btn
-                        :class="selectedClass"
+                        :class="`${selectedClass} text-center`"
                         :data-name="slot.from_time"
                         :data-service-unit="slotInfo.service_unit || ''"
                         :data-day-appointment=" slot.maximum_appointments ? 1 : ''"
@@ -149,7 +149,7 @@
                         style="margin: 0 10px 10px 0; width: auto"
                         :data-toggle="slot.maximum_appointments ? '' : 'tooltip'"
                         :title="slot.maximum_appointments ? '' : slot.tool_tip || ''"
-                        @click="handleSlotClick(toggle, slot.from_time)"
+                        @click="handleSlotClick(toggle, slot.from_time, slotInfo.service_unit)"
                       >
                         {{ slot.maximum_appointments ? `${slot.from_time} - ${slot.to_time}` : slot.from_time.substring(0, slot.from_time.length - 3)}}
                         &nbsp
@@ -225,8 +225,8 @@ export default {
       defalut: {
         doctype: 'Patient Appointment',
 				name: 'new-patient-appointment',
-				appointment_type: '',
-				appointment_for: '',
+				appointment_type: 'Practitioner',
+				appointment_for: 'Practitioner',
 				duration: '',
 				custom_appointment_category: 'Primary',
         custom_payment_type: '',
@@ -327,8 +327,9 @@ export default {
         console.log('error', err);
       });
     },
-    handleSlotClick(toggle, value){
-      this.appointmentForm.appointment_time = value;
+    handleSlotClick(toggle, time, service_unit){
+      this.appointmentForm.appointment_time = time;
+      this.appointmentForm.service_unit = service_unit;
       toggle();
     },
     disabledDate(current) {

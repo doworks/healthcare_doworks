@@ -46,6 +46,7 @@ import patientappointment from '@/views/frontend/pages/patients/dashboard/patien
 import DoctorSidebar from '@/views/frontend/layouts/doctorsidebar.vue'
 import Dappointment from '@/views/frontend/pages/doctors/patient-profile/dappointment.vue'
 import AppointmentTab from '@/views/frontend/pages/doctors/doctor-appointment-tab.vue'
+import Attachments from '@/components/attachments.vue'
 
 //Dialogs
 import PatientAppointmentDialog from '@/components/dialogs/patientAppointment.vue'
@@ -66,6 +67,7 @@ app.component('patientfooter',PatientFooter)
 app.component('patientappointment',patientappointment)
 app.component('doctorsidebar',DoctorSidebar)
 app.component('dappointment',Dappointment)
+app.component('attachments',Attachments)
 app.component('appointmenttab',AppointmentTab)
 app.component('patientAppointmentDialog',PatientAppointmentDialog)
 app.component('vitalSignsDialog',VitalSignsDialog)

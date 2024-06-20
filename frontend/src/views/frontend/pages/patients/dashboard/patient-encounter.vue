@@ -41,7 +41,7 @@
                 <div class="text-start">
                   <div class="d-flex">
                     <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.practitioner.practitioner_name }}</h4>
-                    &nbsp;&nbsp;->&nbsp;&nbsp;
+                    <span v-if="practitionerConflict">&nbsp;&nbsp;->&nbsp;&nbsp;</span>
                     <img 
                     v-if="practitionerConflict && $resources.user.image" 
                     class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
@@ -51,7 +51,7 @@
                   </div>
                   <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
                   <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
-                  <h4 class="mt-2 mb-0">{{ startTime.format('h:mm A') }}</h4>
+                  <h4 class="mt-2 mb-0">{{ diagnosticForm.encounter_start_time.format('h:mm A') }}</h4>
                 </div>
             </div>
           </template>
@@ -176,7 +176,7 @@
                   <div class="text-start">
                     <div class="d-flex">
                       <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.practitioner.practitioner_name }}</h4>
-                      &nbsp;&nbsp;->&nbsp;&nbsp;
+                      <span v-if="practitionerConflict">&nbsp;&nbsp;->&nbsp;&nbsp;</span>
                       <img 
                       v-if="practitionerConflict && $resources.user.image" 
                       class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
@@ -186,7 +186,7 @@
                     </div>
                     <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
                     <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
-                    <h4 class="mt-2 mb-0">{{ startTime.format('h:mm A') }}</h4>
+                    <h4 class="mt-2 mb-0">{{ diagnosticForm.encounter_start_time.format('h:mm A') }}</h4>
                   </div>
                 </div>
               </template>
@@ -199,11 +199,11 @@
           <Card class="p-0" id="past-encounters" style="overflow: hidden;">
             <template #title>Visit Logs<a class="fs-6 float-end" :class="{'d-none': records.encounters.length <= 4}">See All</a></template>
             <template #content>
-              <DataTable :value="records.encounters">
-                <Column field="date" header="Date"></Column>
+              <DataTable :value="records.encounters" selectionMode="single" :metaKeySelection="true" dataKey="id" @row-click="visitLogSelect">
+                <Column field="encounter_date" header="Date"></Column>
                 <Column field="practitioner_name" header="Practitioner"></Column>
-                <Column field="appointment_category" header="Type"></Column>
-                <Column field="diagnosis" header="Reason"></Column>
+                <Column field="custom_appointment_category" header="Type"></Column>
+                <Column field="reasons" header="Reason"></Column>
               </DataTable>
             </template>
           </Card>
@@ -232,24 +232,28 @@
             </template>
             <template #content>
               <div
-                class="d-flex align-items-center pb-4"
-                :class="{'border-bottom': index < attachments.length -1, 'pt-4': index > 0}"
-                v-for="(doc, index) in attachments"
-                :key="index"
+              class="d-flex align-items-center pb-4"
+              :class="{'border-bottom': index < records.attachments.length -1, 'pt-4': index > 0}"
+              v-for="(doc, index) in records.attachments"
+              :key="index"
               >
-                <div class="me-4">
-                  <i :class="doc.icon" style="font-size: 2.5rem"/>
-                </div>
-                <div class="d-flex flex-column flex-grow-1">
-                  <h4>{{ doc.item }}</h4>
-                </div>
-                <div class="text-end fw-500">
-                  <p class="text-fade mb-0">{{ doc.date }}</p>
-                </div>
+                <v-hover v-slot="{ isHovering, props }">
+                  <div class="me-4">
+                    <Image v-if="doc.type === 'image'" :src="doc.attachment" preview width="40" :maskVisible="isHovering"/>
+                    <i v-else-if="doc.type === 'pdf' || doc.type === 'word'" :class="`pi pi-file-${doc.type}`" style="font-size: 2.5rem" />
+                    <!-- <v-btn v-else-if="doc.type === 'pdf' || doc.type === 'word'" class="ma-2" :icon="`pi pi-file-${doc.type}`" variant="text" style="font-size: 5.5rem"></v-btn> -->
+                  </div>
+                  <div class="d-flex flex-column flex-grow-1">
+                    <h4>{{ doc.attachment_name }}</h4>
+                  </div>
+                  <div class="text-end fw-500">
+                    <p class="text-fade mb-0">{{ doc.creation }}</p>
+                  </div>
+                </v-hover>
               </div>
             </template>
             <template #footer>
-              <a v-if="attachments.length > 4" class="float-end" >View All</a>
+              <a v-if="records.attachments.length > 4" class="float-end" >View All</a>
             </template>
           </Card>
         </div>
@@ -258,7 +262,7 @@
         <Card class="p-0 mb-3 gap-card" id="patient-history" style="overflow: hidden;">
           <template #title>Patient History</template>
           <template #content>
-            <v-card class="p-0 mb-3" id="allergies" variant="text">
+            <v-card class="p-0" id="allergies" variant="tonal" color="light-blue">
               <template v-slot:title>
                 Allergies {{ records.patient.custom_allergies_table.length > 0 ? '(' + records.patient.custom_allergies_table.length + ')' : ''}}
               </template>
@@ -285,7 +289,7 @@
               </template>
             </v-card>
 
-            <v-card class="p-0 mb-3 gap-card" id="infected-diseases" variant="text">
+            <v-card class="p-0 gap-card" id="infected-diseases" variant="tonal" color="light-green">
               <template v-slot:title>
                 Infected Diseases
               </template>
@@ -309,7 +313,7 @@
               </template>
             </v-card>
 
-            <v-card class="p-0 mb-3 gap-card" id="surgical-history" variant="text">
+            <v-card class="p-0 gap-card" id="surgical-history" variant="tonal" color="purple">
               <template v-slot:title>
                 Surgical History<a class="fs-6 float-end" :class="{'d-none': records.patient.custom_surgical_history_table.length <= 4}">See All</a>
               </template>
@@ -339,7 +343,7 @@
               </template>
             </v-card>
 
-            <v-card class="p-0 mb-3 gap-card" id="medications" variant="text">
+            <v-card class="p-0 gap-card" id="medications" variant="tonal" color="pink">
               <template v-slot:title>
                 Medications ({{ records.patient.custom_medications.length }})
               </template>
@@ -371,7 +375,7 @@
               </template>
             </v-card>
 
-            <v-card class="p-0 mb-3 gap-card" id="habits" variant="text">
+            <v-card class="p-0 gap-card" id="habits" variant="tonal" color="teal">
               <template v-slot:title>
                 Habits / Social
               </template>
@@ -395,7 +399,7 @@
               </template>
             </v-card>
 
-            <v-card class="p-0 mb-3 gap-card" id="family-history" variant="text">
+            <v-card class="p-0 gap-card" id="family-history" variant="tonal" color="brown">
               <template v-slot:title>
                 Family History
               </template>
@@ -418,7 +422,7 @@
               </template>
             </v-card>
 
-            <v-card class="p-0 mb-3 gap-card" id="risk-factors" variant="text">
+            <v-card class="p-0 gap-card" id="risk-factors" variant="tonal" color="deep-orange">
               <template v-slot:title>
                 Risk Factors
               </template>
@@ -780,6 +784,7 @@ import { VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow
 import { VSheet } from 'vuetify/components/VSheet';
 import { VCard } from 'vuetify/components/VCard';
 import { VAlert } from 'vuetify/components/VAlert';
+import { VHover } from 'vuetify/components/VHover'
 
 import Card from 'primevue/card';
 import Divider from 'primevue/divider';
@@ -787,9 +792,11 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Stepper from 'primevue/stepper';
 import StepperPanel from 'primevue/stepperpanel';
+import Image from 'primevue/image';
 
 import { ref, reactive } from 'vue';
 
+import encounterRecords from '@/assets/json/encounterrecords.json'
 import soundImage from '@/assets/img/sound.png';
 import lungsImage from '@/assets/img/lungs.png';
 import celsiusImage from '@/assets/img/celsius.png';
@@ -799,11 +806,12 @@ export default {
   components: {
     Card, Divider, VSlideGroup, VSlideGroupItem, DataTable, Column, VBtn, VProgressCircular, VProgressLinear, VChip, VEmptyState, VContainer,
     VRow, VCol, VSelect, VDivider, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet, VCard, 
-    Stepper, StepperPanel, VAlert,
+    Stepper, StepperPanel, VAlert, Image, VHover
   }, 
   computed: {
     diagnosticForm() {
       return reactive({
+        encounter_start_time: dayjs(),
         symptoms: [],
         period: 0,
         note: '',
@@ -816,6 +824,7 @@ export default {
     },
     diagnosticFormRules() {
       return reactive({
+        encounter_start_time: [{ required: true, message: 'Please enter start time!' }],
         appointment_type: [{ required: true, message: 'Please choose a type!' }],
         patient: [{ required: true, message: 'Please choose a patient!' }],
         practitioner: [{ required: this.appointmentForm.appointment_for === 'Practitioner', message: 'Please choose a practitioner!' }],
@@ -828,75 +837,7 @@ export default {
   data() {
     return {
       currentFormStep: 0,
-      records: ref({
-        appointment:{
-          appointment_date: '',
-          appointment_time: "",
-          appointment_type: "",
-          custom_appointment_category: "",
-          custom_appointment_time_logs: [],
-          custom_visit_notes: [],
-          department: "",
-          duration: 0,
-          name: "",
-          patient: "",
-          patient_name: "",
-          patient_sex: "",
-          practitioner: "",
-          practitioner_name: "",
-        },
-        encounters:[{
-          appointment_category: null,
-          date: "",
-          diagnosis: "",
-          medical_department: "",
-          name: "",
-          patient_name: "",
-          practitioner_name: "",
-          symptoms: [],
-          time: "",
-        }],
-        patient:{
-          age: 0,
-          blood_group: "",
-          custom_allergies_table: [],
-          custom_infected_diseases: [],
-          custom_cpr: "",
-          custom_habits__social: '',
-          custom_medications: '',
-          custom_chronic_diseases: '',
-          custom_genetic_conditions: '',
-          custom_risk_factors_table: [],
-          custom_surgical_history_table: [],
-          image: "",
-          mobile: "",
-          patient_name: "",
-          sex: "",
-        },
-        practitioner:{
-          department: "",
-          gender: "",
-          mobile_phone: "",
-          practitioner_name: "",
-        },
-        vitalSigns: [{
-          abdomen: "",
-          bmi: 0,
-          bp_diastolic: "",
-          bp_systolic: "",
-          height: 0,
-          nutrition_note: "",
-          pulse: "",
-          reflexes: "",
-          respiratory_rate: "",
-          signs_date: "",
-          signs_time: "",
-          temperature: "",
-          tongue: "",
-          vital_signs_note: null,
-          weight: 0,
-        }]
-      }),
+      records: ref(encounterRecords),
       currentVS: {
         name: '',
         pulse: "-",
@@ -921,17 +862,11 @@ export default {
         prescripedBy: 'Dr. Kevin Black',
         orderNumber: '2024DIBTT0215492',
       }],
-      attachments: [
-        {item: 'Chest X-Ray', date: '02/03/2024', icon: 'pi pi-file-pdf'},
-        {item: 'Ecg Test Report', date: '08/03/2024', icon: 'pi pi-file-word'},
-        {item: 'Chest X-Ray', date: '12/03/2024', icon: 'pi pi-file-pdf'},
-      ],
       lungsImage:lungsImage,
       celsiusImage:celsiusImage,
       soundImage:soundImage,
       diagnosisFormSteps:['Complaint', 'Investigation', 'Assessment and Diagnosis', 'Treatment', 'Order'],
       practitionerConflict: false,
-      startTime: dayjs(),
       vitalSignsActive: false,
       labTestActive: false,
       medicationRequestActive: false,
@@ -954,14 +889,24 @@ export default {
       return {risk: 'Low', color: 'green', severity: 'Mild'}
     },
     fetchRecords(){
-      this.$call('healthcare_doworks.api.methods.patient_encounter_records', {appointment: this.$route.params.appointmentId})
-      .then(response => {
+      this.$call('healthcare_doworks.api.methods.patient_encounter_records', {appointment: this.$route.params.appointmentId}).then(response => {
+        console.log(response)
         response.patient.dob = dayjs(response.patient.dob).format('DD/MM/YYYY')
         response.patient.age = dayjs().diff(response.patient.dob, 'y')
-        response.encounters = response.encounters.map((value, index) => {
-          value.date = dayjs(value.encounter_date).format('DD/MM/YYYY')
-          value.diagnosis = value.diagnosis.join(', ')
-          return value
+        response.encounters = response.encounters.map((encounter, index) => {
+          encounter.date = dayjs(encounter.encounter_date).format('DD/MM/YYYY')
+          encounter.diagnosisArray = encounter.diagnosis.map((value, index) => {
+            return value.diagnosis
+          })
+          encounter.symptomsArray = encounter.symptoms.map((value, index) => {
+            return value.complaint
+          })
+          encounter.reasons = encounter.diagnosisArray.join(', ')
+          return encounter
+        })
+        response.attachments = response.attachments.map((attachment, index) => {
+          attachment.creation = dayjs(attachment.creation).format('DD/MM/YYYY')
+          return attachment
         })
         if(response.vitalSigns.length > 0){
           response.vitalSigns = response.vitalSigns.map((value, index) => {
@@ -970,11 +915,10 @@ export default {
           })
           this.currentVS = response.vitalSigns[0];
         }
-        if(response.appointment.practitioner_name !== this.$resources.user.name){
+        if(response.appointment.practitioner !== this.$resources.user.practitioner){
           this.practitionerConflict = true
         }
         this.records = response
-        console.log(this.records)
       })
       .catch(error => {
         console.error('Error fetching records:', error);
@@ -1011,6 +955,17 @@ export default {
       .catch(err => {
         console.log('error', err);
       });
+    },
+    visitLogSelect(row) {
+      console.log(row)
+    },
+    hidePreview() {
+      this.previewUrl = null;
+    },
+    openPreview(row) {
+      this.previewUrl = row.url;
+      this.previewType = row.type;
+      this.previewVisible = true;
     }
   }
 };

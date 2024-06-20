@@ -1,0 +1,77 @@
+{
+    "appointment":{
+        "appointment_date": "",
+        "appointment_time": "",
+        "appointment_type": "",
+        "custom_appointment_category": "",
+        "custom_appointment_time_logs": [],
+        "custom_visit_notes": [],
+        "department": "",
+        "duration": 0,
+        "name": "",
+        "patient": "",
+        "patient_name": "",
+        "patient_sex": "",
+        "practitioner": "",
+        "practitioner_name": ""
+    },
+    "attachments":[
+        {
+            "name": "", 
+            "creation": "", 
+            "attach": "", 
+            "type": ""
+        }
+    ],
+    "encounters":[{
+        "appointment_category": null,
+        "date": "",
+        "diagnosis": "",
+        "medical_department": "",
+        "name": "",
+        "patient_name": "",
+        "practitioner_name": "",
+        "symptoms": [],
+        "time": ""
+    }],
+    "patient":{
+        "age": 0,
+        "blood_group": "",
+        "custom_allergies_table": [],
+        "custom_infected_diseases": [],
+        "custom_cpr": "",
+        "custom_habits__social": "",
+        "custom_medications": "",
+        "custom_chronic_diseases": "",
+        "custom_genetic_conditions": "",
+        "custom_risk_factors_table": [],
+        "custom_surgical_history_table": [],
+        "image": "",
+        "mobile": "",
+        "patient_name": "",
+        "sex": ""
+    },
+    "practitioner":{
+        "department": "",
+        "gender": "",
+        "mobile_phone": "",
+        "practitioner_name": ""
+    },
+    "vitalSigns": [{
+        "abdomen": "",
+        "bmi": 0,
+        "bp_diastolic": "",
+        "bp_systolic": "",
+        "height": 0,
+        "nutrition_note": "",
+        "pulse": "",
+        "reflexes": "",
+        "respiratory_rate": "",
+        "signs_date": "",
+        "signs_time": "",
+        "temperature": "",
+        "tongue": "",
+        "vital_signs_note": null,
+        "weight": 0
+    }]
+}

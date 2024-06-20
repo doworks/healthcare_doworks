@@ -71,7 +71,8 @@
             <v-window v-model="tab" disabled>
               <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
                 <appointmenttab 
-                  :searchValue="searchValue" 
+                  :searchValue="searchValue"
+                  :selectedDate="selectedDate"
                   :selectedDepartments="selectedDepartments" 
                   :appointments="value" 
                   :tab="key.toLowerCase()"
@@ -341,9 +342,9 @@ export default {
       if(isNew){
         this.appointmentForm.name = 'new-patient-appointment';
 				this.appointmentForm.duration = '';
-				this.appointmentForm.appointment_type = '';
-				this.appointmentForm.appointment_for = '';
-				this.appointmentForm.custom_appointment_category = '';
+				this.appointmentForm.appointment_type = 'Practitioner';
+				this.appointmentForm.appointment_for = 'Practitioner';
+				this.appointmentForm.custom_appointment_category = 'Primary';
         this.appointmentForm.custom_payment_type = '';
         this.appointmentForm.practitioner = '';
 				this.appointmentForm.practitioner_name = '';
