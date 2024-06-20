@@ -6,8 +6,8 @@ from healthcare.healthcare.doctype.patient_appointment.patient_appointment impor
 # App Resources
 @frappe.whitelist()
 def fetch_resources():
-	user_name = frappe.session.user
-	user_image = frappe.db.get_value('User', user_name, 'user_image')
+	user = frappe.get_doc('User', frappe.session.user)
+	user_practitioner = frappe.db.get_value('Healthcare Practitioner', {'user_id': user.name}, 'name')
 	practitioners = frappe.db.get_list('Healthcare Practitioner', fields=['practitioner_name', 'image', 'department', 'name'])
 	patients = frappe.db.get_list('Patient', fields=['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile'])
 	appointmentTypes = frappe.db.get_list('Appointment Type', fields=['appointment_type', 'allow_booking_for', 'default_duration'])
@@ -22,7 +22,7 @@ def fetch_resources():
 	prescriptionPeriods = frappe.db.get_list('Prescription Duration', fields=['name'])
 	labTestTemplates = frappe.db.get_list('Lab Test Template', fields=['name', 'department'])
 	return {
-		'user': {'name': user_name, 'image': user_image},
+		'user': {'name': user.full_name, 'user': user.name, 'image': user.user_image, 'practitioner': user_practitioner},
 		'practitioners': practitioners,
 		'patients': patients,
 		'appointmentTypes': appointmentTypes,
@@ -85,45 +85,44 @@ def patient_encounter_records(appointment):
 			],
 			order_by='signs_date desc, signs_time desc',
 		)
-		encounters = frappe.db.sql("""
-			SELECT
-				pe.`name` AS `name`,
-				pe.`encounter_date` AS `date`,
-				pe.`encounter_time` AS `time`,
-				pe.`practitioner_name` AS `practitioner_name`,
-				pe.`medical_department` AS `medical_department`,
-				pe.`patient_name` AS `patient_name`,
-				pa.`custom_appointment_category` AS `appointment_category`,
-
-				JSON_ARRAYAGG(s.complaint) AS `symptoms`,
-				JSON_ARRAYAGG(d.diagnosis) AS `diagnosis`
-				
-			FROM
-				`tabPatient Encounter` pe
-			LEFT JOIN `tabPatient Appointment` pa
-				ON pa.`name` = pe.`appointment`
-			LEFT JOIN `tabPatient Encounter Symptom` s
-				ON s.`parent` = pe.`name`
-			LEFT JOIN `tabPatient Encounter Diagnosis` d
-				ON s.`parent` = pe.`name`
-			WHERE
-				pe.`patient_name` = %(patient)s
-			GROUP BY
-				pe.`name`
-			ORDER BY
-				pe.`encounter_date` DESC,
-				pe.`encounter_time` DESC
-		""", values={'patient': appointment.patient}, as_dict=True)
+		encounters = frappe.db.get_list('Patient Encounter', pluck='name')
+		encounter_docs = []
+		pdf_extensions = ['pdf']
+		word_extensions = ['doc', 'docx', 'dot', 'dotx']
+		image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp']
+		attachments = []
 		for encounter in encounters:
-			encounter['symptoms'] = json.loads(encounter['symptoms'])
-			encounter['diagnosis'] = json.loads(encounter['diagnosis'])
-		return {'appointment': appointment, 'vitalSigns': vital_signs, 'encounters': encounters, 'patient': patient, 'practitioner': practitioner}
+			doc = frappe.get_doc('Patient Encounter', encounter)
+			for attachment in doc.custom_attachments:
+				obj = {}
+				obj = attachment.__dict__
+				url = obj['attachment']
+				if url:
+					if url.split('.')[-1] in pdf_extensions:
+						obj['type'] = 'pdf'
+					elif url.split('.')[-1] in word_extensions:
+						obj['type'] = 'word'
+					elif url.split('.')[-1] in image_extensions:
+						obj['type'] = 'image'
+					else:
+						obj['type'] = 'unknown'
+					attachments.append(obj)
+			encounter_docs.append(doc)
+		return {
+			'appointment': appointment, 
+			'vitalSigns': vital_signs,
+			'encounters': encounter_docs, 
+			'patient': patient, 'practitioner': practitioner, 
+			'attachments': attachments
+		}
 
 
 @frappe.whitelist()
 def new_doc(form, submit=False):
 	doc = frappe.get_doc(form)
 	doc.insert()
+	if(doc.doctype == 'Patient Appointment'):
+		update_status(doc.name, 'Scheduled')
 	if(submit):
 		doc.submit()
 
