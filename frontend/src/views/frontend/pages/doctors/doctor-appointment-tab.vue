@@ -2,25 +2,30 @@
 	<div class="tab-pane" :id="tab + '-appointments'">
 		<div class="card">
 			<DataTable
-				v-model:filters="filters"
-				size="small"
-				sortField="appointment_time"
-				paginator
-				dataKey="id"
-				filterDisplay="row"
-				resizableColumns
-				:loading="loading"
-				:sortOrder="1"
-				:rows="10"
-				:rowsPerPageOptions="[10, 20, 50]"
-				:value="appointments"
-				selectionMode="single" 
-				:metaKeySelection="true" 
-				@row-contextmenu="handleRowContextMenu"
+			v-model:filters="filters"
+			size="small"
+			sortField="appointment_time"
+			paginator
+			dataKey="id"
+			filterDisplay="row"
+			resizableColumns
+			:loading="loading"
+			:sortOrder="1"
+			:rows="10"
+			:rowsPerPageOptions="[10, 20, 50]"
+			:value="updatedAppointments"
+			selectionMode="single" 
+			:metaKeySelection="true" 
+			@row-contextmenu="handleRowContextMenu"
 			>
 				<template #empty> No Appointments found. </template>
 				<template #loading> Loading Appointments data. Please wait.</template>
-				<Column field="patient_cpr" header="Patient" :showFilterMenu="false" :showClearButton="false" style="width: 20%">
+				<Column header="Patient" 
+				field="patient_cpr" 
+				:showFilterMenu="false" 
+				:showClearButton="false" 
+				style="width: 20%"
+				>
 					<template #body="{ data }">
 						<!-- <router-link to="patient-profile"> -->
 							<div class="d-flex align-items-center gap-2">
@@ -51,7 +56,13 @@
 						/>
 					</template>
 				</Column>
-				<Column header="Time" field="appointment_time" :showFilterMenu="false" :showClearButton="false" filterField="appointment_time_moment" style="width: 10%">
+				<Column header="Apt Time" 
+				field="appointment_time" 
+				:showFilterMenu="false" 
+				:showClearButton="false" 
+				filterField="appointment_time_moment" 
+				style="width: 10%"
+				>
 					<template #body="{ data }">
 						{{ data.appointment_time_moment }}
 					</template>
@@ -65,7 +76,22 @@
 						/>
 					</template>
 				</Column>
-				<Column field="status" header="Status" :showFilterMenu="false" :showClearButton="false" style="width: 10%">
+				<Column header="Arv Time" v-if="tab !== 'scheduled'"
+				field="arriveTime" 
+				:showFilterMenu="false" 
+				:showClearButton="false" 
+				style="width: 10%"
+				>
+					<template #body="{ data }">
+						{{ data.timeSinceArrived }}
+					</template>
+				</Column>
+				<Column header="Status" 
+				field="status" 
+				:showFilterMenu="false" 
+				:showClearButton="false" 
+				style="width: 10%"
+				>
 					<template #body="{ data }">
 						<v-chip class="ma-2" label size="small" :color="getSeverity(data.status)">{{ data.status }}</v-chip>
 					</template>
@@ -85,7 +111,13 @@
 						</a-select>
 					</template>
 				</Column>
-				<Column header="Mobile" field="mobile" filterField="patient_details.mobile" :showFilterMenu="false" :showClearButton="false" style="width: 10%">
+				<Column header="Mobile" 
+				field="mobile" 
+				filterField="patient_details.mobile" 
+				:showFilterMenu="false" 
+				:showClearButton="false" 
+				style="width: 10%"
+				>
 					<template #body="{ data }">
 						{{ data.patient_details.mobile }}
 					</template>
@@ -99,7 +131,13 @@
 						/>
 					</template>
 				</Column>
-				<Column header="Practitioner" field="practitioner_name" filterField="practitioner_name" :showFilterMenu="false" :showClearButton="false" style="width: 20%">
+				<Column header="Practitioner" 
+				field="practitioner_name" 
+				filterField="practitioner_name" 
+				:showFilterMenu="false" 
+				:showClearButton="false" 
+				style="width: 20%"
+				>
 					<template #body="{ data }">
 						<div class="d-flex align-items-center gap-2">
 							<v-avatar :color="!data.practitioner_image ? colorCache[data.practitioner_name] || '': ''">
@@ -168,9 +206,14 @@
 						</a-select>
 					</template>
 				</Column>
-				<Column field="appointment_type" header="For" :showFilterMenu="false" :showClearButton="false" style="width: 10%">
+				<Column header="For" 
+				field="service_unit" 
+				:showFilterMenu="false" 
+				:showClearButton="false" 
+				style="width: 10%"
+				>
 					<template #body="{ data }">
-						<v-chip class="ma-2" label size="small">{{ data.appointment_type }}</v-chip>
+						<v-chip class="ma-2" label size="small">{{ data.service_unit }}</v-chip>
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
 						<a-select
@@ -179,10 +222,11 @@
 							class="p-column-filter"
 							style="width: 100%; align-items: center;"
 							placeholder="Any"
-							:options="purposes"
+							:options="$resources.serviceUnits"
+							:fieldNames="{label: 'name', value: 'name'}"
 							allowClear
 						>
-							<template #option="{ value: val }">
+							<template #option="{ name: val }">
 								<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
 							</template>
 						</a-select>
@@ -278,6 +322,26 @@ export default {
 			defaul: true
 		}
 	},
+	computed: {
+		updatedAppointments() {
+			return this.appointments.map(appointment => {
+			const arrivalTime = dayjs(appointment.arriveTime);
+			const diffInSeconds = this.currentTime.diff(arrivalTime, 'second');
+			const hours = Math.floor(diffInSeconds / 3600);
+			const minutes = Math.floor((diffInSeconds % 3600) / 60);
+			const seconds = diffInSeconds % 60;
+			return {
+				...appointment,
+				timeSinceArrived: `${hours}h ${minutes}m ${seconds}s`
+			};
+			});
+		}
+	},
+	mounted() {
+		setInterval(() => {
+			this.currentTime = dayjs();
+		}, 1000); // Update every second
+	},
 	data() {
 		return {
 			bellImage:bellImage,
@@ -293,12 +357,12 @@ export default {
 				appointment_time: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				appointment_time_moment: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				appointment_date: { value: dayjs().format('YYYY-MM-DD'), matchMode: FilterMatchMode.EQUALS },
-				appointment_type: { value: null, matchMode: FilterMatchMode.EQUALS },
+				service_unit: { value: null, matchMode: FilterMatchMode.EQUALS },
 				status: { value: null, matchMode: FilterMatchMode.EQUALS },
 				'patient_details.mobile': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 			},
-			statuses: [{label: 'Scheduled', value: 'Scheduled'}, {label: 'Rescheduled', value: 'Rescheduled'}, {label: 'Walked In', value: 'Walked In'}],
-			purposes: [{label: 'General', value: 'General'}, {label: 'Follow-up', value: 'Follow-up'}, {label: 'Consultation', value: 'Consultation'}],
+			statuses: [{label:'Scheduled', value:'Scheduled'}, {label:'Rescheduled', value:'Rescheduled'}, {label:'Walked In', value:'Walked In'}],
+			purposes: [{label:'General', value:'General'}, {label:'Follow-up', value:'Follow-up'}, {label:'Consultation', value:'Consultation'}],
 			selectedRow: null,
 			contextItems: [
 				{
@@ -310,17 +374,18 @@ export default {
 					label: 'Status',
 					icon: 'mdi mdi-clipboard-edit-outline',
 					items: [
-						{label: 'Arrived', command: ({ item }) => this.updateStatus(item)},
-						{label: 'Ready', command: ({ item }) => this.updateStatus(item)},
-						{label: 'In Room', command: ({ item }) => this.updateStatus(item)},
-						{label: 'Completed', command: ({ item }) => this.updateStatus(item)},
-						{label: 'Transferred', command: ({ item }) => this.updateStatus(item)},
+						...(this.tab !== 'scheduled' ? [{label: 'Scheduled', command: ({ item }) => this.updateStatus(item)}] : []),
+						...(this.tab !== 'arrived' ? [{label: 'Arrived', command: ({ item }) => this.updateStatus(item)}] : []),
+						...(this.tab !== 'ready' ? [{label: 'Ready', command: ({ item }) => this.updateStatus(item)}] : []),
+						...(this.tab !== 'in room' ? [{label: 'In Room', command: ({ item }) => this.updateStatus(item)}] : []),
+						...(this.tab !== 'completed' ? [{label: 'Completed', command: ({ item }) => this.updateStatus(item)}] : []),
+						...(this.tab !== 'transferred' ? [{label: 'Transferred', command: ({ item }) => this.updateStatus(item)}] : []),
 					]
 				},
 				{separator: true},
 				{
 					label: 'Reschedule Appointment',
-					icon: 'mdi clock-outline',
+					icon: 'mdi mdi-clock-outline',
 					command: () => this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)
 				},
 				{
@@ -363,6 +428,7 @@ export default {
 				},
             ],
 			colorCache: {},
+			currentTime: dayjs(),
 		};
 	},
 	watch: {

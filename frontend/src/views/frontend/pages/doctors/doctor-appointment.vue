@@ -301,7 +301,7 @@ export default {
       .then(response => {
         this.appointments = this.adjustAppointments(response)
         this.groupAppointmentsByStatus();
-        this.appointmentsLoading = false; 
+        this.appointmentsLoading = false;
       })
       .catch(error => {
         this.appointmentsLoading = false;
@@ -311,9 +311,16 @@ export default {
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
         try {
-          d.patient_details = JSON.parse(d.patient_details)
-          d.visit_notes = JSON.parse(d.visit_notes)
-          d.status_log = JSON.parse(d.status_log)
+          if(typeof d.patient_details === 'string'){
+            d.patient_details = JSON.parse(d.patient_details)
+            d.visit_notes = JSON.parse(d.visit_notes)
+            d.status_log = JSON.parse(d.status_log)
+            d.arriveTime = '-'
+            d.status_log.forEach(value => {
+              if(value.status == 'Arrived')
+                d.arriveTime = dayjs(value.time)
+            })
+          }
         } catch (error) {
           console.error('Error parsing JSON:', error);
         }
@@ -325,9 +332,19 @@ export default {
 			});
 		},
     getBadgeNumber(tab){
-      if(this.groupedAppointments[tab])
-        return this.groupedAppointments[tab].length
-      return 0
+      let count = 0
+      if(this.groupedAppointments[tab]){
+        count = this.groupedAppointments[tab].reduce((total, value) => {
+          let departmentFilter = true
+          if(this.selectedDepartments)
+            departmentFilter = this.selectedDepartments.some(department => {return department === value.department})
+          if(this.selectedDate.format('YYYY-MM-DD') === value.appointment_date && departmentFilter){
+            return total + 1
+          }
+          return total
+        },0)
+      }
+      return count
     },
     groupAppointmentsByStatus() {
       this.groupedAppointments = {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],}

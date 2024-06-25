@@ -53,6 +53,7 @@ import PatientAppointmentDialog from '@/components/dialogs/patientAppointment.vu
 import VitalSignsDialog from '@/components/dialogs/vitalSigns.vue'
 import MedicationRequestDialog from '@/components/dialogs/medicationRequest.vue'
 import LabTestDialog from '@/components/dialogs/labTest.vue'
+import PatientEncounterDialog from '@/components/dialogs/patientEncounter.vue'
 						  // My App End //
 
 
@@ -73,6 +74,7 @@ app.component('patientAppointmentDialog',PatientAppointmentDialog)
 app.component('vitalSignsDialog',VitalSignsDialog)
 app.component('medicationRequestDialog',MedicationRequestDialog)
 app.component('labTestDialog',LabTestDialog)
+app.component('patientEncounterDialog',PatientEncounterDialog)
 // Use other UI libraries and plugins
 app.use(Antd);
 

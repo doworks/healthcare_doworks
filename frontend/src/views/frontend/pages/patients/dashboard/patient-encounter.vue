@@ -211,15 +211,15 @@
         <div class="mb-3 col-12 pe-0">
           <Card class="p-0" id="services" style="overflow: hidden;">
             <template #title>
-              <span class="align-middle">Services Request / Results ({{ services.length }})</span>
+              <span class="align-middle">Service Requests / Results ({{ records.services && records.services.length }})</span>
               <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain">Add</v-btn>
             </template>
             <template #content>
-              <DataTable :value="services">
-                <Column field="service" header="Service Name"></Column>
-                <Column field="prescripedOn" header="Presciped On"></Column>
+              <DataTable :value="records.services">
+                <Column field="template_dn" header="Service Name"></Column>
+                <Column field="order_date" header="Ordered On"></Column>
                 <Column field="status" header="Status"></Column>
-                <Column field="prescripedBy" header="Presciped By"></Column>
+                <Column field="practitioner" header="Ordered By"></Column>
               </DataTable>
             </template>
           </Card>
@@ -448,157 +448,6 @@
       </div> 
       <v-divider color="black" inset class="my-6" style="max-width: calc(100% - 180px)"></v-divider>
       <div class="ps-0 mt-3 col-12 mb-25">
-        <!-- <v-stepper class="mb-4" v-model="currentFormStep" non-linear>
-          <template v-slot:default="{ prev, next }">
-            <v-stepper-header>
-              <template v-for="(n, index) in diagnosisFormSteps" :key="`${n}-step`">
-                <v-stepper-item
-                  :complete="currentFormStep > index"
-                  :step="`Step {{ index }}`"
-                  :value="index"
-                  editable
-                  :edit-icon="`fa-solid fa-${index + 1}`"
-                >{{n}}</v-stepper-item>
-
-                <v-divider
-                  v-if="index < diagnosisFormSteps.length -1"
-                  :key="n"
-                ></v-divider>
-              </template>
-            </v-stepper-header>
-
-            <a-form layout="vertical" :model="diagnosticForm">
-              <v-stepper-window>
-                <v-stepper-window-item :value="0" key="Complaint-content">
-                  <v-sheet>
-                    <v-container>
-                      <v-row>
-                        <v-col>
-                          <a-form-item label="Symptoms">
-                            <a-select
-                              v-model:value="diagnosticForm.complaint.symptoms"
-                              :options="$resources.complaints"
-                              :fieldNames="{label: 'complaints', value: 'complaints'}"
-                              mode="multiple"
-                              style="width: 100%"
-                            ></a-select>
-                          </a-form-item>
-                          <a-form-item label="Symptoms Duration">
-                            <a-input v-model:value="diagnosticForm.complaint.period" />
-                          </a-form-item>
-                          <a-form-item label="Note">
-                            <a-textarea v-model:value="diagnosticForm.complaint.note" :rows="4" />
-                          </a-form-item>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-sheet>
-                </v-stepper-window-item>
-                <v-stepper-window-item :value="1" key="Investigation-content">
-                  <v-sheet>
-                    <v-container>
-                      <v-row>
-                        <v-col>
-                          <a-form-item label="Physical Examination">
-                            <a-input v-model:value="diagnosticForm.investigation.physicalExamination" />
-                          </a-form-item>
-                          <h3 class="mt-3 mb-1">Diagnostic Procedure</h3>
-                          <a-form-item label="Lab Test" class="ps-15">
-                            <a-input v-model:value="diagnosticForm.investigation.diagnosticProcedure.labTest" />
-                          </a-form-item>
-                          <a-form-item label="Radiology Test" class="ps-15">
-                            <a-input v-model:value="diagnosticForm.investigation.diagnosticProcedure.radiologyTest" />
-                          </a-form-item>
-                          <a-form-item label="Other Examination">
-                            <a-input v-model:value="diagnosticForm.investigation.otherExamination" />
-                          </a-form-item>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-sheet>
-                </v-stepper-window-item>
-                <v-stepper-window-item :value="2" key="Assessment And Diagnosis-content">
-                  <v-sheet>
-                    <v-container>
-                      <v-row>
-                        <v-col>
-                          <a-form-item label="Diagnosis">
-                            <a-select
-                              v-model:value="diagnosticForm.assessmentAndDiagnosis.diagnosis"
-                              :options="$resources.diagnosis"
-                              :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
-                              mode="multiple"
-                              style="width: 100%"
-                            ></a-select>
-                          </a-form-item>
-                          <a-form-item label="Differential Diagnosis">
-                            <a-input v-model:value="diagnosticForm.assessmentAndDiagnosis.differentialDiagnosis" />
-                          </a-form-item>
-                          <a-form-item label="Diagnosis Note">
-                            <a-textarea v-model:value="diagnosticForm.assessmentAndDiagnosis.diagnosisNote" :rows="4" />
-                          </a-form-item>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-sheet>
-                </v-stepper-window-item>
-                <v-stepper-window-item :value="3" key="Treatment-content">
-                  <v-sheet>
-                    <v-container>
-                      <v-row>
-                        <v-col>
-                          <a-form-item label="Medications">
-                            <a-input v-model:value="diagnosticForm.treatment.medications" />
-                          </a-form-item>
-                          <a-form-item label="Surgical Procedure">
-                            <a-input v-model:value="diagnosticForm.treatment.surgicalProcedure" />
-                          </a-form-item>
-                          <a-form-item label="Therapeutic Procedure">
-                            <a-input v-model:value="diagnosticForm.treatment.therapeuticProcedure" />
-                          </a-form-item>
-                          <a-form-item label="Physiotherapy Session">
-                            <a-input v-model:value="diagnosticForm.treatment.physiotherapySession" />
-                          </a-form-item>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-sheet>
-                </v-stepper-window-item>
-                <v-stepper-window-item :value="4" key="Order-content">
-                  <v-sheet>
-                    <v-container>
-                      <v-row>
-                        <v-col>
-                          <a-form-item label="Medications">
-                            <a-input v-model:value="diagnosticForm.order.medications" />
-                          </a-form-item>
-                          <a-form-item label="Lab Test">
-                            <a-input v-model:value="diagnosticForm.order.labTest" />
-                          </a-form-item>
-                          <a-form-item label="Radiology Test">
-                            <a-input v-model:value="diagnosticForm.order.radiologyTest" />
-                          </a-form-item>
-                          <a-form-item label="Transfer To Other Hospital">
-                            <a-input v-model:value="diagnosticForm.order.transferToOtherHospital" />
-                          </a-form-item>
-                          <a-form-item label="Transfer To Other Doctor">
-                            <a-input v-model:value="diagnosticForm.order.transferToOtherDoctor" />
-                          </a-form-item>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-sheet>
-                </v-stepper-window-item>
-              </v-stepper-window>
-            </a-form>
-                
-            <v-stepper-actions
-              @click:next="next"
-              @click:prev="prev"
-            ></v-stepper-actions>
-          </template>
-        </v-stepper> -->
-
         <Card class="mb-4">
           <template #content>
             <a-form layout="vertical" :model="diagnosticForm">
@@ -754,6 +603,12 @@
     @show-alert="showAlert" 
     :appointment="records.appointment"
     />
+    <patientEncounterDialog 
+    :isOpen="pastVisitsActive" 
+    @update:isOpen="pastVisitsActive = $event" 
+    @show-alert="showAlert" 
+    :form="pastVisitEditRow"
+    />
     <labTestDialog 
     :isOpen="labTestActive" 
     @update:isOpen="labTestActive = $event" 
@@ -848,26 +703,14 @@ export default {
         signs_date: '-',
       },
       isAffixed:false,
-      services: [{
-        service: 'Diabetes Test',
-        prescripedOn: '06/03/2024',
-        status: 'Pending',
-        prescripedBy: 'Dr. Kevin Black',
-        orderNumber: '2024DIBTT0215492',
-      },
-      {
-        service: 'Head X-Ray',
-        prescripedOn: '06/03/2024',
-        status: 'In Process',
-        prescripedBy: 'Dr. Kevin Black',
-        orderNumber: '2024DIBTT0215492',
-      }],
       lungsImage:lungsImage,
       celsiusImage:celsiusImage,
       soundImage:soundImage,
+      pastVisitEditRow: '',
       diagnosisFormSteps:['Complaint', 'Investigation', 'Assessment and Diagnosis', 'Treatment', 'Order'],
       practitionerConflict: false,
       vitalSignsActive: false,
+      pastVisitsActive: false,
       labTestActive: false,
       medicationRequestActive: false,
       message: '',
@@ -894,7 +737,7 @@ export default {
         response.patient.dob = dayjs(response.patient.dob).format('DD/MM/YYYY')
         response.patient.age = dayjs().diff(response.patient.dob, 'y')
         response.encounters = response.encounters.map((encounter, index) => {
-          encounter.date = dayjs(encounter.encounter_date).format('DD/MM/YYYY')
+          encounter.encounter_date = dayjs(encounter.encounter_date).format('DD/MM/YYYY')
           encounter.diagnosisArray = encounter.diagnosis.map((value, index) => {
             return value.diagnosis
           })
@@ -957,7 +800,8 @@ export default {
       });
     },
     visitLogSelect(row) {
-      console.log(row)
+      this.pastVisitEditRow = row.data;
+      this.pastVisitsActive = true;
     },
     hidePreview() {
       this.previewUrl = null;

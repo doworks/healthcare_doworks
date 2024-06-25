@@ -17,7 +17,12 @@
                     :options="$resources.appointmentTypes"
                     @change="(value, option) => {
                       appointmentForm.appointment_for = option.allow_booking_for;
-                      appointmentForm.duration = option.default_duration
+                      appointmentForm.duration = option.default_duration;
+                      appointmentForm.practitioner = '';
+                      appointmentForm.practitioner_name = '';
+                      appointmentForm.department = '';
+                      appointmentForm.service_unit = '';
+                      appointmentForm.appointment_time = '';
                     }"
                     :fieldNames="{label: 'appointment_type', value: 'appointment_type'}"
                   ></a-select>
@@ -45,7 +50,11 @@
                 <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
                   <a-input v-model:value="appointmentForm.appointment_for" disabled/>
                 </a-form-item>
-                <a-form-item v-if="appointmentForm.appointment_for === 'Practitioner'" label="Practitioner" name="practitioner">
+                <a-form-item label="Practitioner" 
+                name="practitioner" 
+                v-if="appointmentForm.appointment_for === 'Practitioner'" 
+                @change="setPaymentDetails()"
+                >
                   <a-select
                     v-model:value="appointmentForm.practitioner_name"
                     :options="$resources.practitioners"
@@ -57,7 +66,11 @@
                     }"
                   ></a-select>
                 </a-form-item>
-                <a-form-item v-if="appointmentForm.appointment_for === 'Department'" label="Department" name="department">
+                <a-form-item label="Department" 
+                name="department" 
+                v-if="appointmentForm.appointment_for === 'Department'" 
+                @change="setPaymentDetails()"
+                >
                   <a-select
                     v-model:value="appointmentForm.department"
                     :options="$resources.departments"
@@ -65,7 +78,11 @@
                     show-search
                   ></a-select>
                 </a-form-item>
-                <a-form-item v-if="appointmentForm.appointment_for === 'Service Unit'" label="Service Unit" name="service_unit">
+                <a-form-item label="Service Unit" 
+                name="service_unit" 
+                v-if="appointmentForm.appointment_for === 'Service Unit'" 
+                @change="setPaymentDetails()"
+                >
                   <a-select
                     v-model:value="appointmentForm.service_unit"
                     :options="$resources.name"
@@ -76,9 +93,6 @@
                 <a-form-item label="Patient Gender" v-if="appointmentForm.patient">
                   <a-input v-model:value="appointmentForm.patient_sex" disabled/>
                 </a-form-item>
-                <!-- <a-form-item label="Appointment Date Range">
-                  <a-date-picker v-model:value="dateWeek" @change="(val)=>{console.log(val.week())}" :format="customWeekStartEndFormat" style="z-index: 3000" picker="week" />
-                </a-form-item> -->
                 <a-form-item label="Appointment Date" name="appointment_date">
                   <a-date-picker 
                     v-model:value="appointmentForm.appointment_date"
@@ -96,29 +110,15 @@
             <v-divider class="mt-2 mb-8"></v-divider>
 
             <v-row>
-              <!-- <v-tabs
-                v-model="appointmentForm.appointment_date"
-                align-tabs="center"
-                color="deep-purple-accent-4"
+              <div 
+              class="text-center mb-0" 
+              ref="appointmentSlots" 
+              v-if="appointmentForm.appointment_date && 
+                (appointmentForm.appointment_for === 'Practititoner' && appointmentForm.practitioner || 
+                appointmentForm.appointment_for === 'Department' && appointmentForm.department ||
+                appointmentForm.appointment_for === 'Service Unit' && appointmentForm.service_unit
+                )"
               >
-                <v-infinite-scroll
-                  ref="infinite"
-                  height="500"
-                  side="both"
-                  direction="horizontal"
-                  @load="load"
-                >
-                  <div>
-                    <template v-for="formDate in formDates" :key="formDate">
-                      <v-tab :value="formDate">{{ formDate }}</v-tab>
-                    </template>
-                  </div>
-                </v-infinite-scroll>
-              </v-tabs> -->
-
-              <!-- <div class="text-center mb-0" v-html="slotsHtml"></div> -->
-
-              <div class="text-center mb-0" v-if="appointmentForm.appointment_date && appointmentForm.practitioner">
                 <div v-for="(slotInfo, index) in slots.slot_details" :key="index">
                   <div class="slot-info">
                     <span v-if="slots.fee_validity && slots.fee_validity != 'Disabled'" style="color:green">Patient has fee validity till <b>{{ getDate(slots.fee_validity.valid_till) }}</b></span>
@@ -332,6 +332,24 @@ export default {
       this.appointmentForm.appointment_time = time;
       this.appointmentForm.service_unit = service_unit;
       toggle();
+    },
+    setPaymentDetails() {
+      console.log('hello')
+      this.$call('healthcare.healthcare.utils.get_appointment_billing_item_and_rate', {doc: this.appointmentForm}).then(data => {
+        console.log(data)
+        if (data.message) {
+          this.appointmentForm.paid_amount = data.message.practitioner_charge
+          this.appointmentForm.billing_item = data.message.service_item
+        }
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
+      });
     },
     disabledDate(current) {
       // Can not select days before today and today

@@ -85,6 +85,21 @@ def patient_encounter_records(appointment):
 			],
 			order_by='signs_date desc, signs_time desc',
 		)
+		services = frappe.db.get_list('Service Request',
+			filters={'patient': appointment.patient}, 
+			fields=[
+				'status', 'order_date', 'order_time', 'practitioner', 'practitioner_email', 'medical_department', 'referred_to_practitioner', 
+				'source_doc', 'order_group', 'sequence', 'staff_role', 'patient_care_type', 'intent', 'priority', 'quantity', 'dosage_form', 
+				'as_needed', 'dosage', 'occurrence_date', 'occurrence_time', 'healthcare_service_unit_type', 'order_description', 
+				'patient_instructions', 'template_dt', 'template_dn', 'sample_collection_required', 'qty_invoiced', 'billing_status'
+			],
+			order_by='order_date desc, order_time desc',
+		)
+		for service in services:
+			practitioner = frappe.get_doc('Healthcare Practitioner', service.practitioner)
+			status = frappe.get_doc('Code Value', service.status)
+			service.practitioner = practitioner.practitioner_name
+			service.status = status.display
 		encounters = frappe.db.get_list('Patient Encounter', pluck='name')
 		encounter_docs = []
 		pdf_extensions = ['pdf']
@@ -113,7 +128,8 @@ def patient_encounter_records(appointment):
 			'vitalSigns': vital_signs,
 			'encounters': encounter_docs, 
 			'patient': patient, 'practitioner': practitioner, 
-			'attachments': attachments
+			'attachments': attachments,
+			'services': services
 		}
 
 
