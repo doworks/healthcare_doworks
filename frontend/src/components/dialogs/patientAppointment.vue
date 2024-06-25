@@ -53,7 +53,7 @@
                 <a-form-item label="Practitioner" 
                 name="practitioner" 
                 v-if="appointmentForm.appointment_for === 'Practitioner'" 
-                @change="setPaymentDetails()"
+                
                 >
                   <a-select
                     v-model:value="appointmentForm.practitioner_name"
@@ -69,7 +69,7 @@
                 <a-form-item label="Department" 
                 name="department" 
                 v-if="appointmentForm.appointment_for === 'Department'" 
-                @change="setPaymentDetails()"
+                
                 >
                   <a-select
                     v-model:value="appointmentForm.department"
@@ -81,7 +81,7 @@
                 <a-form-item label="Service Unit" 
                 name="service_unit" 
                 v-if="appointmentForm.appointment_for === 'Service Unit'" 
-                @change="setPaymentDetails()"
+                
                 >
                   <a-select
                     v-model:value="appointmentForm.service_unit"
@@ -114,7 +114,7 @@
               class="text-center mb-0" 
               ref="appointmentSlots" 
               v-if="appointmentForm.appointment_date && 
-                (appointmentForm.appointment_for === 'Practititoner' && appointmentForm.practitioner || 
+                (appointmentForm.appointment_for === 'Practitioner' && appointmentForm.practitioner || 
                 appointmentForm.appointment_for === 'Department' && appointmentForm.department ||
                 appointmentForm.appointment_for === 'Service Unit' && appointmentForm.service_unit
                 )"
