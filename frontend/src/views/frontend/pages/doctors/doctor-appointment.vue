@@ -266,7 +266,6 @@ import { ref } from 'vue';
 import moment from "moment";
 import dayjs from 'dayjs';
 import Clock from '@/components/clock/Clock.vue';
-import DentalChart from '@/components/DentalChart.vue';
 
 import {VBadge} from 'vuetify/components/VBadge';
 import {VTab, VTabs} from 'vuetify/components/VTabs';
@@ -284,7 +283,7 @@ export default {
   inject: ['$socket', '$call'],
   components: {
     Clock, VBadge, VTabs, VTab, VWindow, VWindowItem, VIcon, VToolbar, VToolbarItems, VBtn,
-    VDialog, VCard, VCardTitle, VCardText, VCardActions, VAlert, VOverlay, VProgressCircular, DentalChart
+    VDialog, VCard, VCardTitle, VCardText, VCardActions, VAlert, VOverlay, VProgressCircular
   },
   data() {
     return {
