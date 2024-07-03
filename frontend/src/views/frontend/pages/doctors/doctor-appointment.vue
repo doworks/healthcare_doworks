@@ -79,6 +79,7 @@
                   :loading="appointmentsLoading"
                   ref="appointmentTabRef"
                   @appointment-dialog="appointmentDialog"
+                  @appointment-note-dialog="appointmentNoteDialog"
                   @vital-sign-dialog="vitalSignDialog"
                   @service-unit-dialog="serviceUnitDialog"
                   @payment-type-dialog="paymentTypeDialog"
@@ -88,7 +89,7 @@
             </v-window>
           </div>
           <!-- /Appointment Tab -->
-
+          
         </div>
       </div>
     </div>
@@ -109,6 +110,40 @@
     @show-alert="showAlert" 
     :appointment="appointmentForm"
     />
+    <v-dialog v-model="appointmentNoteOpen" width="auto">
+      <v-card
+        rounded="lg"
+        width="auto"
+        prepend-icon="mdi mdi-door-open"
+        title="Update Room"
+      >
+        <v-card-text>
+          <a-form-item label="Provider">
+            <a-input v-model:value="newNote.provider" />
+          </a-form-item>
+          <a-form-item label="Notes">
+            <a-textarea v-model:value="newNote.note" placeholder="Notes" :rows="4" />
+          </a-form-item>
+        </v-card-text>
+
+        <v-card-actions class="my-2 d-flex justify-end">
+          <v-btn
+          class="text-none"
+          text="Cancel"
+          @click="isActive.value = false"
+          ></v-btn>
+
+          <v-btn
+          class="text-none"
+          color="blue"
+          
+          text="submit"
+          variant="tonal"
+          @click="onSubmitAppointmentNote()"
+          ></v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model="serviceUnitOpen" width="auto">
       <v-card
         rounded="lg"
@@ -231,6 +266,7 @@ import { ref } from 'vue';
 import moment from "moment";
 import dayjs from 'dayjs';
 import Clock from '@/components/clock/Clock.vue';
+import DentalChart from '@/components/DentalChart.vue';
 
 import {VBadge} from 'vuetify/components/VBadge';
 import {VTab, VTabs} from 'vuetify/components/VTabs';
@@ -248,7 +284,7 @@ export default {
   inject: ['$socket', '$call'],
   components: {
     Clock, VBadge, VTabs, VTab, VWindow, VWindowItem, VIcon, VToolbar, VToolbarItems, VBtn,
-    VDialog, VCard, VCardTitle, VCardText, VCardActions, VAlert, VOverlay, VProgressCircular, 
+    VDialog, VCard, VCardTitle, VCardText, VCardActions, VAlert, VOverlay, VProgressCircular, DentalChart
   },
   data() {
     return {
@@ -260,12 +296,14 @@ export default {
       selectedDepartments: undefined,
       appointmentsLoading: true,
       appointmentOpen: false,
+      appointmentNoteOpen: false,
       vitalSignsOpen: false,
       serviceUnitOpen: false,
       transferOpen: false,
       paymentTypeOpen: false,
       lodingOverlay: false,
       slots: {},
+      newNote: {},
       message: '',
       alertVisible: false,
       dateWeek: ref(dayjs()),
@@ -398,6 +436,10 @@ export default {
       this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
 			this.appointmentForm.type = formType
 			this.appointmentOpen = true
+		},
+    appointmentNoteDialog(row) {
+      this.appointmentForm.name = row.appointment_id;
+			this.appointmentNoteOpen = true;
 		},
     vitalSignDialog(row) {
       this.appointmentForm.name = row.appointment_id;
@@ -536,6 +578,31 @@ export default {
       ).then(response => {
         this.lodingOverlay = false;
         this.transferOpen = false;
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
+      });
+    },
+    onSubmitAppointmentNote() {
+      this.lodingOverlay = true;
+      this.$call('frappe.client.insert', 
+        {doc: {
+          doctype: 'Appointment Note Table', 
+          parent: this.appointmentForm.name, 
+          parentfield: 'custom_visit_notes', 
+          parenttype: 'Patient Appointment', 
+          provider: this.newNote.provider, 
+          note: this.newNote.note, 
+          time: dayjs().format('YYYY/MM/DD hh:mm:ss')
+        }}
+      ).then(response => {
+        this.lodingOverlay = false;
+        this.appointmentNoteOpen = false;
       }).catch(error => {
         console.error(error);
         let message = error.message.split('\n');

@@ -32,9 +32,6 @@ import '@mdi/font/css/materialdesignicons.css'
 import { fa } from 'vuetify/iconsets/fa'
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 
-//Breadcrumb
-import DoctorsSidebar from '@/views/frontend/layouts/doctorsidebar.vue'
-
 //pages
 import Footer from '@/views/frontend/layouts/footer.vue'
 import IndexFooter from '@/views/frontend/pages/home/footer.vue'
@@ -46,7 +43,6 @@ import patientappointment from '@/views/frontend/pages/patients/dashboard/patien
 import DoctorSidebar from '@/views/frontend/layouts/doctorsidebar.vue'
 import Dappointment from '@/views/frontend/pages/doctors/patient-profile/dappointment.vue'
 import AppointmentTab from '@/views/frontend/pages/doctors/doctor-appointment-tab.vue'
-import Attachments from '@/components/attachments.vue'
 
 //Dialogs
 import PatientAppointmentDialog from '@/components/dialogs/patientAppointment.vue'
@@ -61,14 +57,12 @@ const app = createApp(App);
 const auth = reactive(new Auth());
 
 // My App (Again)
-app.component('doctors-sidebar',DoctorsSidebar)
 app.component('footerindex',Footer)
 app.component('indexfooter',IndexFooter)
 app.component('patientfooter',PatientFooter)
 app.component('patientappointment',patientappointment)
 app.component('doctorsidebar',DoctorSidebar)
 app.component('dappointment',Dappointment)
-app.component('attachments',Attachments)
 app.component('appointmenttab',AppointmentTab)
 app.component('patientAppointmentDialog',PatientAppointmentDialog)
 app.component('vitalSignsDialog',VitalSignsDialog)

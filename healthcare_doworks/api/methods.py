@@ -144,6 +144,43 @@ def new_doc(form, submit=False):
 
 def get_appointments(*args):
 	appointments = frappe.db.sql("""
+		WITH SortedVisitNotes AS (
+			SELECT
+				vn.`parent`,
+				JSON_OBJECT(
+					'provider', vn.`provider`,
+					'note', vn.`note`,
+					'time', vn.`time`
+				) AS visit_note
+			FROM `tabAppointment Note Table` vn
+			ORDER BY vn.`time` ASC
+		),
+		LatestVitalSigns AS (
+			SELECT
+				vs.`patient`,
+				vs.`height`,
+				vs.`weight`,
+				vs.`bmi`,
+				vs.`nutrition_note`
+			FROM `tabVital Signs` vs
+			WHERE vs.`signs_date` = (
+				SELECT MAX(vs2.`signs_date`)
+				FROM `tabVital Signs` vs2
+				WHERE vs2.`patient` = vs.`patient`
+			)
+		),					  
+		LastVisit AS (
+			SELECT
+				pe.`patient`,
+				pe.`encounter_date`
+			FROM `tabPatient Encounter` pe
+			WHERE pe.`encounter_date` = (
+				SELECT MAX(pe2.`encounter_date`)
+				FROM `tabPatient Encounter` pe2
+				WHERE pe2.`patient` = pe.`patient`
+			)
+		)
+							  
 		SELECT
 			pa.`name` AS `appointment_id`,
 			pa.`patient_name` AS `patient_name`,
@@ -172,16 +209,15 @@ def get_appointments(*args):
 				'gender', `tabPatient`.`sex`,
 				'age', pa.`patient_age`,
 				'cpr', `tabPatient`.`custom_cpr`,
-				'date_of_birth', `tabPatient`.`dob`
+				'date_of_birth', `tabPatient`.`dob`,
+				'height', lvs.`height`,
+				'weight', lvs.`weight`,
+				'bmi', lvs.`bmi`,
+				'last_visit', lpe.`encounter_date`,
+				'nutrition_note', lvs.`nutrition_note`
 			) AS `patient_details`,
 							  
-			JSON_ARRAYAGG(
-				JSON_OBJECT(
-					'provider', vn.`provider`,
-					'note', vn.`note`,
-					'time', vn.`time`
-				)
-			) AS `visit_notes`,
+			JSON_ARRAYAGG(SortedVisitNotes.visit_note) AS `visit_notes`,
 							  
 			JSON_ARRAYAGG(
 				JSON_OBJECT(
@@ -196,10 +232,13 @@ def get_appointments(*args):
 			ON `tabPatient`.`name` = pa.`patient`
 		LEFT JOIN `tabHealthcare Practitioner` hp
 			ON hp.`name` = pa.`practitioner`
-		LEFT JOIN `tabAppointment Note Table` vn
-			ON vn.`parent` = pa.`name`
+		LEFT JOIN SortedVisitNotes ON SortedVisitNotes.`parent` = pa.`name`
 		LEFT JOIN `tabAppointment Time Logs` tl
 			ON tl.`parent` = pa.`name`
+		LEFT JOIN LatestVitalSigns lvs
+    		ON lvs.`patient` = `tabPatient`.`name`
+		LEFT JOIN LastVisit lpe
+			ON lpe.`patient` = `tabPatient`.`name`
 		WHERE
 			pa.`status` IN ('Scheduled', 'Rescheduled', 'Walked In')
 		GROUP BY
@@ -209,4 +248,6 @@ def get_appointments(*args):
     		pa.`appointment_time` ASC
 	""", as_dict=True)
 	frappe.publish_realtime("patient_appointments", appointments)
+	for appointment in appointments:
+		pass
 	return appointments

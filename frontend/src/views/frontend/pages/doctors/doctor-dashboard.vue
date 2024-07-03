@@ -1,6 +1,6 @@
 <template>
   <!-- Main Wrapper -->
-  <div class="main-wrapper" style="margin-right: -10px;">
+  <div class="main-wrapper" id="doctor-dashboard" style="margin-right: -10px;">
     <!-- Page Content -->
     <div class="row">
       <div class="row">
@@ -14,7 +14,7 @@
                       <div class="circle-graph1">
                         <v-progress-circular
                           class="col"
-                          :model-value="getPercentage(finishedAppointments,totalAppointments)"
+                          :model-value="getPercentage(appointments.length - updatedAppointments.length,appointments.length)"
                           :size="100"
                           :width="7"
                           color="blue"
@@ -30,8 +30,8 @@
                     <div class="dash-widget-info">
                       <h6 >Today Appointments</h6>
                       <div class="d-flex">
-                        <h4 class="text-info">{{finishedAppointments}}</h4>
-                        <h3>/{{totalAppointments}}</h3>
+                        <h4 class="text-info">{{appointments.length - updatedAppointments.length}}</h4>
+                        <h3>/{{appointments.length}}</h3>
                       </div>
                     </div>
                   </div>
@@ -69,7 +69,7 @@
                       <div class="circle-graph3">
                         <v-progress-circular
                           class="col"
-                          :model-value="50"
+                          :model-value="100"
                           :size="100"
                           :width="7"
                           color="red"
@@ -84,9 +84,8 @@
                       </div>
                     </div>
                     <div class="dash-widget-info">
-                      <h6>Next Appointment in</h6>
-                      <h3>{{nextAppointmentTime}}</h3>
-                      <p class="text-muted">today</p>
+                      <h6>Next Appointment</h6>
+                      <h3>{{ nextAppointmentTime }}</h3>
                     </div>
                   </div>
                 </div>
@@ -95,30 +94,102 @@
           </div>
         </div>
       </div>
-      <div class="row row-cols-lg-2 cont">
-        <Card class="col-12 col-lg-6 left-col p-0 " style="overflow: hidden;">
+      <div class="row row-cols-lg-2 cont mb-3">
+        <Card class="col-12 col-lg-6 left-col p-0" style="overflow: hidden;">
           <template #title>Upcoming Appintments</template>
           <template #content>
             <div class="table-responsive">
-              <table style="table-layout: auto; min-width: 435px; border-collapse: collapse;" class="table mb-0 border-0 table-hover">
-                <tbody>
-                  <tr v-for="(appointment, index) in appointments" :key="index" @click="onPatientDetails(appointment)">
-                    <td class="table-image appoint-doctor d-flex">
-                      <img width="28" height="28" class="rounded-circle avatar-lg align-self-center" :src="appointment.image" alt=""/>
-                      <div style="padding: 10px 15px; vertical-align: middle; padding-right: 0;">
-                        <h6 style="font-size: 16px; font-weight: 500; margin-bottom: 0">{{ appointment.patient_name }}</h6>
-                        <span style="color: rgba(51, 52, 72, 0.5); font-size: 16px; font-weight: 500">{{ appointment.appointment_type }}</span>
+              <DataTable
+              size="small"
+              sortField="arriveTime"
+              dataKey="id"
+              :loading="appointmentsLoading"
+              :sortOrder="-1"
+              paginator
+              :rows="5"
+              :value="updatedAppointments"
+              selectionMode="single" 
+              :metaKeySelection="true"
+              @row-click="onPatientDetails"
+              >
+                <template #empty> No Appointments found. </template>
+                <template #loading> Loading Appointments data. Please wait.</template>
+                <Column header="Patient" field="patient">
+                  <template #body="{ data }">
+                    <!-- <router-link to="patient-profile"> -->
+                      <div class="d-flex align-items-center gap-2">
+                        <v-avatar>
+                          <img
+                            class="h-100 w-100"
+                            :src="data.patient_details.image ? 
+                              data.patient_details.image :
+                              data.patient_details.gender === 'Male' ? maleImage : femaleImage"
+                          />
+                          <!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
+                        </v-avatar>
+                        <div style="padding: 10px 15px; vertical-align: middle; padding-right: 0;">
+                          <h6 style="font-size: 16px; font-weight: 500; margin-bottom: 0">{{ data.patient_name }}</h6>
+                          <span style="color: rgba(51, 52, 72, 0.5); font-size: 16px; font-weight: 500">{{ data.service_unit }}</span>
+                        </div><br/>
                       </div>
-                    </td>
-                    <td class="text-sm align-middle">
-                      <span class="text-900 font-medium text-sm">{{ appointment.visit_status }}</span>
-                    </td>
-                    <td class="text-sm align-middle text-end " style="position: sticky; right: 0; z-index: 1; width: 5.5rem;">
-                      <Tag :value="appointment.appointment_time_moment" severity="info" class="absolute w-100"></Tag>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+
+                    <!-- </router-link> -->
+                  </template>
+                </Column>
+                <Column header="Apt Time" sortable field="appointment_time">
+                  <template #body="{ data }">
+                    <Tag :value="data.appointment_time_moment" severity="info" style="width: 95px" class="absolute"></Tag>
+                  </template>
+                </Column>
+                <Column header="Arv Time" sortable field="arriveTime">
+                  <template #body="{ data }">
+                    <Tag v-if="data.timeSinceArrived" :value="data.timeSinceArrived" severity="success" style="width: 95px" class="absolute"></Tag>
+                  </template>
+                </Column>
+                <Column header="Status" field="status_log">
+                  <template #body="{ data }">
+                    <v-chip class="ma-2" label size="small" :color="getSeverity(visitStatus(data))">{{ visitStatus(data) }}</v-chip>
+                  </template>
+                </Column>
+                <Column style="width: 5%">
+                  <template #body="{ data }">
+                    <v-btn 
+                      v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0]?.note)" 
+                      size="small" 
+                      variant="text" 
+                      icon
+                      @click="toggleOP"
+                    >
+                      <v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
+                        <img :src="bellImage"/>
+                      </v-badge>
+                    </v-btn>
+                    <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
+                    <OverlayPanel ref="op">
+                      <div class="d-flex flex-column gap-3 w-25rem">
+                        <div v-if="data.notes">
+                          <span class="fw-semibold d-block mb-2">Appointment Notes</span>
+                          <a-textarea v-model:value="data.notes" disabled/>
+                        </div>
+                        <div v-if="data.visit_notes.length > 0 && data.visit_notes[0]?.note">
+                          <span class="fw-semibold d-block mb-2">Visit Notes</span>
+                          <ul class="list-none p-0 m-0 flex flex-column">
+                            <li v-for="(note, index) in data.visit_notes" :key="index" class="d-flex align-items-center gap-2 mb-3">
+                              <div>
+                                <a-textarea v-model:value="note.note" disabled/>
+                                <span>{{ note.time }}</span>
+                              </div>
+                              <div class="d-flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
+                                <span>{{ note.provider }}</span>
+                              </div>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </OverlayPanel>
+                  </template>
+                </Column>
+              </DataTable>
             </div>
           </template>
           <template #footer>
@@ -127,8 +198,8 @@
             </div>
           </template>
         </Card>
-        <div class="col-12 col-lg-6 right-col p-0 details-card mt-4 mt-md-0" ref="containerRef">
-          <div class="flip-card-inner" :class="{ 'isFlipped': isFlipped }">
+        <div v-if="nextPatientDetails" class="col-12 col-lg-6 right-col p-0 details-card mt-4 mt-md-0" style="min-height: 550px; height: auto;" ref="containerRef">
+          <div  class="flip-card-inner" :class="{ 'isFlipped': isFlipped }">
             <div class="flip-card-front">
               <patientDetailsCard :patient="nextPatientDetails" @cardRendered="adjustContainerHeight"/>
             </div>
@@ -136,8 +207,9 @@
               <patientDetailsCard :patient="nextPatientDetails"/>
             </div>
           </div>
+          <!-- <Card v-else class="h-100"></Card> -->
         </div>
-        <Card class="col-12 col-lg-6 left-col p-0 mt-4" style="overflow: hidden;">
+        <!-- <Card class="col-12 col-lg-6 left-col p-0 mt-3" style="overflow: hidden;">
           <template #title>Waiting List</template>
           <template #content>
             <div class="table-responsive">
@@ -166,7 +238,7 @@
               <a href="/appointments">See All</a>
             </div>
           </template>
-        </Card>
+        </Card> -->
       </div>
     </div>    
     <!-- /Page Content -->
@@ -174,92 +246,189 @@
   <!-- /Main Wrapper -->
 </template>
 <script>
-import myappointments from "@/assets/json/doctor/myappointments.json";
-import moment from "moment";
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 
 import patientDetailsCard from './patient-details-card.vue'
 
 import {VProgressCircular} from 'vuetify/components/VProgressCircular';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import ContextMenu from 'primevue/contextmenu';
+import OverlayPanel from 'primevue/overlaypanel';
+
+import { VBtn } from 'vuetify/components/VBtn'
+import { VAvatar } from 'vuetify/components/VAvatar';
+import { VChip } from 'vuetify/components/VChip';
+import { VListItem } from 'vuetify/components/VList';
+import { VBadge } from 'vuetify/components/VBadge';
+
 import { watchEffect } from "vue";
 import Card from 'primevue/card';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
 
+import bellImage from '@/assets/img/animations/alarm.gif';
+import maleImage from '@/assets/img/male.png';
+import femaleImage from '@/assets/img/female.png';
 
 export default {
+  inject: ['$call', '$socket'],
   components: {
-    VProgressCircular,
-    Card,
-    Tag,
-    patientDetailsCard,
-    Button,
+    VProgressCircular, Card, Tag, patientDetailsCard, Button, DataTable, Column, ContextMenu, VBtn, VAvatar, VChip, 
+    VListItem, VBadge, OverlayPanel,
   },
   data() {
     return {
-      totalAppointments: 20,
-      finishedAppointments: 10,
+      bellImage:bellImage,
+			maleImage:maleImage,
+			femaleImage:femaleImage,
       walkedInPatients:0,
-      nextAppointmentTime: 10,
       appointments: [],
-      nextPatientDetails: {
-        "name": "HLC-APP-2024-00001",
-        "appointment_type": "General",
-        "patient_name": "Sayed Mohamed Adnan",
-        "mobile": "1234567890",
-        "practitioner_name": "Sayed Hassan",
-        "cpr": 123576342,
-        "department": "Neurology",
-        "status": "Scheduled",
-        "invoiced": 100,
-        "paid_amount": 0,
-        "duration": 20,
-        "visit_status": "Scheduled",
-        "image": "https://randomuser.me/api/portraits/men/1.jpg",
-        "practitioner_image": "https://randomuser.me/api/portraits/men/30.jpg",
-        "appointment_time": "09:45:00",
-        "appointment_date": "2024-02-21",
-        "patientDetails": {
-          "date_of_birth": "2024-02-21",
-          "gender": "Male",
-          "weight": "65 Kg",
-          "height": "180 cm"
-        }
-      },
+      currentTime: dayjs(),
+      nextPatientDetails: null,
       isFlipped: false,
+      appointmentsLoading: false,
     };
   },
-  mounted() {
-    watchEffect(() => {
-      this.appointments = this.getUpcomingAppointments(myappointments)
+  created() {
+    this.fetchRecords();
+    this.$socket.on('patient_appointments', response => {
+      if(response){
+        this.appointments = this.adjustAppointments(response)
+      }
     })
+  },
+  computed: {
+    updatedAppointments() {
+      return this.appointments.filter(value => value.visit_status !== 'Completed' && value.visit_status !== 'No Show').map(appointment => {
+        const arrivalTime = dayjs(appointment.arriveTime);
+        const diffInSeconds = this.currentTime.diff(arrivalTime, 'second');
+        const hours = Math.floor(diffInSeconds / 3600);
+        const minutes = Math.floor((diffInSeconds % 3600) / 60);
+        const seconds = diffInSeconds % 60;
+        if(appointment.arriveTime)
+          return {
+            ...appointment,
+            timeSinceArrived: `${hours}h ${minutes}m ${seconds}s`
+          };
+          return appointment
+        });
+    },
+    nextAppointmentTime() {
+      if(this.appointments[0]){
+        const firstValidAppointment = this.appointments
+        .filter(appointment => appointment.visit_status !== 'Completed' && appointment.visit_status !== 'No Show')
+        .sort((a, b) => dayjs(a.appointment_date + ' ' + a.appointment_time) - dayjs(b.appointment_date + ' ' + b.appointment_time))[0];
+        const nextappointment = dayjs(firstValidAppointment.appointment_date + ' ' + firstValidAppointment.appointment_time);
+        // const diffInSeconds = this.currentTime.diff(nextappointment, 'second');
+        // const hours = Math.floor(diffInSeconds / 3600);
+        // const minutes = Math.floor((diffInSeconds % 3600) / 60);
+        // const seconds = diffInSeconds % 60;
+        // return `${hours}:${minutes}:${seconds}`
+        return dayjs(this.currentTime).to(nextappointment)
+      }
+      return ''
+    },
+  },
+  mounted() {
+    setInterval(() => {
+			this.currentTime = dayjs();
+		}, 1000); // Update every second
     this.adjustContainerHeight();
   },
   methods: {
     getPercentage: (num1, num2) => {
       return num1 / num2 * 100
     },
-    getUpcomingAppointments: (data) => {
-      const upcoming = data.slice(0, 4)
-      return [...(upcoming || [])].map((d) => {
-        d.appointment_time_moment = moment(d.appointment_date + ' ' + d.appointment_time).format('LT');
-        return d;
+    visitStatus(data) {
+      if(data.status_log.length > 0 && data.status_log[data.status_log.length -1].status){
+        return data.status_log.reduce((latest, current) => {return new Date(current.time) > new Date(latest.time) ? current : latest}).status;
+      }
+      return 'Scheduled'
+    },
+    fetchRecords() {
+      this.appointmentsLoading = true;
+      this.$call('healthcare_doworks.api.methods.fetch_patient_appointments')
+      .then(response => {
+        this.appointments = this.adjustAppointments(response)
+        console.log(this.appointments)
+        this.appointmentsLoading = false;
+      })
+      .catch(error => {
+        this.appointmentsLoading = false;
+        console.error('Error fetching records:', error);
       });
     },
-    onPatientDetails: function(patient){
+    adjustAppointments(data) {
+			return [...(data || [])].filter(value => {
+        const practitioner = value.practitioner === this.$resources.user.practitioner;
+        const date = dayjs().isSame(dayjs(value.appointment_date), 'day')
+        return practitioner && date
+      }).map((d) => {
+        try {
+          if(typeof d.patient_details === 'string'){
+            d.patient_details = JSON.parse(d.patient_details)
+            d.visit_notes = JSON.parse(d.visit_notes)
+            d.status_log = JSON.parse(d.status_log)
+            d.arriveTime = null
+            d.status_log.forEach(value => {
+              if(value.status == 'Arrived')
+                d.arriveTime = dayjs(value.time)
+            })
+          }
+        } catch (error) {
+          console.error('Error parsing JSON:', error);
+        }
+
+				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
+				d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
+
+        return d;
+			});
+		},
+    onPatientDetails(row) {
       this.isFlipped = !this.isFlipped;
       setTimeout(() => {
-        this.nextPatientDetails = patient
+        this.nextPatientDetails = row.data
       }, 200)
     },
     adjustContainerHeight(cardHeight) {
       if(cardHeight)
         this.$refs.containerRef.style.minHeight = cardHeight + 'px';
-    }
+    },
+    getSeverity(status) {
+			switch (status) {
+				case 'Scheduled':
+					return 'success';
+
+				case 'Rescheduled':
+					return 'info';
+
+				case 'Walked In':
+					return 'warning';
+
+				default:
+					return 'danger';
+			}
+		},
+    toggleOP(event) {
+			this.$refs.op.toggle(event)
+		},
+    nextAppointmentTimeDiff() {
+      dayjs()
+    },
   },
   name: "doctor-dashboard",
 };
 </script>
 
+<style>
+#doctor-dashboard .p-paginator-bottom{
+  display: none;
+}
+</style>
 <style scoped>
 .details-card {
   background-color: rgba(228, 228, 228, 0.541);

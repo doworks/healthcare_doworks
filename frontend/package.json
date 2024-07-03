@@ -29,6 +29,7 @@
     "primevue": "^3.48.1",
     "quill": "^2.0.2",
     "socket.io-client": "^4.7.1",
+    "three": "^0.166.0",
     "vue": "^3.3.8",
     "vue-feather": "^2.0.0",
     "vue-router": "^4.3.0",

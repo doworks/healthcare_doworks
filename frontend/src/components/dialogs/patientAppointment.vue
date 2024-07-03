@@ -11,6 +11,12 @@
           <v-container>
             <v-row>
               <v-col cols="12" md="6">
+                <a-form-item label="Appointment Category">
+                  <a-select
+                    v-model:value="appointmentForm.custom_appointment_category"
+                    :options="[{label: 'Primary', value: 'Primary'}, {label: 'Follow-up', value: 'Follow-up'}, {label: 'Session', value: 'Session'}]"
+                  ></a-select>
+                </a-form-item>
                 <a-form-item label="Appointment Type" name="appointment_type">
                   <a-select
                     v-model:value="appointmentForm.appointment_type"
@@ -27,33 +33,19 @@
                     :fieldNames="{label: 'appointment_type', value: 'appointment_type'}"
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Appointment Category">
-                  <a-select
-                    v-model:value="appointmentForm.custom_appointment_category"
-                    :options="[{label: 'Primary', value: 'Primary'}, {label: 'Follow-up', value: 'Follow-up'}, {label: 'Session', value: 'Session'}]"
-                  ></a-select>
+                <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
+                  <a-input v-model:value="appointmentForm.appointment_for" disabled/>
                 </a-form-item>
-                <a-form-item label="Patient" name="patient">
-                  <a-select
-                  v-model:value="appointmentForm.patient_name"
-                  :options="$resources.patients"
-                  :fieldNames="{label: 'patient_name', value: 'patient_name'}"
-                  @change="(value, option) => {appointmentForm.patient = option.name; appointmentForm.patient_sex = option.sex;}"
-                  show-search
-                  ></a-select>
-                </a-form-item>
+                
                 <a-form-item v-if="appointmentForm.appointment_type" label="Appointment Duration">
                   <a-input disabled v-model:value="appointmentForm.duration" />
                 </a-form-item>
               </v-col>
               <v-col cols="12" md="6">
-                <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
-                  <a-input v-model:value="appointmentForm.appointment_for" disabled/>
-                </a-form-item>
                 <a-form-item label="Practitioner" 
                 name="practitioner" 
                 v-if="appointmentForm.appointment_for === 'Practitioner'" 
-                
+                @change="setPaymentDetails()"
                 >
                   <a-select
                     v-model:value="appointmentForm.practitioner_name"
@@ -69,7 +61,7 @@
                 <a-form-item label="Department" 
                 name="department" 
                 v-if="appointmentForm.appointment_for === 'Department'" 
-                
+                @change="setPaymentDetails()"
                 >
                   <a-select
                     v-model:value="appointmentForm.department"
@@ -81,17 +73,14 @@
                 <a-form-item label="Service Unit" 
                 name="service_unit" 
                 v-if="appointmentForm.appointment_for === 'Service Unit'" 
-                
+                @change="setPaymentDetails()"
                 >
                   <a-select
                     v-model:value="appointmentForm.service_unit"
-                    :options="$resources.name"
+                    :options="$resources.serviceUnits"
                     :fieldNames="{label: 'name', value: 'name'}"
                     show-search
                   ></a-select>
-                </a-form-item>
-                <a-form-item label="Patient Gender" v-if="appointmentForm.patient">
-                  <a-input v-model:value="appointmentForm.patient_sex" disabled/>
                 </a-form-item>
                 <a-form-item label="Appointment Date" name="appointment_date">
                   <a-date-picker 
@@ -108,16 +97,46 @@
               </v-col>
             </v-row>
             <v-divider class="mt-2 mb-8"></v-divider>
-
+            <h3>Patient Details</h3>
+            <v-row>
+              <v-col cols="12" md="6">
+                <a-form-item label="Patient" name="patient">
+                  <a-select
+                  v-model:value="appointmentForm.patient_name"
+                  :options="$resources.patients"
+                  :fieldNames="{label: 'patient_name', value: 'patient_name'}"
+                  @change="(value, option) => {
+                    appointmentForm.patient = option.name;
+                    appointmentForm.patient_sex = option.sex;
+                    appointmentForm.patient_mobile = option.mobile
+                    appointmentForm.patient_age = calculateAge(option.dob)
+                  }"
+                  show-search
+                  ></a-select>
+                </a-form-item>
+                <a-form-item label="Patient Mobile" v-if="appointmentForm.patient">
+                  <a-input v-model:value="appointmentForm.patient_mobile" disabled/>
+                </a-form-item>
+              </v-col>
+              <v-col cols="12" md="6">
+                <a-form-item label="Patient Gender" v-if="appointmentForm.patient">
+                  <a-input v-model:value="appointmentForm.patient_sex" disabled/>
+                </a-form-item>
+                <a-form-item label="Patient Age" v-if="appointmentForm.patient">
+                  <a-input v-model:value="appointmentForm.patient_age" disabled/>
+                </a-form-item>
+              </v-col>
+            </v-row>
+            <v-divider class="mt-2 mb-8"></v-divider>
             <v-row>
               <div 
               class="text-center mb-0" 
               ref="appointmentSlots" 
-              v-if="appointmentForm.appointment_date && 
-                (appointmentForm.appointment_for === 'Practitioner' && appointmentForm.practitioner || 
-                appointmentForm.appointment_for === 'Department' && appointmentForm.department ||
-                appointmentForm.appointment_for === 'Service Unit' && appointmentForm.service_unit
-                )"
+              v-if="this.appointmentForm.appointment_date && (
+                (this.appointmentForm.appointment_for === 'Practitioner' && this.appointmentForm.practitioner) ||
+                (this.appointmentForm.appointment_for === 'Department' && this.appointmentForm.department) ||
+                (this.appointmentForm.appointment_for === 'Service Unit' && this.appointmentForm.service_unit)
+              )"
               >
                 <div v-for="(slotInfo, index) in slots.slot_details" :key="index">
                   <div class="slot-info">
@@ -248,29 +267,38 @@ export default {
       default: {}
     },
 	},
-    computed: {
-      dialogVisible: {
-        get() {
-          return this.isOpen;
-        },
-        set(value) {
-          this.$emit('update:isOpen', value);
-        },
+  computed: {
+    dialogVisible: {
+      get() {
+        return this.isOpen;
       },
-      appointmentForm() {
-        return reactive(this.form);
-      },
-      rulesRef() {
-        return reactive({
-          appointment_type: [{ required: true, message: 'Please choose a type!' }],
-          patient: [{ required: true, message: 'Please choose a patient!' }],
-          practitioner: [{ required: this.appointmentForm.appointment_for === 'Practitioner', message: 'Please choose a practitioner!' }],
-          department: [{ required: this.appointmentForm.appointment_for === 'Department', message: 'Please choose a department!' }],
-          service_unit: [{ required: this.appointmentForm.appointment_for === 'Service Unit', message: 'Please choose a service unit!' }],
-          appointment_date: [{ required: true, message: 'Please choose a date!' }],
-        });
+      set(value) {
+        this.$emit('update:isOpen', value);
       },
     },
+    appointmentForm() {
+      return reactive(this.form);
+    },
+    rulesRef() {
+      return reactive({
+        appointment_type: [{ required: true, message: 'Please choose a type!' }],
+        patient: [{ required: true, message: 'Please choose a patient!' }],
+        practitioner: [{ required: this.appointmentForm.appointment_for === 'Practitioner', message: 'Please choose a practitioner!' }],
+        department: [{ required: this.appointmentForm.appointment_for === 'Department', message: 'Please choose a department!' }],
+        service_unit: [{ required: this.appointmentForm.appointment_for === 'Service Unit', message: 'Please choose a service unit!' }],
+        appointment_date: [{ required: true, message: 'Please choose a date!' }],
+      });
+    },
+  },
+  watch: {
+    slots(newVal) {
+      if (newVal) {
+        this.$nextTick(() => {
+          this.scrollToTimeSlots();
+        });
+      }
+    },
+  },
 	data() {
 		return {
       lodingOverlay: false,
@@ -285,6 +313,12 @@ export default {
     },
     getDate(date) {
       return dayjs(date).format('DD-MM-YYYY')
+    },
+    scrollToTimeSlots() {
+      const element = this.$refs.appointmentSlots;
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     },
     onSubmit() {
       const { validate } = Form.useForm(this.appointmentForm, this.rulesRef);
@@ -350,6 +384,17 @@ export default {
           this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
         }
       });
+    },
+    calculateAge(dob) {
+      if(dob){
+        const today = dayjs();
+        const birthDate = dayjs(dob)
+        const years = today.diff(birthDate, 'year');
+        const months = today.diff(birthDate.add(years, 'year'), 'month');
+        const days = today.diff(birthDate.add(years, 'year').add(months, 'month'), 'day');
+        return `${years} Year(s) ${months} Month(s) ${days} Day(s)`;
+      }
+      return ''
     },
     disabledDate(current) {
       // Can not select days before today and today

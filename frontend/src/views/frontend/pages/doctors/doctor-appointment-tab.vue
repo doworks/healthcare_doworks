@@ -235,13 +235,13 @@
 				<Column style="width: 5%">
 					<template #body="{ data }">
 						<v-btn 
-							v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0].note)" 
+							v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0]?.note)" 
 							size="small" 
 							variant="text" 
 							icon
 							@click="toggleOP"
 						>
-							<v-badge color="success" :content="getNotesCount(data)" :offset-y="5" :offset-x="6">
+							<v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
 								<img :src="bellImage"/>
 							</v-badge>
 						</v-btn>
@@ -252,12 +252,13 @@
 									<span class="fw-semibold d-block mb-2">Appointment Notes</span>
 									<a-textarea v-model:value="data.notes" disabled/>
 								</div>
-								<div v-if="data.visit_notes.length > 0 && data.visit_notes[0].note">
+								<div v-if="data.visit_notes.length > 0 && data.visit_notes[0]?.note">
 									<span class="fw-semibold d-block mb-2">Visit Notes</span>
-									<ul class="list-none p-0 m-0 flex flex-column gap-3">
-										<li v-for="(note, index) in data.visit_notes" :key="index" class="d-flex align-items-center gap-2">
+									<ul class="list-none p-0 m-0 flex flex-column">
+										<li v-for="(note, index) in data.visit_notes" :key="index" class="d-flex align-items-center gap-2 mb-3">
 											<div>
 												<a-textarea v-model:value="note.note" disabled/>
+												<span>{{ note.time }}</span>
 											</div>
 											<div class="d-flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
 												<span>{{ note.provider }}</span>
@@ -325,15 +326,15 @@ export default {
 	computed: {
 		updatedAppointments() {
 			return this.appointments.map(appointment => {
-			const arrivalTime = dayjs(appointment.arriveTime);
-			const diffInSeconds = this.currentTime.diff(arrivalTime, 'second');
-			const hours = Math.floor(diffInSeconds / 3600);
-			const minutes = Math.floor((diffInSeconds % 3600) / 60);
-			const seconds = diffInSeconds % 60;
-			return {
-				...appointment,
-				timeSinceArrived: `${hours}h ${minutes}m ${seconds}s`
-			};
+				const arrivalTime = dayjs(appointment.arriveTime);
+				const diffInSeconds = this.currentTime.diff(arrivalTime, 'second');
+				const hours = Math.floor(diffInSeconds / 3600);
+				const minutes = Math.floor((diffInSeconds % 3600) / 60);
+				const seconds = diffInSeconds % 60;
+				return {
+					...appointment,
+					timeSinceArrived: `${hours}h ${minutes}m ${seconds}s`
+				};
 			});
 		}
 	},
@@ -381,6 +382,11 @@ export default {
 						...(this.tab !== 'completed' ? [{label: 'Completed', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'transferred' ? [{label: 'Transferred', command: ({ item }) => this.updateStatus(item)}] : []),
 					]
+				},
+				{
+					label: 'Add Note',
+					icon: 'mdi mdi-text',
+					command: () => this.$emit('appointment-note-dialog', this.selectedRow)
 				},
 				{separator: true},
 				{
