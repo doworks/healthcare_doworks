@@ -133,6 +133,9 @@ doc_events = {
 #       }
     'Patient Appointment':{
         "on_update": "healthcare_doworks.api.methods.get_appointments"
+    },
+    'Service Request':{
+        "on_update": "healthcare_doworks.api.methods.get_services"
     }
 }
 

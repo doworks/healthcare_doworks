@@ -4,7 +4,9 @@ import authRoutes from './auth';
 
 
 import PatientEncounter from '@/views/frontend/pages/patients/dashboard/patient-encounter.vue';
+import PatientEncounterList from '@/views/frontend/pages/patients/dashboard/patient-encounter-list.vue';
 import DoctorDashBoard from '@/views/frontend/pages/doctors/doctor-dashboard.vue';
+import NurseDashBoard from '@/views/frontend/pages/nurse/nurse-dashboard.vue';
 import Appointments from '@/views/frontend/pages/doctors/doctor-appointment.vue';
 
 const routes = [
@@ -19,9 +21,19 @@ const routes = [
     component: PatientEncounter
   },
   {
+    path: '/patient-encounter-list',
+    name: 'patient-encounter-list',
+    component: PatientEncounterList
+  },
+  {
     path: '/doctor-dashboard',
     name: 'doctor-dashboard',
     component: DoctorDashBoard
+  },
+  {
+    path: '/nurse-dashboard',
+    name: 'nurse-dashboard',
+    component: NurseDashBoard
   },
   {
     path: '/appointments',

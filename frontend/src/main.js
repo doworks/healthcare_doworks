@@ -10,7 +10,10 @@ import Auth from "../../../doppio/libs/controllers/auth";
             				// My App //
 // import primevue/ vutify
 import PrimeVue from 'primevue/config';
-import { createVuetify } from 'vuetify'
+import { createVuetify } from 'vuetify';
+import {
+	VDialog, VBtn, VAlert, VOverlay, VProgressCircular, VBadge, VCard, VCardTitle, VCardText, VCardActions, VWindow, VWindowItem, VTab, VTabs
+} from 'vuetify/components'
 
 // Other UI libraries
 import Antd from 'ant-design-vue';
@@ -42,11 +45,11 @@ import patientappointment from '@/views/frontend/pages/patients/dashboard/patien
 
 import DoctorSidebar from '@/views/frontend/layouts/doctorsidebar.vue'
 import Dappointment from '@/views/frontend/pages/doctors/patient-profile/dappointment.vue'
-import AppointmentTab from '@/views/frontend/pages/doctors/doctor-appointment-tab.vue'
 
 //Dialogs
 import PatientAppointmentDialog from '@/components/dialogs/patientAppointment.vue'
 import VitalSignsDialog from '@/components/dialogs/vitalSigns.vue'
+import VitalSignsListDialog from '@/components/dialogs/vitalSigns-list.vue'
 import MedicationRequestDialog from '@/components/dialogs/medicationRequest.vue'
 import LabTestDialog from '@/components/dialogs/labTest.vue'
 import PatientEncounterDialog from '@/components/dialogs/patientEncounter.vue'
@@ -63,8 +66,8 @@ app.component('patientfooter',PatientFooter)
 app.component('patientappointment',patientappointment)
 app.component('doctorsidebar',DoctorSidebar)
 app.component('dappointment',Dappointment)
-app.component('appointmenttab',AppointmentTab)
 app.component('patientAppointmentDialog',PatientAppointmentDialog)
+app.component('vitalSignsListDialog',VitalSignsListDialog)
 app.component('vitalSignsDialog',VitalSignsDialog)
 app.component('medicationRequestDialog',MedicationRequestDialog)
 app.component('labTestDialog',LabTestDialog)
@@ -74,6 +77,9 @@ app.use(Antd);
 
 app.component(VueFeather.name, VueFeather);
 const vuetify = createVuetify({
+	components: {
+		VDialog, VBtn, VAlert, VOverlay, VProgressCircular, VBadge, VCard, VCardTitle, VCardText, VCardActions, VWindow, VWindowItem, VTab, VTabs
+	},
     icons: {
         defaultSet: 'fa',
         aliases,

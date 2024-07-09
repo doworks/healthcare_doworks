@@ -84,10 +84,6 @@
 </template>
 
 <script>
-import Card from 'primevue/card';
-import Button from 'primevue/button';
-import Tag from 'primevue/tag';
-import {VBtn} from 'vuetify/components/VBtn'
 import {VCol, VRow} from 'vuetify/components/VGrid'
 
 import maleImage from '@/assets/img/male.png';
@@ -95,12 +91,7 @@ import femaleImage from '@/assets/img/female.png';
 
 export default {
     components: {
-        Card,
-        Button,
-        VBtn,
-        VCol,
-        VRow,
-        Tag
+        VCol, VRow,
     },
     data: {
         maleImage:maleImage,

@@ -9,6 +9,24 @@
                 <v-divider class="m-0"></v-divider>
                 <v-card-text>
                     <v-container>
+                        <v-row>
+                            <v-col cols="12" md="6">
+                                <a-form-item label="Date" name="signs_date">
+                                    <a-date-picker 
+                                        v-model:value="form.signs_date"
+                                        @change="()=>{$emit('show-slots')}" 
+                                        format="DD/MM/YYYY" 
+                                        style="z-index: 3000"
+                                    />
+                                </a-form-item>
+                            </v-col>
+                            <v-col cols="12" md="6">
+                                <a-form-item label="Time" name="signs_time">
+                                    <a-time-picker v-model:value="form.signs_time" use12-hours format="HH:mm" style="z-index: 3000; width: 100%;"/>
+                                </a-form-item>
+                            </v-col>
+                        </v-row>
+                        <v-divider class="mt-2 mb-8"></v-divider>
                         <h3 class="mb-4">Vital Signs</h3>
                         <v-row>
                             <v-col cols="12" md="6">
@@ -161,21 +179,12 @@ export default {
                 name: '',
             }
         },
-	},
-    computed: {
-        dialogVisible: {
-            get() {
-                return this.isOpen;
-            },
-            set(value) {
-                this.$emit('update:isOpen', value);
-            },
-        },
-        form() {
-            return reactive({
+        vitalSigns: {
+            defalut: {
                 doctype: 'Vital Signs',
-                patient: this.appointment.patient,
-                appointment: this.appointment.name,
+                name: '',
+                patient: '',
+                appointment: '',
                 signs_date: dayjs(),
                 signs_time: dayjs(),
                 temperature: '',
@@ -192,6 +201,40 @@ export default {
                 weight: '',
                 bmi: 0,
                 nutrition_note: '',
+            }
+        }
+	},
+    computed: {
+        dialogVisible: {
+            get() {
+                return this.isOpen;
+            },
+            set(value) {
+                this.$emit('update:isOpen', value);
+            },
+        },
+        form() {
+            return reactive({
+                doctype: 'Vital Signs',
+                name: this.vitalSigns.name || '',
+                patient: this.vitalSigns.patient || this.appointment.patient || '',
+                appointment: this.vitalSigns.appointment || this.appointment ? this.appointment.name : '',
+                signs_date: this.vitalSigns.signs_date || dayjs(),
+                signs_time: this.vitalSigns.signs_time || dayjs(),
+                temperature: this.vitalSigns.temperature || '',
+                pulse: this.vitalSigns.pulse || '',
+                respiratory_rate: this.vitalSigns.respiratory_rate || '',
+                tongue: this.vitalSigns.tongue || '',
+                abdomen: this.vitalSigns.abdomen || '',
+                reflexes: this.vitalSigns.reflexes || '',
+                bp_systolic: this.vitalSigns.bp_systolic || '',
+                bp_diastolic: this.vitalSigns.bp_diastolic || '',
+                bp: this.vitalSigns.bp || '',
+                vital_signs_note: this.vitalSigns.vital_signs_note || '',
+                height: this.vitalSigns.height || '',
+                weight: this.vitalSigns.weight || '',
+                bmi: this.vitalSigns.bmi || 0,
+                nutrition_note: this.vitalSigns.nutrition_note || '',
             });
         },
         rules() {
@@ -272,9 +315,11 @@ export default {
             validate().then(() => {
                 this.lodingOverlay = true;
                 let formClone = {...this.form}
-                formClone.signs_date = dayjs(this.form.signs_date).format('YYYY-MM-DD')
-                formClone.signs_time = dayjs(this.form.signs_time).format('HH:mm')
-                this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone, submit: true})
+                formClone.signs_date = dayjs(formClone.signs_date).format('YYYY-MM-DD')
+                formClone.signs_time = dayjs(formClone.signs_time).format('HH:mm')
+                const old = formClone.name && true
+                console.log(old)
+                this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone})
                 .then(response => {
                     this.lodingOverlay = false;
                     this.closeDialog()
@@ -284,7 +329,7 @@ export default {
                     message = message.find(line => line.includes('frappe.exceptions'));
                     if(message){
                         const firstSpaceIndex = message.indexOf(' ');
-                        this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+                        this.$emit('show-alert', message.substring(firstSpaceIndex + 1))
                     }
                 });
             })

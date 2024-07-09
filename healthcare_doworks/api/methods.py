@@ -22,7 +22,7 @@ def fetch_resources():
 	prescriptionPeriods = frappe.db.get_list('Prescription Duration', fields=['name'])
 	labTestTemplates = frappe.db.get_list('Lab Test Template', fields=['name', 'department'])
 	return {
-		'user': {'name': user.full_name, 'user': user.name, 'image': user.user_image, 'practitioner': user_practitioner},
+		'user': {'name': user.full_name, 'user': user.name, 'image': user.user_image, 'practitioner': user_practitioner, 'roles': user.roles},
 		'practitioners': practitioners,
 		'patients': patients,
 		'appointmentTypes': appointmentTypes,
@@ -42,6 +42,13 @@ def fetch_resources():
 @frappe.whitelist()
 def fetch_patient_appointments():
 	return get_appointments()
+
+@frappe.whitelist()
+def fetch_nurse_records():
+	return {
+		'appointments': get_appointments(),
+		'services': get_services(),
+	}
 
 @frappe.whitelist()
 def reschedule_appointment(form):
@@ -132,6 +139,23 @@ def patient_encounter_records(appointment):
 			'services': services
 		}
 
+@frappe.whitelist()
+def vital_signs_list():
+	return frappe.db.get_list('Vital Signs', 
+		fields=['signs_date', 'signs_time', 'temperature', 'pulse', 'name', 'appointment', 'title', 'modified', 'modified_by', 'patient'], 
+		order_by='signs_date desc, signs_time desc',
+	)
+
+@frappe.whitelist()
+def edit_doc(form, submit=False):
+	doc = frappe.get_doc(form['doctype'], form['name'])
+	for key, value in form.items():
+		print(key)
+		if key != 'doctype' or key != 'name':
+			doc[key] = value
+	doc.save()
+	if(submit):
+		doc.submit()
 
 @frappe.whitelist()
 def new_doc(form, submit=False):
@@ -142,20 +166,27 @@ def new_doc(form, submit=False):
 	if(submit):
 		doc.submit()
 
+def get_services(*args):
+	services = frappe.db.get_list('Service Request',
+		filters={'staff_role': 'Nursing User'}, 
+		fields=[
+			'status', 'order_date', 'order_time', 'practitioner', 'practitioner_email', 'medical_department', 'referred_to_practitioner', 
+			'source_doc', 'order_group', 'sequence', 'staff_role', 'patient_care_type', 'intent', 'priority', 'quantity', 'dosage_form', 
+			'as_needed', 'dosage', 'occurrence_date', 'occurrence_time', 'healthcare_service_unit_type', 'order_description', 
+			'patient_instructions', 'template_dt', 'template_dn', 'sample_collection_required', 'qty_invoiced', 'billing_status'
+		],
+		order_by='order_date asc, order_time asc',
+	)
+	for service in services:
+		practitioner = frappe.get_doc('Healthcare Practitioner', service.practitioner)
+		status = frappe.get_doc('Code Value', service.status)
+		service.practitioner = practitioner.practitioner_name
+		service.status = status.display
+	return services
+
 def get_appointments(*args):
 	appointments = frappe.db.sql("""
-		WITH SortedVisitNotes AS (
-			SELECT
-				vn.`parent`,
-				JSON_OBJECT(
-					'provider', vn.`provider`,
-					'note', vn.`note`,
-					'time', vn.`time`
-				) AS visit_note
-			FROM `tabAppointment Note Table` vn
-			ORDER BY vn.`time` ASC
-		),
-		LatestVitalSigns AS (
+		WITH LatestVitalSigns AS (
 			SELECT
 				vs.`patient`,
 				vs.`height`,
@@ -217,7 +248,13 @@ def get_appointments(*args):
 				'nutrition_note', lvs.`nutrition_note`
 			) AS `patient_details`,
 							  
-			JSON_ARRAYAGG(SortedVisitNotes.visit_note) AS `visit_notes`,
+			JSON_ARRAYAGG(
+				JSON_OBJECT(
+					'provider', vn.`provider`,
+					'note', vn.`note`,
+					'time', vn.`time`
+				)
+			) AS `visit_notes`,
 							  
 			JSON_ARRAYAGG(
 				JSON_OBJECT(
@@ -232,7 +269,8 @@ def get_appointments(*args):
 			ON `tabPatient`.`name` = pa.`patient`
 		LEFT JOIN `tabHealthcare Practitioner` hp
 			ON hp.`name` = pa.`practitioner`
-		LEFT JOIN SortedVisitNotes ON SortedVisitNotes.`parent` = pa.`name`
+		LEFT JOIN `tabAppointment Note Table` vn
+			ON vn.`parent` = pa.`name`
 		LEFT JOIN `tabAppointment Time Logs` tl
 			ON tl.`parent` = pa.`name`
 		LEFT JOIN LatestVitalSigns lvs
@@ -248,6 +286,4 @@ def get_appointments(*args):
     		pa.`appointment_time` ASC
 	""", as_dict=True)
 	frappe.publish_realtime("patient_appointments", appointments)
-	for appointment in appointments:
-		pass
 	return appointments

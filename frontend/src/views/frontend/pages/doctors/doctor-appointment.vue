@@ -70,7 +70,7 @@
           <div class="tab-content">
             <v-window v-model="tab" disabled>
               <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
-                <appointmenttab 
+                <AppointmentTab 
                   :searchValue="searchValue"
                   :selectedDate="selectedDate"
                   :selectedDepartments="selectedDepartments" 
@@ -115,7 +115,7 @@
         rounded="lg"
         width="auto"
         prepend-icon="mdi mdi-door-open"
-        title="Update Room"
+        title="Add Note"
       >
         <v-card-text>
           <a-form-item label="Provider">
@@ -267,33 +267,25 @@ import moment from "moment";
 import dayjs from 'dayjs';
 import Clock from '@/components/clock/Clock.vue';
 
-import {VBadge} from 'vuetify/components/VBadge';
-import {VTab, VTabs} from 'vuetify/components/VTabs';
-import {VWindow, VWindowItem} from 'vuetify/components/VWindow';
-import {VIcon} from 'vuetify/components/VIcon';
-import {VToolbar, VToolbarItems} from 'vuetify/components/VToolbar';
-import {VBtn} from 'vuetify/components/VBtn';
-import { VDialog } from 'vuetify/components/VDialog';
-import { VCard, VCardTitle, VCardText, VCardActions } from 'vuetify/components/VCard';
-import { VAlert } from 'vuetify/components/VAlert';
-import { VOverlay } from 'vuetify/components/VOverlay';
-import { VProgressCircular } from 'vuetify/components/VProgressCircular';
+import { VIcon } from 'vuetify/components/VIcon';
+import { VToolbar, VToolbarItems } from 'vuetify/components/VToolbar';
+
+import AppointmentTab from './doctor-appointment-tab.vue'
 
 export default {
   inject: ['$socket', '$call'],
   components: {
-    Clock, VBadge, VTabs, VTab, VWindow, VWindowItem, VIcon, VToolbar, VToolbarItems, VBtn,
-    VDialog, VCard, VCardTitle, VCardText, VCardActions, VAlert, VOverlay, VProgressCircular
+    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems,
   },
   data() {
     return {
-      tab: null,
+      tab: 'Scheduled',
       appointments: [],
       groupedAppointments: {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],},
       selectedDate: ref(dayjs()),
       searchValue: '',
       selectedDepartments: undefined,
-      appointmentsLoading: true,
+      appointmentsLoading: false,
       appointmentOpen: false,
       appointmentNoteOpen: false,
       vitalSignsOpen: false,

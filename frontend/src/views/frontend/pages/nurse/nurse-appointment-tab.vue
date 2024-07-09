@@ -362,11 +362,6 @@ export default {
 			selectedRow: null,
 			contextItems: [
 				{
-					label: 'New Appointment',
-					icon: 'mdi mdi-account-multiple-plus-outline',
-					command: () => this.$emit('appointment-dialog', 'New Appointment', false, this.selectedRow)
-				},
-				{
 					label: 'Status',
 					icon: 'mdi mdi-clipboard-edit-outline',
 					items: [
@@ -385,11 +380,6 @@ export default {
 				},
 				{separator: true},
 				{
-					label: 'Reschedule Appointment',
-					icon: 'mdi mdi-clock-outline',
-					command: () => this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)
-				},
-				{
 					label: 'Add CPR Reading',
 					icon: 'mdi mdi-card-account-details-outline',
 					disabled: true
@@ -403,11 +393,6 @@ export default {
 					label: 'Update Room',
 					icon: 'mdi mdi-door-open',
 					command: () => this.$emit('service-unit-dialog', this.selectedRow)
-				},
-				{
-					label: 'Update Payment Type',
-					icon: 'pi pi-wallet',
-					command: () => this.$emit('payment-type-dialog', this.selectedRow)
 				},
 				{
 					label: 'Patient Encounter',
@@ -427,7 +412,7 @@ export default {
 					icon: 'mdi mdi-transit-transfer',
 					command: () => this.$emit('transfer-practitioner-dialog', this.selectedRow)
 				},
-      ],
+            ],
 			colorCache: {},
 			currentTime: dayjs(),
 		};

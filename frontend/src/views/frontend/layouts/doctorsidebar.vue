@@ -14,7 +14,7 @@
                 class="h-100 w-100"
                 :src="$resources.user.image"
               />
-              <span v-if="!$resources.user.image" class="text-h5">{{ getInitials($resources.user.name) }}</span>
+              <span v-if="!$resources.user.image" class="text-h5">{{ $resources.user.name ? $resources.user.name[0] : '' }}</span>
             </v-avatar>
           </template>
         </v-list-item>
@@ -23,9 +23,10 @@
       <v-divider></v-divider>
 
       <v-list nav>
-        <v-list-item prepend-icon="fa fa-display" title="Dashboard" value="myfiles" nav to="/doctor-dashboard"></v-list-item>
-        <v-list-item prepend-icon="fa fa-calendar-check" title="Appointments" value="shared" to="/appointments"></v-list-item>
-        <!-- <v-list-item prepend-icon="fa fa-user-injured" title="Patient Encounter" value="starred" :to="{ name: 'patient-encounter' }"></v-list-item> -->
+        <v-list-item prepend-icon="fa fa-display" title="Dashboard" value="doctorDashboard" nav to="/doctor-dashboard"></v-list-item>
+        <v-list-item prepend-icon="fa fa-display" title="Dashboard" value="nurseDashboard" nav to="/nurse-dashboard"></v-list-item>
+        <v-list-item prepend-icon="fa fa-calendar-check" title="Appointments" value="appointments" to="/appointments"></v-list-item>
+        <v-list-item prepend-icon="fa fa-user-injured" title="Patient Encounter" value="patientEncounter" to="/patient-encounter-list"></v-list-item>
       </v-list>
     </v-navigation-drawer>
 </template>
@@ -57,8 +58,14 @@
         currenColor: '',
       };
     },
-    mounted() {
-      this.currenColor = this.randomColors()
+    watch: {
+      '$resources.user': {
+        handler(newValue) {
+          if(this.$resources.user.name)
+            this.currenColor = this.getColorFromName(this.$resources.user.name)
+        },
+        immediate: true,
+      },
     },
     methods:{
       getInitials(name) {
@@ -72,8 +79,17 @@
           return initials;
         }
       },
-      randomColors() {
-        return colors[Math.floor(Math.random() * colors.length)];
+      getColorFromName(name) {
+        const hash = this.hashStringToNumber(name);
+        const index = hash % colors.length;
+        return colors[index];
+      },
+      hashStringToNumber(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return Math.abs(hash);
       },
     }
   };

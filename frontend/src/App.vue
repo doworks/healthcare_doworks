@@ -6,14 +6,10 @@
 	<div id="app">
 		<v-layout style="min-height: 100vh" v-if="$auth.isLoggedIn">
 			<doctorsidebar/>
-			
 			<v-main class="pt-0 pt-sm-2 bg-gradient ps-20" id="body-main">
 				<a-layout-content >
 					<router-view />
 				</a-layout-content>
-				<!-- <a-layout-footer style="text-align: center">
-					<indexfooter />
-				</a-layout-footer> -->
 			</v-main>
 		</v-layout>
 	</div>

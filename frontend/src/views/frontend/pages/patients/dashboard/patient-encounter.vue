@@ -51,7 +51,7 @@
                   </div>
                   <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
                   <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
-                  <h4 class="mt-2 mb-0">{{ diagnosticForm.encounter_start_time.format('h:mm A') }}</h4>
+                  <h4 class="mt-2 mb-0">{{ form.custom_encounter_start_time.format('h:mm A') }}</h4>
                 </div>
             </div>
           </template>
@@ -186,7 +186,7 @@
                     </div>
                     <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
                     <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
-                    <h4 class="mt-2 mb-0">{{ diagnosticForm.encounter_start_time.format('h:mm A') }}</h4>
+                    <h4 class="mt-2 mb-0">{{ form.custom_encounter_start_time.format('h:mm A') }}</h4>
                   </div>
                 </div>
               </template>
@@ -200,6 +200,7 @@
             <template #title>Visit Logs<a class="fs-6 float-end" :class="{'d-none': records.encounters.length <= 4}">See All</a></template>
             <template #content>
               <DataTable :value="records.encounters" selectionMode="single" :metaKeySelection="true" dataKey="id" @row-click="visitLogSelect">
+                <template #empty><v-empty-state title="This Is The First Visit"></v-empty-state></template>
                 <Column field="encounter_date" header="Date"></Column>
                 <Column field="practitioner_name" header="Practitioner"></Column>
                 <Column field="custom_appointment_category" header="Type"></Column>
@@ -216,6 +217,7 @@
             </template>
             <template #content>
               <DataTable :value="records.services">
+                <template #empty><v-empty-state title="No Service Requests"></v-empty-state></template>
                 <Column field="template_dn" header="Service Name"></Column>
                 <Column field="order_date" header="Ordered On"></Column>
                 <Column field="status" header="Status"></Column>
@@ -231,9 +233,14 @@
               <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain">Add</v-btn>
             </template>
             <template #content>
+              <div :class="{'d-none': records.attachments.length > 0}">
+                <v-empty-state
+                  title="No Attachments"
+                ></v-empty-state>
+              </div>
               <div
               class="d-flex align-items-center pb-4"
-              :class="{'border-bottom': index < records.attachments.length -1, 'pt-4': index > 0}"
+              :class="{'border-bottom': index < records.attachments.length -1, 'pt-4': index > 0, 'd-none': records.attachments.length == 0}"
               v-for="(doc, index) in records.attachments"
               :key="index"
               >
@@ -288,7 +295,6 @@
                 </div>
               </template>
             </v-card>
-
             <v-card class="p-0 gap-card" id="infected-diseases" variant="tonal" color="light-green">
               <template v-slot:title>
                 Infected Diseases
@@ -312,7 +318,6 @@
                 </div>
               </template>
             </v-card>
-
             <v-card class="p-0 gap-card" id="surgical-history" variant="tonal" color="purple">
               <template v-slot:title>
                 Surgical History<a class="fs-6 float-end" :class="{'d-none': records.patient.custom_surgical_history_table.length <= 4}">See All</a>
@@ -342,14 +347,19 @@
                 </div>
               </template>
             </v-card>
-
             <v-card class="p-0 gap-card" id="medications" variant="tonal" color="pink">
               <template v-slot:title>
                 Medications ({{ records.patient.custom_medications.length }})
               </template>
               <template v-slot:text>
+                <div :class="{'d-none': records.patient.custom_medications.length > 0}">
+                  <v-empty-state
+                    title="No Medications"
+                  ></v-empty-state>
+                </div>
                 <div
                 class="d-flex align-items-center flex-column py-3"
+                :class="{'d-none': records.patient.custom_medications.length == 0}"
                 v-for="(medication, index) in records.patient.custom_medications"
                 :key="index"
                 >
@@ -374,7 +384,6 @@
                 </div>
               </template>
             </v-card>
-
             <v-card class="p-0 gap-card" id="habits" variant="tonal" color="teal">
               <template v-slot:title>
                 Habits / Social
@@ -398,7 +407,6 @@
                 </div>
               </template>
             </v-card>
-
             <v-card class="p-0 gap-card" id="family-history" variant="tonal" color="brown">
               <template v-slot:title>
                 Family History
@@ -421,7 +429,6 @@
                 </div>
               </template>
             </v-card>
-
             <v-card class="p-0 gap-card" id="risk-factors" variant="tonal" color="deep-orange">
               <template v-slot:title>
                 Risk Factors
@@ -450,7 +457,7 @@
       <div class="ps-0 mt-3 col-12 mb-25">
         <Card class="mb-4">
           <template #content>
-            <a-form layout="vertical" :model="diagnosticForm">
+            <a-form layout="vertical" :model="form">
               <Stepper orientation="vertical">
                 <StepperPanel header="Complaint">
                   <template #content="{ nextCallback }">
@@ -460,7 +467,7 @@
                           <v-col>
                             <a-form-item label="Symptoms">
                               <a-select
-                                v-model:value="diagnosticForm.symptoms"
+                                v-model:value="form.symptoms"
                                 :options="$resources.complaints"
                                 :fieldNames="{label: 'complaints', value: 'complaints'}"
                                 mode="multiple"
@@ -468,10 +475,10 @@
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Symptoms Duration">
-                              <a-input v-model:value="diagnosticForm.period" />
+                              <a-input v-model:value="form.period" />
                             </a-form-item>
                             <a-form-item label="Note">
-                              <a-textarea v-model:value="diagnosticForm.note" :rows="4" />
+                              <a-textarea v-model:value="form.note" :rows="4" />
                             </a-form-item>
                           </v-col>
                         </v-row>
@@ -489,10 +496,10 @@
                         <v-row>
                           <v-col>
                             <a-form-item label="Physical Examination">
-                              <a-textarea v-model:value="diagnosticForm.physicalExamination" :rows="4" />
+                              <a-textarea v-model:value="form.physicalExamination" :rows="4" />
                             </a-form-item>
                             <a-form-item label="Other Examination">
-                              <a-textarea v-model:value="diagnosticForm.otherExamination" :rows="4" />
+                              <a-textarea v-model:value="form.otherExamination" :rows="4" />
                             </a-form-item>
                             <h3 class="mt-3">Diagnostic Procedure</h3>
                             <div class="d-flex gap-2">
@@ -517,7 +524,7 @@
                           <v-col>
                             <a-form-item label="Diagnosis">
                               <a-select
-                                v-model:value="diagnosticForm.diagnosis"
+                                v-model:value="form.diagnosis"
                                 :options="$resources.diagnosis"
                                 :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
                                 mode="multiple"
@@ -526,7 +533,7 @@
                             </a-form-item>
                             <a-form-item label="Differential Diagnosis">
                               <a-select
-                                v-model:value="diagnosticForm.differentialDiagnosis"
+                                v-model:value="form.differentialDiagnosis"
                                 :options="$resources.diagnosis"
                                 :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
                                 mode="multiple"
@@ -534,7 +541,7 @@
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Diagnosis Note">
-                              <a-textarea v-model:value="diagnosticForm.diagnosisNote" :rows="4" />
+                              <a-textarea v-model:value="form.diagnosisNote" :rows="4" />
                             </a-form-item>
                           </v-col>
                         </v-row>
@@ -587,11 +594,14 @@
                     </v-sheet>
                     <div class="d-flex py-4">
                       <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
-                      <v-btn variant="flat" color="purple-darken-4" @click="submitEncounter">Submit</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
               </Stepper>
+              <div class="d-flex py-4 gap-2">
+                <v-btn variant="flat" color="blue-darken-2" @click="submitEncounter()">Save</v-btn>
+                <v-btn variant="flat" color="purple-darken-4" @click="submitEncounter(true)">Submit</v-btn>
+              </div>
             </a-form>
           </template>
         </Card>
@@ -628,28 +638,17 @@
 import dayjs from 'dayjs';
 import { VEmptyState } from 'vuetify/labs/VEmptyState';
 import { VSlideGroup, VSlideGroupItem } from 'vuetify/components/VSlideGroup';
-import { VProgressCircular } from 'vuetify/components/VProgressCircular';
 import { VProgressLinear } from 'vuetify/components/VProgressLinear';
-import { VBtn } from 'vuetify/components/VBtn';
 import { VChip } from 'vuetify/components/VChip';
 import { VContainer, VRow, VCol } from 'vuetify/components/VGrid';
 import { VSelect } from 'vuetify/components/VSelect';
 import { VDivider } from 'vuetify/components/VDivider';
 import { VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem } from 'vuetify/components/VStepper';
 import { VSheet } from 'vuetify/components/VSheet';
-import { VCard } from 'vuetify/components/VCard';
-import { VAlert } from 'vuetify/components/VAlert';
 import { VHover } from 'vuetify/components/VHover'
 
-import Card from 'primevue/card';
-import Divider from 'primevue/divider';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Stepper from 'primevue/stepper';
-import StepperPanel from 'primevue/stepperpanel';
-import Image from 'primevue/image';
-
 import { ref, reactive } from 'vue';
+import { Form } from 'ant-design-vue';
 
 import encounterRecords from '@/assets/json/encounterrecords.json'
 import soundImage from '@/assets/img/sound.png';
@@ -659,14 +658,15 @@ import celsiusImage from '@/assets/img/celsius.png';
 export default {
   inject: ['$call'],
   components: {
-    Card, Divider, VSlideGroup, VSlideGroupItem, DataTable, Column, VBtn, VProgressCircular, VProgressLinear, VChip, VEmptyState, VContainer,
-    VRow, VCol, VSelect, VDivider, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet, VCard, 
-    Stepper, StepperPanel, VAlert, Image, VHover
+    VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VContainer,
+    VRow, VCol, VSelect, VDivider, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet,
+    Image, VHover
   }, 
   computed: {
-    diagnosticForm() {
+    form() {
       return reactive({
-        encounter_start_time: dayjs(),
+        doctype: 'Patient Encounter',
+        custom_encounter_start_time: dayjs(),
         symptoms: [],
         period: 0,
         note: '',
@@ -675,24 +675,23 @@ export default {
         diagnosis: [],
         differentialDiagnosis: [],
         diagnosisNote: '',
+
+        appointment: this.records.appointment.name,
+        appointment_type: this.records.appointment.appointment_type,
+        custom_appointment_category: this.records.appointment.appointment_type,
+        patient: this.records.patient.name,
+        patient_name: this.records.patient.patient_name,
+        patient_sex: this.records.patient.patient_sex,
+        patient_age: this.records.patient.patient_age,
+        practitioner: this.records.patient.practitioner,
+        practitioner_name: this.records.patient.practitioner_name,
+        medical_department: this.records.appointment.department,
 			});
-    },
-    diagnosticFormRules() {
-      return reactive({
-        encounter_start_time: [{ required: true, message: 'Please enter start time!' }],
-        appointment_type: [{ required: true, message: 'Please choose a type!' }],
-        patient: [{ required: true, message: 'Please choose a patient!' }],
-        practitioner: [{ required: this.appointmentForm.appointment_for === 'Practitioner', message: 'Please choose a practitioner!' }],
-        department: [{ required: this.appointmentForm.appointment_for === 'Department', message: 'Please choose a department!' }],
-        service_unit: [{ required: this.appointmentForm.appointment_for === 'Service Unit', message: 'Please choose a service unit!' }],
-        appointment_date: [{ required: true, message: 'Please choose a date!' }],
-      });
     },
   },
   data() {
     return {
       currentFormStep: 0,
-      records: ref(encounterRecords),
       currentVS: {
         name: '',
         pulse: "-",
@@ -702,6 +701,7 @@ export default {
         temperature: "-",
         signs_date: '-',
       },
+      records: ref(encounterRecords),
       isAffixed:false,
       lungsImage:lungsImage,
       celsiusImage:celsiusImage,
@@ -774,17 +774,18 @@ export default {
       //   this.alertVisible = false;
       // }, duration);
     },
-    submitEncounter() {
+    submitEncounter(submit = false) {
       const { validate } = Form.useForm(this.form, this.rules);
       validate().then(() => {
         this.lodingOverlay = true;
         let formClone = {...this.form}
-        formClone.signs_date = dayjs(this.form.signs_date).format('YYYY-MM-DD')
-        formClone.signs_time = dayjs(this.form.signs_time).format('HH:mm')
-        this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone, submit: true})
+        formClone.encounter_date = dayjs().format('YYYY-MM-DD')
+        formClone.encounter_time = dayjs().format('HH:mm')
+        formClone.custom_encounter_start_time = this.form.custom_encounter_start_time.format('HH:mm')
+        this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone, submit: submit})
         .then(response => {
           this.lodingOverlay = false;
-          this.closeDialog()
+          
         }).catch(error => {
           console.error(error);
           let message = error.message.split('\n');

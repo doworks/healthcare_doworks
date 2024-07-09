@@ -202,19 +202,14 @@
 </template>
 
 <script >
-import { VBtn } from 'vuetify/components/VBtn'
-import { VDialog } from 'vuetify/components/VDialog';
-import { VCard, VCardTitle, VCardText, VCardActions } from 'vuetify/components/VCard';
 import { VContainer, VCol, VRow } from 'vuetify/components/VGrid';
-import { VDivider } from 'vuetify/components/VDivider';
 import { VInfiniteScroll } from 'vuetify/components/VInfiniteScroll';
 import { VItemGroup, VItem } from 'vuetify/components/VItemGroup';
 
 export default {
 	inject: ['$call'],
 	components: {
-		VBtn, VDialog, VCard, VCardTitle, VCardText, VCardActions, VDivider, VContainer, VCol, VRow, 
-        VInfiniteScroll, VItemGroup, VItem,
+		VContainer, VCol, VRow, VInfiniteScroll, VItemGroup, VItem,
 	},
 	props: {
 		isOpen: {

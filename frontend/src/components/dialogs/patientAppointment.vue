@@ -219,21 +219,14 @@ import dayjs from 'dayjs';
 import { Form } from 'ant-design-vue';
 import { reactive } from 'vue';
 
-import { VBtn } from 'vuetify/components/VBtn'
-import { VDialog } from 'vuetify/components/VDialog';
-import { VCard, VCardTitle, VCardText, VCardActions } from 'vuetify/components/VCard';
 import { VContainer, VCol, VRow } from 'vuetify/components/VGrid';
 import { VDivider } from 'vuetify/components/VDivider';
-import { VAlert } from 'vuetify/components/VAlert';
 import { VItemGroup, VItem } from 'vuetify/components/VItemGroup';
-import { VOverlay } from 'vuetify/components/VOverlay';
-import { VProgressCircular } from 'vuetify/components/VProgressCircular';
 
 export default {
 	inject: ['$call'],
 	components: {
-		VBtn, VDialog, VCard, VCardTitle, VCardText, VCardActions, VDivider, VContainer, VCol, VRow, 
-    VAlert, VItemGroup, VItem, VOverlay, VProgressCircular, 
+		VDivider, VContainer, VCol, VRow, VItemGroup, VItem,
 	},
 	props: {
 		isOpen: {

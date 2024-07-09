@@ -112,7 +112,7 @@
               :metaKeySelection="true"
               @row-click="onPatientDetails"
               >
-                <template #empty> No Appointments found. </template>
+                <template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
                 <template #loading> Loading Appointments data. Please wait.</template>
                 <Column header="Patient" field="patient">
                   <template #body="{ data }">
@@ -252,22 +252,10 @@ dayjs.extend(relativeTime);
 
 import patientDetailsCard from './patient-details-card.vue'
 
-import {VProgressCircular} from 'vuetify/components/VProgressCircular';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import ContextMenu from 'primevue/contextmenu';
-import OverlayPanel from 'primevue/overlaypanel';
-
-import { VBtn } from 'vuetify/components/VBtn'
 import { VAvatar } from 'vuetify/components/VAvatar';
 import { VChip } from 'vuetify/components/VChip';
 import { VListItem } from 'vuetify/components/VList';
-import { VBadge } from 'vuetify/components/VBadge';
-
-import { watchEffect } from "vue";
-import Card from 'primevue/card';
-import Tag from 'primevue/tag';
-import Button from 'primevue/button';
+import { VEmptyState } from 'vuetify/labs/VEmptyState';
 
 import bellImage from '@/assets/img/animations/alarm.gif';
 import maleImage from '@/assets/img/male.png';
@@ -276,8 +264,7 @@ import femaleImage from '@/assets/img/female.png';
 export default {
   inject: ['$call', '$socket'],
   components: {
-    VProgressCircular, Card, Tag, patientDetailsCard, Button, DataTable, Column, ContextMenu, VBtn, VAvatar, VChip, 
-    VListItem, VBadge, OverlayPanel,
+    patientDetailsCard, VAvatar, VChip, VListItem, VEmptyState,
   },
   data() {
     return {
@@ -365,7 +352,7 @@ export default {
 			return [...(data || [])].filter(value => {
         const practitioner = value.practitioner === this.$resources.user.practitioner;
         const date = dayjs().isSame(dayjs(value.appointment_date), 'day')
-        return practitioner && date
+        return date
       }).map((d) => {
         try {
           if(typeof d.patient_details === 'string'){
