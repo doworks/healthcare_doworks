@@ -3,7 +3,7 @@
         <v-card rounded="lg">
             <a-form layout="vertical" :model="form" :rules="rules">
                 <v-card-title class="d-flex justify-space-between align-center">
-                    <div class="text-h5 text-medium-emphasis ps-2">New Vital Signs</div>
+                    <div class="text-h5 text-medium-emphasis ps-2">{{!form.name ? 'New ' : ''}}Vital Signs</div>
                     <v-btn icon="mdi mdi-close" variant="text" @click="closeDialog"></v-btn>
                 </v-card-title>
                 <v-divider class="m-0"></v-divider>
@@ -174,13 +174,13 @@ export default {
             default: false,
         },
         appointment: {
-            defalut: {
+            default: {
                 patient: '',
                 name: '',
             }
         },
         vitalSigns: {
-            defalut: {
+            default: {
                 doctype: 'Vital Signs',
                 name: '',
                 patient: '',
@@ -329,7 +329,7 @@ export default {
                     message = message.find(line => line.includes('frappe.exceptions'));
                     if(message){
                         const firstSpaceIndex = message.indexOf(' ');
-                        this.$emit('show-alert', message.substring(firstSpaceIndex + 1))
+                        this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
                     }
                 });
             })

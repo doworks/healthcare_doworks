@@ -146,7 +146,7 @@ export default {
             default: false,
         },
         appointment: {
-            defalut: {
+            default: {
                 patient: '',
                 practitioner: '',
             }
@@ -220,7 +220,7 @@ export default {
                     message = message.find(line => line.includes('frappe.exceptions'));
                     if(message){
                         const firstSpaceIndex = message.indexOf(' ');
-                        this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+                        this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
                     }
                 });
             })

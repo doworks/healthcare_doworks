@@ -17,13 +17,15 @@
                     <div class="text-h5 text-medium-emphasis ps-2">Vital Signs</div>
                     <v-btn icon="mdi mdi-close" variant="text" @click="closeDialog"></v-btn>
                 </v-card-title>
-                
+                <Menubar :model="actions" />
                 <DataTable 
                 v-model:selection="selectedSigns" 
+                :metaKeySelection="true"
                 selectionMode="single" 
                 :value="vitalSigns" 
                 dataKey="name" 
-                tableStyle="min-width: 50rem" 
+                tableStyle="min-width: 50rem"
+                :rowClass="rowClass"
                 @row-click="openVitalSigns"
                 >
                     <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
@@ -56,7 +58,7 @@
                 ></v-progress-circular>
             </v-overlay>
         </v-dialog>
-        <vitalSignsDialog :isOpen="vsDialogOpen" @update:isOpen="vsDialogOpen = $event" @show-alert="showAlert" :vitalSigns="selectedSigns"/>
+        <vitalSignsDialog :isOpen="vsDialogOpen" @update:isOpen="vsDialogOpen = $event" @show-alert="showAlert" :appointment="appointment" :vitalSigns="selectedSigns"/>
     </div>
 </template>
 
@@ -67,11 +69,12 @@ import { VContainer, VCol, VRow } from 'vuetify/components/VGrid';
 import { VDivider } from 'vuetify/components/VDivider';
 import { VInfiniteScroll } from 'vuetify/components/VInfiniteScroll';
 import { VItemGroup, VItem } from 'vuetify/components/VItemGroup';
+import { VToolbar, VToolbarItems } from 'vuetify/components/VToolbar';
 
 export default {
 	inject: ['$call'],
 	components: {
-		VDivider, VContainer, VCol, VRow, VInfiniteScroll, VItemGroup, VItem,
+		VDivider, VContainer, VCol, VRow, VInfiniteScroll, VItemGroup, VItem, VToolbar, VToolbarItems,
 	},
 	props: {
 		isOpen: {
@@ -79,15 +82,34 @@ export default {
             required: true,
             default: false,
         },
+        appointment: {
+            default: {
+                patient: '',
+                name: '',
+            }
+        },
 	},
 	data() {
 		return {
             lodingOverlay: false,
-            selectedSigns: null,
-            vitalSigns: null,
+            selectedSigns: {},
+            vitalSigns: [],
             vsDialogOpen: false,
             message: '',
             alertVisible: false,
+            actions: [
+                {
+                    label: 'Add Vital Signs',
+                    icon: 'pi pi-plus',
+                    command: () => {
+                        this.vsDialogOpen = true
+                    }
+                },
+                // {
+                //     label: 'Features',
+                //     icon: 'pi pi-star'
+                // },
+            ],
 		};
 	},
     computed: {
@@ -116,7 +138,7 @@ export default {
         },
         fetchVitalSigns(){
             this.lodingOverlay = true;
-            this.$call('healthcare_doworks.api.methods.vital_signs_list')
+            this.$call('healthcare_doworks.api.methods.vital_signs_list', {patient: this.appointment.patient})
             .then(response => {
                 this.vitalSigns = response.map(signs => {
                     signs.signs_date = dayjs(signs.signs_date + ' ' + signs.signs_time);
@@ -130,7 +152,7 @@ export default {
                 message = message.find(line => line.includes('frappe.exceptions'));
                 if(message){
                     const firstSpaceIndex = message.indexOf(' ');
-                    this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+                    this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
                 }
                 this.lodingOverlay = false;
             });
@@ -139,6 +161,9 @@ export default {
             if(isNew)
                 this.selectedSigns = null
             this.vsDialogOpen = true
+        },
+        rowClass(data) {
+            return [{ 'bg-primary': data.appointment === this.appointment.name }];
         },
 	},
 };

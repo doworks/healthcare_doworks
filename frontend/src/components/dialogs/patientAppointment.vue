@@ -14,7 +14,7 @@
                 <a-form-item label="Appointment Category">
                   <a-select
                     v-model:value="appointmentForm.custom_appointment_category"
-                    :options="[{label: 'Primary', value: 'Primary'}, {label: 'Follow-up', value: 'Follow-up'}, {label: 'Session', value: 'Session'}]"
+                    :options="[{label: 'First Time', value: 'First Time'}, {label: 'Follow-up', value: 'Follow-up'}, {label: 'Session', value: 'Session'}]"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment Type" name="appointment_type">
@@ -235,13 +235,13 @@ export default {
       default: false,
     },
     form: {
-      defalut: {
+      default: {
         doctype: 'Patient Appointment',
 				name: 'new-patient-appointment',
 				appointment_type: 'Practitioner',
 				appointment_for: 'Practitioner',
 				duration: '',
-				custom_appointment_category: 'Primary',
+				custom_appointment_category: 'First Time',
         custom_payment_type: '',
 				practitioner: '',
         practitioner_name: '',
@@ -331,7 +331,7 @@ export default {
             message = message.find(line => line.includes('frappe.exceptions'));
             if(message){
               const firstSpaceIndex = message.indexOf(' ');
-              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+              this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
             }
           });
         }
@@ -346,7 +346,7 @@ export default {
             message = message.find(line => line.includes('frappe.exceptions'));
             if(message){
               const firstSpaceIndex = message.indexOf(' ');
-              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+              this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
             }
           });
         }
@@ -374,7 +374,7 @@ export default {
         message = message.find(line => line.includes('frappe.exceptions'));
         if(message){
           const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+          this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
         }
       });
     },

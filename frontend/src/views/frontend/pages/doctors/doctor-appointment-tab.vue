@@ -31,10 +31,10 @@
 							<div class="d-flex align-items-center gap-2">
 								<v-avatar>
 									<img
-										class="h-100 w-100"
-										:src="data.patient_details.image ? 
-											data.patient_details.image :
-											data.patient_details.gender === 'Male' ? maleImage : femaleImage"
+									class="h-100 w-100"
+									:src="data.patient_details.image ? 
+										data.patient_details.image :
+										data.patient_details.gender === 'Male' ? maleImage : femaleImage"
 									/>
 									<!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
 								</v-avatar>
@@ -48,11 +48,11 @@
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
 						<a-input 
-							v-model:value="filterModel.value"
-							@change="filterCallback()"
-							placeholder="Search by Patient" 
-							class="p-column-filter"
-							style="width: 100%; align-items: center;"
+						v-model:value="filterModel.value"
+						@change="filterCallback()"
+						placeholder="Search by Patient" 
+						class="p-column-filter"
+						style="width: 100%; align-items: center;"
 						/>
 					</template>
 				</Column>
@@ -68,11 +68,11 @@
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
 						<a-input 
-							v-model:value="filterModel.value"
-							@change="filterCallback()"
-							placeholder="Search by Time" 
-							class="p-column-filter"
-							style="width: 100%; align-items: center;"
+						v-model:value="filterModel.value"
+						@change="filterCallback()"
+						placeholder="Search by Time" 
+						class="p-column-filter"
+						style="width: 100%; align-items: center;"
 						/>
 					</template>
 				</Column>
@@ -142,9 +142,9 @@
 						<div class="d-flex align-items-center gap-2">
 							<v-avatar :color="!data.practitioner_image ? colorCache[data.practitioner_name] || '': ''">
 								<img
-									v-if="data.practitioner_image"
-									class="h-100 w-100"
-									:src="data.practitioner_image"
+								v-if="data.practitioner_image"
+								class="h-100 w-100"
+								:src="data.practitioner_image"
 								/>
 								<span v-if="!data.practitioner_image" class="text-h6">{{ data.practitioner_name[0] }}</span>
 							</v-avatar>
@@ -242,7 +242,7 @@
 							@click="toggleOP"
 						>
 							<v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
-								<img :src="bellImage"/>
+								<img :src="bellImage" width="40px" class="me-1"/>
 							</v-badge>
 						</v-btn>
 						<i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
@@ -290,6 +290,8 @@ import bellImage from '@/assets/img/animations/alarm.gif';
 import maleImage from '@/assets/img/male.png';
 import femaleImage from '@/assets/img/female.png';
 
+let formatedDates =  [dayjs().format('YYYY-MM-DD')]
+
 export default {
 	inject: ['$call'],
 	components: {
@@ -307,8 +309,8 @@ export default {
 			type: String,
 			default: ''
 		},
-		selectedDate: {
-			default: dayjs().format('YYYY-MM-DD')
+		selectedDates: {
+			default: [dayjs()]
 		},
 		selectedDepartments: {
 			default: []
@@ -331,7 +333,7 @@ export default {
 					timeSinceArrived: `${hours}h ${minutes}m ${seconds}s`
 				};
 			});
-		}
+		},
 	},
 	mounted() {
 		setInterval(() => {
@@ -352,7 +354,7 @@ export default {
 				practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN },
 				appointment_time: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				appointment_time_moment: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
-				appointment_date: { value: dayjs().format('YYYY-MM-DD'), matchMode: FilterMatchMode.EQUALS },
+				appointment_date: { value: formatedDates, matchMode: FilterMatchMode.IN },
 				service_unit: { value: null, matchMode: FilterMatchMode.EQUALS },
 				status: { value: null, matchMode: FilterMatchMode.EQUALS },
 				'patient_details.mobile': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
@@ -427,9 +429,10 @@ export default {
 					icon: 'mdi mdi-transit-transfer',
 					command: () => this.$emit('transfer-practitioner-dialog', this.selectedRow)
 				},
-      ],
+      		],
 			colorCache: {},
 			currentTime: dayjs(),
+			
 		};
 	},
 	watch: {
@@ -443,14 +446,26 @@ export default {
 			},
 			immediate: true,
 		},
-		searchValue() {
-			this.filters['global'].value = this.searchValue
+		searchValue: {
+			handler(newValue) {
+				if(newValue)
+					this.filters['global'].value = this.searchValue
+			}
 		},
-		selectedDepartments() {
-			this.filters['department'].value = this.selectedDepartments
+		selectedDepartments: {
+			handler(newValue) {
+				if(newValue)
+					this.filters['department'].value = this.selectedDepartments
+			}
 		},
-		selectedDate() {
-			this.filters['appointment_date'].value = dayjs(this.selectedDate).format('YYYY-MM-DD')
+		selectedDates: {
+			handler(newValue) {
+				if(newValue){
+					const formated = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
+					this.filters['appointment_date'].value = formated
+					formatedDates = formated
+				}
+			}
 		},
 	},
 	methods: {

@@ -1,8 +1,9 @@
 import path from 'path';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import react from '@vitejs/plugin-react'
+
 import proxyOptions from './proxyOptions';
-import copy from 'rollup-plugin-copy';
 
 import Components from 'unplugin-vue-components/vite';
 import {PrimeVueResolver} from '@primevue/auto-import-resolver';
@@ -10,27 +11,27 @@ import {PrimeVueResolver} from '@primevue/auto-import-resolver';
 // https://vitejs.dev/config/
 export default defineConfig({
 	plugins: [
-		vue(),
-		copy({
-			targets: [
-				{ src: 'src/assets/css', dest: 'dist/css' },
-				{ src: 'src/assets/admin/css', dest: 'dist/admin/css' },
-				{ src: 'src/assets/pharmacy/css', dest: 'dist/pharmacy/css' },
-			],
-		}),
+		vue(), 
+		react(),
 		Components({
 			resolvers: [
 				PrimeVueResolver()
 			]
-		})
+		}),
 	],
 	server: {
 		port: 8080,
 		proxy: proxyOptions
 	},
+	define: {
+		"process.env.IS_PREACT": JSON.stringify("true"),
+	},
 	resolve: {
 		alias: {
-			'@': path.resolve(__dirname, 'src')
+			'@': path.resolve(__dirname, 'src'),
+			'vue': 'vue/dist/vue.esm-bundler.js',
+			'react': 'react',
+      		'react-dom': 'react-dom',
 		}
 	},
 	build: {

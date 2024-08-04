@@ -24,7 +24,10 @@
 
       <v-list nav>
         <v-list-item prepend-icon="fa fa-display" title="Dashboard" value="doctorDashboard" nav to="/doctor-dashboard"></v-list-item>
-        <v-list-item prepend-icon="fa fa-display" title="Dashboard" value="nurseDashboard" nav to="/nurse-dashboard"></v-list-item>
+        <v-list-item prepend-icon="fa fa-display" title="Dashboard" value="nurseDashboard" nav to="/nurse-dashboard" 
+        v-if="isNurse"
+        >
+        </v-list-item>
         <v-list-item prepend-icon="fa fa-calendar-check" title="Appointments" value="appointments" to="/appointments"></v-list-item>
         <v-list-item prepend-icon="fa fa-user-injured" title="Patient Encounter" value="patientEncounter" to="/patient-encounter-list"></v-list-item>
       </v-list>
@@ -39,7 +42,7 @@
   import { VAvatar } from 'vuetify/components/VAvatar';
 
   export default{
-    inject:['$call'],
+    inject:['$auth', '$call'],
     props:{
       drawer:{
         type: Boolean,
@@ -56,13 +59,16 @@
     data() {
       return {
         currenColor: '',
+        isNurse: false,
       };
     },
     watch: {
       '$resources.user': {
         handler(newValue) {
-          if(this.$resources.user.name)
+          if(this.$resources.user.name){
             this.currenColor = this.getColorFromName(this.$resources.user.name)
+            this.isNurse = this.$resources.user.roles.some(value => value.role == 'Nursing User')
+          }
         },
         immediate: true,
       },

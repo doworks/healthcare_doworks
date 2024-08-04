@@ -340,7 +340,6 @@ export default {
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments')
       .then(response => {
         this.appointments = this.adjustAppointments(response)
-        console.log(this.appointments)
         this.appointmentsLoading = false;
       })
       .catch(error => {
@@ -368,9 +367,7 @@ export default {
         } catch (error) {
           console.error('Error parsing JSON:', error);
         }
-
 				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
-				d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
 
         return d;
 			});

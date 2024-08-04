@@ -10,9 +10,10 @@ import Auth from "../../../doppio/libs/controllers/auth";
             				// My App //
 // import primevue/ vutify
 import PrimeVue from 'primevue/config';
+import Aura from '@primevue/themes/aura';
 import { createVuetify } from 'vuetify';
 import {
-	VDialog, VBtn, VAlert, VOverlay, VProgressCircular, VBadge, VCard, VCardTitle, VCardText, VCardActions, VWindow, VWindowItem, VTab, VTabs
+	VDivider, VDialog, VBtn, VAlert, VOverlay, VProgressCircular, VBadge, VCard, VCardTitle, VCardText, VCardActions, VWindow, VWindowItem, VTab, VTabs
 } from 'vuetify/components'
 
 // Other UI libraries
@@ -28,7 +29,7 @@ import 'bootstrap-vue/dist/bootstrap-vue.css';
 import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
-import 'primevue/resources/themes/aura-light-blue/theme.css'
+// import 'primevue/resources/themes/aura-light-blue/theme.css'
 import 'primeicons/primeicons.css' 
 
 import '@mdi/font/css/materialdesignicons.css'
@@ -52,7 +53,9 @@ import VitalSignsDialog from '@/components/dialogs/vitalSigns.vue'
 import VitalSignsListDialog from '@/components/dialogs/vitalSigns-list.vue'
 import MedicationRequestDialog from '@/components/dialogs/medicationRequest.vue'
 import LabTestDialog from '@/components/dialogs/labTest.vue'
+import AddAttachmentDialog from '@/components/dialogs/addAttachment.vue'
 import PatientEncounterDialog from '@/components/dialogs/patientEncounter.vue'
+import ProcedureDialog from '@/components/dialogs/procedure.vue'
 						  // My App End //
 
 
@@ -60,6 +63,7 @@ const app = createApp(App);
 const auth = reactive(new Auth());
 
 // My App (Again)
+
 app.component('footerindex',Footer)
 app.component('indexfooter',IndexFooter)
 app.component('patientfooter',PatientFooter)
@@ -71,14 +75,17 @@ app.component('vitalSignsListDialog',VitalSignsListDialog)
 app.component('vitalSignsDialog',VitalSignsDialog)
 app.component('medicationRequestDialog',MedicationRequestDialog)
 app.component('labTestDialog',LabTestDialog)
+app.component('addAttachmentDialog',AddAttachmentDialog)
 app.component('patientEncounterDialog',PatientEncounterDialog)
+app.component('procedureDialog',ProcedureDialog)
 // Use other UI libraries and plugins
 app.use(Antd);
 
 app.component(VueFeather.name, VueFeather);
 const vuetify = createVuetify({
 	components: {
-		VDialog, VBtn, VAlert, VOverlay, VProgressCircular, VBadge, VCard, VCardTitle, VCardText, VCardActions, VWindow, VWindowItem, VTab, VTabs
+		VDivider, VDialog, VBtn, VAlert, VOverlay, VProgressCircular, VBadge, VCard, VCardTitle, VCardText, 
+		VCardActions, VWindow, VWindowItem, VTab, VTabs
 	},
     icons: {
         defaultSet: 'fa',
@@ -101,7 +108,18 @@ const vuetify = createVuetify({
 	},
 	$reset: false
 })
-app.use(PrimeVue).use(vuetify);
+app.use(PrimeVue, {
+    // Default theme configuration
+    theme: {
+        preset: Aura,
+        options: {
+            prefix: 'p',
+            darkModeSelector: 'system',
+            cssLayer: false
+        }
+    }
+});
+app.use(vuetify);
 // End Of My App (Again)
 
 // Plugins

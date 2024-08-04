@@ -1,13 +1,17 @@
 import frappe
+from frappe import _
 import datetime
 import json
+import base64
+from io import BytesIO
+from PIL import Image
 from healthcare.healthcare.doctype.patient_appointment.patient_appointment import update_status
 
 # App Resources
 @frappe.whitelist()
 def fetch_resources():
 	user = frappe.get_doc('User', frappe.session.user)
-	user_practitioner = frappe.db.get_value('Healthcare Practitioner', {'user_id': user.name}, 'name')
+	user_practitioner = frappe.db.get_value('Healthcare Practitioner', {'user_id': user.name}, ['name', 'practitioner_name', 'image'])
 	practitioners = frappe.db.get_list('Healthcare Practitioner', fields=['practitioner_name', 'image', 'department', 'name'])
 	patients = frappe.db.get_list('Patient', fields=['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile'])
 	appointmentTypes = frappe.db.get_list('Appointment Type', fields=['appointment_type', 'allow_booking_for', 'default_duration'])
@@ -22,7 +26,14 @@ def fetch_resources():
 	prescriptionPeriods = frappe.db.get_list('Prescription Duration', fields=['name'])
 	labTestTemplates = frappe.db.get_list('Lab Test Template', fields=['name', 'department'])
 	return {
-		'user': {'name': user.full_name, 'user': user.name, 'image': user.user_image, 'practitioner': user_practitioner, 'roles': user.roles},
+		'user': {'name': user.full_name, 
+		   'user': user.name, 
+		   'image': user.user_image, 
+		   'practitioner': user_practitioner[0] if user_practitioner is not None else None, 
+		   'practitioner_name': user_practitioner[1] if user_practitioner is not None else None, 
+		   'practitioner_image': user_practitioner[2] if user_practitioner is not None else None, 
+		   'roles': user.roles
+		},
 		'practitioners': practitioners,
 		'patients': patients,
 		'appointmentTypes': appointmentTypes,
@@ -79,11 +90,39 @@ def change_status(docname, status):
 
 # Patient Encounter Page
 @frappe.whitelist()
-def patient_encounter_records(appointment):
-	if(appointment):
-		appointment = frappe.get_doc('Patient Appointment', appointment)
+def patient_encounter_records(appointment_id):
+	if(frappe.db.exists('Patient Appointment', appointment_id)):
+		appointment = frappe.get_doc('Patient Appointment', appointment_id)
 		patient = frappe.get_doc('Patient', appointment.patient)
 		practitioner = frappe.get_doc('Healthcare Practitioner', appointment.practitioner)
+		current_encounter = None
+		if frappe.db.exists('Patient Encounter', {"appointment": appointment_id}):
+			# current_encounter = frappe.get_last_doc('Patient Encounter', filters={"appointment": appointment_id})
+			appointment_encounters = frappe.db.get_list('Patient Encounter', filters={"appointment": appointment_id}, pluck='name')
+			current_encounter = frappe.get_doc('Patient Encounter', appointment_encounters[-1])
+		else:
+			new_encounter = frappe.new_doc('Patient Encounter')
+			new_encounter.appointment = appointment_id
+			new_encounter.encounter_date = frappe.utils.nowdate()
+			new_encounter.encounter_time = frappe.utils.nowtime()
+			new_encounter.custom_encounter_start_time = frappe.utils.now()
+
+			new_encounter.medical_department = appointment.department
+			new_encounter.appointment_type = appointment.appointment_type
+			new_encounter.custom_appointment_category = appointment.custom_appointment_category
+			new_encounter.patient = patient.name
+			new_encounter.patient_name = patient.patient_name
+			new_encounter.patient_sex = patient.sex
+			new_encounter.patient_age = patient.age
+			loggedin_practitioner = frappe.db.get_value('Healthcare Practitioner', {'user_id': frappe.session.user}, ['name', 'practitioner_name'])
+			if loggedin_practitioner is not None:
+				new_encounter.practitioner = loggedin_practitioner[0]
+				new_encounter.practitioner_name = loggedin_practitioner[1]
+			else:
+				new_encounter.practitioner = appointment.practitioner
+				new_encounter.practitioner_name = appointment.practitioner_name
+			new_encounter.insert()
+			current_encounter = frappe.get_doc('Patient Encounter', new_encounter.name)
 		vital_signs = frappe.db.get_list('Vital Signs',
 			filters={'patient': appointment.patient},
 			fields=[
@@ -107,7 +146,7 @@ def patient_encounter_records(appointment):
 			status = frappe.get_doc('Code Value', service.status)
 			service.practitioner = practitioner.practitioner_name
 			service.status = status.display
-		encounters = frappe.db.get_list('Patient Encounter', pluck='name')
+		encounters = frappe.db.get_list('Patient Encounter', filters={"status": ['!=', 'Cancelled']}, pluck='name')
 		encounter_docs = []
 		pdf_extensions = ['pdf']
 		word_extensions = ['doc', 'docx', 'dot', 'dotx']
@@ -130,32 +169,46 @@ def patient_encounter_records(appointment):
 						obj['type'] = 'unknown'
 					attachments.append(obj)
 			encounter_docs.append(doc)
+			if encounter == current_encounter.name:
+				encounters.remove(encounter)
 		return {
 			'appointment': appointment, 
 			'vitalSigns': vital_signs,
 			'encounters': encounter_docs, 
-			'patient': patient, 'practitioner': practitioner, 
+			'patient': patient, 
+			'practitioner': practitioner, 
 			'attachments': attachments,
-			'services': services
+			'services': services,
+			'current_encounter': current_encounter
 		}
 
 @frappe.whitelist()
-def vital_signs_list():
-	return frappe.db.get_list('Vital Signs', 
-		fields=['signs_date', 'signs_time', 'temperature', 'pulse', 'name', 'appointment', 'title', 'modified', 'modified_by', 'patient'], 
-		order_by='signs_date desc, signs_time desc',
-	)
+def vital_signs_list(patient):
+	if patient:
+		return frappe.db.get_list('Vital Signs', 
+			fields=['signs_date', 'signs_time', 'temperature', 'pulse', 'name', 'appointment', 'title', 'modified', 'modified_by', 'patient'],
+			filters={'patient': patient}, 
+			order_by='signs_date desc, signs_time desc',
+		)
+	else:
+		return frappe.db.get_list('Vital Signs', 
+			fields=['signs_date', 'signs_time', 'temperature', 'pulse', 'name', 'appointment', 'title', 'modified', 'modified_by', 'patient'], 
+			order_by='signs_date desc, signs_time desc',
+		)
 
 @frappe.whitelist()
 def edit_doc(form, submit=False):
 	doc = frappe.get_doc(form['doctype'], form['name'])
+	del form['doctype']
+	del form['name']
+
 	for key, value in form.items():
-		print(key)
-		if key != 'doctype' or key != 'name':
-			doc[key] = value
+		# Assign the value to the corresponding field in the document
+		setattr(doc, key, value)
 	doc.save()
 	if(submit):
 		doc.submit()
+	return doc
 
 @frappe.whitelist()
 def new_doc(form, submit=False):
@@ -165,6 +218,7 @@ def new_doc(form, submit=False):
 		update_status(doc.name, 'Scheduled')
 	if(submit):
 		doc.submit()
+	return doc
 
 def get_services(*args):
 	services = frappe.db.get_list('Service Request',
@@ -188,17 +242,23 @@ def get_appointments(*args):
 	appointments = frappe.db.sql("""
 		WITH LatestVitalSigns AS (
 			SELECT
-				vs.`patient`,
-				vs.`height`,
-				vs.`weight`,
-				vs.`bmi`,
-				vs.`nutrition_note`
+				vs.patient,
+				vs.height,
+				vs.weight,
+				vs.bmi,
+				vs.nutrition_note
 			FROM `tabVital Signs` vs
-			WHERE vs.`signs_date` = (
-				SELECT MAX(vs2.`signs_date`)
-				FROM `tabVital Signs` vs2
-				WHERE vs2.`patient` = vs.`patient`
-			)
+			INNER JOIN (
+				SELECT 
+					patient,
+					MAX(signs_date) AS latest_signs_date
+				FROM `tabVital Signs`
+				WHERE height IS NOT NULL AND height != ''
+				AND weight IS NOT NULL AND weight != ''
+				AND bmi IS NOT NULL AND bmi != ''
+				AND nutrition_note IS NOT NULL AND nutrition_note != ''
+				GROUP BY patient
+			) latest_vs ON vs.patient = latest_vs.patient AND vs.signs_date = latest_vs.latest_signs_date
 		),					  
 		LastVisit AS (
 			SELECT

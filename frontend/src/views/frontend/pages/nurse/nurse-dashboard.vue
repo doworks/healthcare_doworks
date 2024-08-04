@@ -264,7 +264,7 @@
     <!-- /Page Content -->
     <vitalSignsListDialog 
     :isOpen="vitalSignsOpen" 
-    :appointment="selectedRow"
+    :appointment="{'name': selectedRow.name, 'patient': selectedRow.patient}"
     @update:isOpen="vitalSignsOpen = $event" 
     @show-alert="showAlert" 
     />
@@ -344,7 +344,7 @@ export default {
       appointmentNoteOpen: false,
       alertVisible: false,
       services: [],
-      selectedRow: {},
+      selectedRow: {patient: ''},
     };
   },
   created() {

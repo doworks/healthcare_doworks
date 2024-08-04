@@ -390,7 +390,7 @@
                   this.appointmentForm.duration = duration;
                   this.appointmentForm.appointment_type = 'Practitioner';
                   this.appointmentForm.appointment_for = 'Practitioner';
-                  this.appointmentForm.custom_appointment_category = 'Primary';
+                  this.appointmentForm.custom_appointment_category = 'First Time';
           this.appointmentForm.custom_payment_type = '';
           this.appointmentForm.practitioner = '';
                   this.appointmentForm.practitioner_name = '';

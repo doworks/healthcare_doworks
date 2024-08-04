@@ -48,11 +48,11 @@
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
 						<a-input 
-							v-model:value="filterModel.value"
-							@change="filterCallback()"
-							placeholder="Search by Patient" 
-							class="p-column-filter"
-							style="width: 100%; align-items: center;"
+						v-model:value="filterModel.value"
+						@change="filterCallback()"
+						placeholder="Search by Patient" 
+						class="p-column-filter"
+						style="width: 100%; align-items: center;"
 						/>
 					</template>
 				</Column>
@@ -68,11 +68,11 @@
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
 						<a-input 
-							v-model:value="filterModel.value"
-							@change="filterCallback()"
-							placeholder="Search by Time" 
-							class="p-column-filter"
-							style="width: 100%; align-items: center;"
+						v-model:value="filterModel.value"
+						@change="filterCallback()"
+						placeholder="Search by Time" 
+						class="p-column-filter"
+						style="width: 100%; align-items: center;"
 						/>
 					</template>
 				</Column>
@@ -123,11 +123,11 @@
 					</template>
 					<template #filter="{ filterModel, filterCallback }">
 						<a-input 
-							v-model:value="filterModel.value"
-							@change="filterCallback()"
-							placeholder="Search by Mobile" 
-							class="p-column-filter"
-							style="width: 100%; align-items: center;"
+						v-model:value="filterModel.value"
+						@change="filterCallback()"
+						placeholder="Search by Mobile" 
+						class="p-column-filter"
+						style="width: 100%; align-items: center;"
 						/>
 					</template>
 				</Column>
@@ -142,9 +142,9 @@
 						<div class="d-flex align-items-center gap-2">
 							<v-avatar :color="!data.practitioner_image ? colorCache[data.practitioner_name] || '': ''">
 								<img
-									v-if="data.practitioner_image"
-									class="h-100 w-100"
-									:src="data.practitioner_image"
+								v-if="data.practitioner_image"
+								class="h-100 w-100"
+								:src="data.practitioner_image"
 								/>
 								<span v-if="!data.practitioner_image" class="text-h6">{{ data.practitioner_name[0] }}</span>
 							</v-avatar>
@@ -166,9 +166,9 @@
 							<template #option="{ practitioner_name, image }">
 								<v-avatar size="25" :color="!image ? colorCache[practitioner_name] : ''">
 									<img
-										v-if="image"
-										class="h-100 w-100"
-										:src="image"
+									v-if="image"
+									class="h-100 w-100"
+									:src="image"
 									/>
 									<span v-if="!image" style="font-size: small;">{{ practitioner_name[0] }}</span>
 								</v-avatar>
@@ -193,12 +193,12 @@
 				<Column field="department" hidden :showFilterMenu="false" :showClearButton="false">
 					<template #filter="{ filterModel, filterCallback }">
 						<a-select
-							v-model:value="filterModel.value"
-							@change="(filterCallback())"
-							class="p-column-filter"
-							style="width: 100%; align-items: center;"
-							placeholder="Any"
-							allowClear
+						v-model:value="filterModel.value"
+						@change="(filterCallback())"
+						class="p-column-filter"
+						style="width: 100%; align-items: center;"
+						placeholder="Any"
+						allowClear
 						>
 							<template #option="{ value: val }">
 								<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
@@ -235,11 +235,11 @@
 				<Column style="width: 5%">
 					<template #body="{ data }">
 						<v-btn 
-							v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0]?.note)" 
-							size="small" 
-							variant="text" 
-							icon
-							@click="toggleOP"
+						v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0]?.note)" 
+						size="small" 
+						variant="text" 
+						icon
+						@click="toggleOP"
 						>
 							<v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
 								<img :src="bellImage"/>

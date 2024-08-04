@@ -76,8 +76,8 @@
                                 </a-form-item>
                             </v-col>
                         </v-row>
-                        <v-divider class="mt-2 mb-8"></v-divider>
-                        <h3 class="mb-4">Medications</h3>
+                        <v-divider class="mt-2 mb-8" v-if="form.drug_prescription.length > 0"></v-divider>
+                        <h3 class="mb-4" v-if="form.drug_prescription.length > 0">Medications</h3>
                         <div v-for="(prescription, index) in form.drug_prescription">
                             <h5>{{ index }}</h5>
                             <v-row>
@@ -120,8 +120,8 @@
                                 </v-col>
                             </v-row>
                         </div>
-                        <v-divider class="mt-2 mb-8"></v-divider>
-                        <h3 class="mb-4">Investigation</h3>
+                        <v-divider class="mt-2 mb-8" v-if="form.lab_test_prescription.length > 0"></v-divider>
+                        <h3 class="mb-4" v-if="form.lab_test_prescription.length > 0">Investigation</h3>
                         <div v-for="(prescription, index) in form.lab_test_prescription">
                             <h5>{{ index }}</h5>
                             <v-row>
@@ -143,7 +143,7 @@
                                 </v-col>
                             </v-row>
                         </div>
-                        <h3 class="mb-4">Procedure</h3>
+                        <h3 class="mb-4" v-if="form.procedure_prescription.length > 0">Procedure</h3>
                         <div v-for="(prescription, index) in form.procedure_prescription">
                             <h5>{{ index }}</h5>
                             <v-row>
@@ -174,7 +174,7 @@
                                 </v-col>
                             </v-row>
                         </div>
-                        <h3 class="mb-4">Rehabilitation</h3>
+                        <h3 class="mb-4" v-if="form.therapies.length > 0">Rehabilitation</h3>
                         <div v-for="(therapy, index) in form.therapies">
                             <h5>{{ index }}</h5>
                             <v-row>

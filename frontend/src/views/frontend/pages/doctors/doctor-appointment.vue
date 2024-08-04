@@ -20,14 +20,44 @@
           <div class="flex-wrap flex-column flex-xxl-row gap-3 nav nav-tabs nav-tabs-solid pb-2">
             <div class="d-flex flex-wrap flex-column flex-lg-row gap-3 flex-auto order-2 order-xxl-1">
               <div class="flex-auto" style="width: 15rem">
-                <a-date-picker
-                  v-model:value="selectedDate"
-                  format="D/M/YY"
-                  style="width: 100%; align-items: center; max-height: 62px; text-align: center"
-                  :allowClear="false"
-                  size="large"
+                <a-select v-if="dateFilterType === 'span'"
+                v-model:value="selectedSpan"
+                style="width: 100%; align-items: center; max-height: 62px; text-align: center"
+                :options="spans"
+                size="large"
+                @change="(value) => {
+                  const dates = spanToDate(value)
+                  selectedDates = dates
+                  selectedRangeDates = [dates[0], dates[dates.length -1]]
+                }"
+                ></a-select>
+                <a-date-picker v-if="dateFilterType === 'single'"
+                v-model:value="selectedDates[0]"
+                format="D/M/YY"
+                style="width: 100%; align-items: center; max-height: 62px; text-align: center"
+                :allowClear="false"
+                size="large"
+                @change="(value) => {selectedDates = [value]; selectedRangeDates = [value, value]}"
                 />
-                <span class="d-flex justify-content-center fw-bolder text-dark me-3">{{ formattedDayOfWeek() }}</span>
+                <!-- <span class="d-flex justify-content-center fw-bolder text-dark me-3">{{ formattedDayOfWeek() }}</span> -->
+                <a-range-picker v-if="dateFilterType === 'range'" 
+                v-model:value="selectedRangeDates" 
+                format="D/M/YY" 
+                style="width: 100%; align-items: center; max-height: 62px; text-align: center" 
+                size="large"
+                :allowClear="false"
+                @change="(value) => {selectedDates = getDatesInBetween(value[0], value[1])}"
+                />
+                <v-btn-toggle class="mt-1" v-model="dateFilterType" color="blue" mandatory density="compact">
+                  <v-btn size="small" value="span">Timespans</v-btn>
+                  <v-btn size="small" value="single">Single</v-btn>
+                  <v-btn size="small" value="range">Range</v-btn>
+                </v-btn-toggle>
+                <!-- <a-radio-group class="mt-2" v-model:value="dateFilterType">
+                  <a-radio-button value="span">Timespan</a-radio-button>
+                  <a-radio-button value="single">Single</a-radio-button>
+                  <a-radio-button value="range">Range</a-radio-button>
+                </a-radio-group> -->
               </div>
               <div class="flex-auto" style="width: 15rem">
                 <a-select
@@ -72,7 +102,7 @@
               <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
                 <AppointmentTab 
                   :searchValue="searchValue"
-                  :selectedDate="selectedDate"
+                  :selectedDates="selectedDates"
                   :selectedDepartments="selectedDepartments" 
                   :appointments="value" 
                   :tab="key.toLowerCase()"
@@ -104,11 +134,11 @@
     :form="appointmentForm"
     :slots="slots"
     />
-    <vitalSignsDialog 
+    <vitalSignsListDialog 
     :isOpen="vitalSignsOpen" 
     @update:isOpen="vitalSignsOpen = $event" 
     @show-alert="showAlert" 
-    :appointment="appointmentForm"
+    :appointment="{'name': selectedRow.name, 'patient': selectedRow.patient}"
     />
     <v-dialog v-model="appointmentNoteOpen" width="auto">
       <v-card
@@ -269,20 +299,20 @@ import Clock from '@/components/clock/Clock.vue';
 
 import { VIcon } from 'vuetify/components/VIcon';
 import { VToolbar, VToolbarItems } from 'vuetify/components/VToolbar';
+import { VBtnToggle } from 'vuetify/components/VBtnToggle';
 
 import AppointmentTab from './doctor-appointment-tab.vue'
 
 export default {
   inject: ['$socket', '$call'],
   components: {
-    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems,
+    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle,
   },
   data() {
     return {
       tab: 'Scheduled',
       appointments: [],
       groupedAppointments: {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],},
-      selectedDate: ref(dayjs()),
       searchValue: '',
       selectedDepartments: undefined,
       appointmentsLoading: false,
@@ -297,8 +327,23 @@ export default {
       newNote: {},
       message: '',
       alertVisible: false,
-      dateWeek: ref(dayjs()),
       appointmentForm: {},
+      selectedRow: {patient: ''},
+      dateFilterType: 'span',
+      selectedSpan: 'today',
+      selectedDates: ref([dayjs()]),
+      selectedRangeDates: [dayjs().startOf('isoWeek').subtract(1, 'day'), dayjs().endOf('isoWeek').subtract(1, 'day')],
+      spans: [
+        {label: 'Yesterday', value: 'yesterday'},
+        {label: 'Today', value: 'today'},
+        {label: 'Tomorrow', value: 'tomorrow'},
+        {label: 'Last Week', value: 'last week'},
+        {label: 'This Week', value: 'this week'},
+        {label: 'Next Week', value: 'next week'},
+        {label: 'Last Month', value: 'last month'},
+        {label: 'This Month', value: 'this month'},
+        {label: 'Next Month',  value: 'next month'},
+      ],
     };
   },
   created() {
@@ -311,10 +356,6 @@ export default {
     })
   },
   mounted() {
-  },
-  beforeUnmount() {
-    // Clear the timeout before unmounting the component
-    clearTimeout(this.timer);
   },
   methods: {
     showAlert(message, duration) {
@@ -360,14 +401,62 @@ export default {
 				return d;
 			});
 		},
+    spanToDate(span) {
+      if(span){
+        if(span === 'yesterday')
+          return [dayjs().add(-1, 'd')]
+        if(span === 'today')
+          return [dayjs()]
+        if(span === 'tomorrow')
+          return [dayjs().add(1, 'd')]
+        if(span === 'last week'){
+          const lwRange = [dayjs().subtract(1, 'week').startOf('isoWeek').subtract(1, 'day'), dayjs().subtract(1, 'week').endOf('isoWeek').subtract(1, 'day')]
+          return this.getDatesInBetween(lwRange[0], lwRange[1])
+        }
+        if(span === 'this week'){
+          const twRange = [dayjs().startOf('isoWeek').subtract(1, 'day'), dayjs().endOf('isoWeek').subtract(1, 'day')]
+          return this.getDatesInBetween(twRange[0], twRange[1])
+        }
+        if(span === 'next week'){
+          const nwRange = [dayjs().add(1, 'week').startOf('isoWeek').subtract(1, 'day'), dayjs().add(1, 'week').endOf('isoWeek').subtract(1, 'day')]
+          return this.getDatesInBetween(nwRange[0], nwRange[1])
+        }
+        if(span === 'last month'){
+          const lmRange = [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')]
+          return this.getDatesInBetween(lmRange[0], lmRange[1])
+        }
+        if(span === 'this month'){
+          const tmRange = [dayjs().startOf('month'), dayjs().endOf('month')]
+          return this.getDatesInBetween(tmRange[0], tmRange[1])
+        }
+        if(span === 'next month'){
+          const nmRange = [dayjs().add(1, 'month').startOf('month'), dayjs().add(1, 'month').endOf('month')]
+          return this.getDatesInBetween(nmRange[0], nmRange[1])
+        }
+        return undefined
+      }
+      return undefined
+    },
+    getDatesInBetween(startDate, endDate) {
+      let dates = []
+      
+      while (startDate.isBefore(endDate) || startDate.isSame(endDate, 'day')) {
+        dates.push(startDate);
+        startDate = startDate.add(1, 'day');
+      }
+      return dates
+    },
     getBadgeNumber(tab){
       let count = 0
       if(this.groupedAppointments[tab]){
         count = this.groupedAppointments[tab].reduce((total, value) => {
           let departmentFilter = true
+          let dateFilter = true
           if(this.selectedDepartments)
             departmentFilter = this.selectedDepartments.some(department => {return department === value.department})
-          if(this.selectedDate.format('YYYY-MM-DD') === value.appointment_date && departmentFilter){
+          if(this.selectedDates.length > 0)
+            dateFilter = this.selectedDates.some(date => {return date.format('YYYY-MM-DD') === value.appointment_date})
+          if(dateFilter && departmentFilter){
             return total + 1
           }
           return total
@@ -395,7 +484,7 @@ export default {
 				this.appointmentForm.duration = duration;
 				this.appointmentForm.appointment_type = 'Practitioner';
 				this.appointmentForm.appointment_for = 'Practitioner';
-				this.appointmentForm.custom_appointment_category = 'Primary';
+				this.appointmentForm.custom_appointment_category = 'First Time';
         this.appointmentForm.custom_payment_type = '';
         this.appointmentForm.practitioner = '';
 				this.appointmentForm.practitioner_name = '';
@@ -433,8 +522,7 @@ export default {
 			this.appointmentNoteOpen = true;
 		},
     vitalSignDialog(row) {
-      this.appointmentForm.name = row.appointment_id;
-      this.appointmentForm.patient = row.patient_details.id;
+      this.selectedRow = row
 			this.vitalSignsOpen = true;
 		},
     transferPractitionerDialog(row) {
@@ -453,7 +541,6 @@ export default {
       this.appointmentForm.custom_payment_type = row.payment_type;
 			this.paymentTypeOpen = true
     },
-    customWeekStartEndFormat: value => `${dayjs(value).startOf('week').format('MMMM D, YYYY')} -> ${dayjs(value).endOf('week').format('MMMM D, YYYY')}`,
     showSlots() {
       if (this.appointmentForm.appointment_date && this.appointmentForm.practitioner) {
         this.slots = {};
@@ -638,13 +725,10 @@ export default {
         }
       });
     },
-    createRange (length, start) {
-      return Array.from({ length }).map((_, i) => i + start)
-    },
-    formattedDayOfWeek() {
-      if (!this.selectedDate) return '';
-      return dayjs(this.selectedDate).format('dddd');
-    },
+    // formattedDayOfWeek() {
+    //   if (!this.selectedDates) return '';
+    //   return dayjs(this.selectedDates).format('dddd');
+    // },
   },
   name: 'Appointments',
 };

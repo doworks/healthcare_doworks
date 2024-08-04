@@ -18,11 +18,12 @@
         <Card class="h-100" :class="{'rounded-bottom-0': $vuetify.display.smAndDown, 'rounded-end-0': !$vuetify.display.smAndDown}">
           <template #content>
             <div class="vital-sign-container d-flex align-items-center">
-              <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="...">
+              <!-- <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="..."> -->
+              <v-avatar v-if="records.patient.image" size="80" :image="records.patient.image"></v-avatar>
               <div class="text-start d-flex flex-column">
                 <h4 class="mb-0">{{ records.patient.patient_name }}</h4>
                 <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
-                <p class="mb-1">{{ records.patient.dob + ' (' + records.patient.age + 'yrs), ' + (records.patient.sex.slice(0, 1) || '')}}</p>
+                <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
                 <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
               </div>
             </div>
@@ -33,26 +34,38 @@
         <Card class="h-100" :class="{'rounded-top-0': $vuetify.display.smAndDown, 'rounded-start-0': !$vuetify.display.smAndDown}">
           <template #content>
             <div class="d-flex align-items-center">
-              <img 
-                v-if="records.practitioner && records.practitioner.image && !practitionerConflict" 
-                class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
-                :src="records.practitioner.image" alt="..."
-                >
-                <div class="text-start">
-                  <div class="d-flex">
-                    <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.practitioner.practitioner_name }}</h4>
-                    <span v-if="practitionerConflict">&nbsp;&nbsp;->&nbsp;&nbsp;</span>
-                    <img 
-                    v-if="practitionerConflict && $resources.user.image" 
-                    class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
-                    :src="$resources.user.image" alt="..."
-                    >
-                    <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $resources.user.name }}</h4>
-                  </div>
-                  <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
-                  <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
-                  <h4 class="mt-2 mb-0">{{ form.custom_encounter_start_time.format('h:mm A') }}</h4>
+              <!-- <img 
+              v-if="records.practitioner && records.practitioner.image && !practitionerConflict" 
+              class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
+              :src="records.practitioner.image" alt="..."
+              > -->
+              <v-avatar 
+              v-if="records.practitioner && records.practitioner.image && !practitionerConflict" 
+              size="80" 
+              class="me-3" 
+              :image="records.practitioner.image">
+              </v-avatar>
+              <div class="text-start">
+                <div class="d-flex">
+                  <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.practitioner.practitioner_name }}</h4>
+                  <span v-if="practitionerConflict">&nbsp;&nbsp;->&nbsp;&nbsp;</span>
+                  <v-avatar 
+                  v-if="practitionerConflict && $resources.user.practitioner_image" 
+                  size="80" 
+                  class="me-3" 
+                  :image="$resources.user.practitioner_image">
+                  </v-avatar>
+                  <!-- <img 
+                  v-if="practitionerConflict && $resources.user.practitioner_image" 
+                  class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
+                  :src="$resources.user.practitioner_image" alt="..."
+                  /> -->
+                  <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $resources.user.practitioner_name || $resources.user.name }}</h4>
                 </div>
+                <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
+                <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
+                <h4 class="mt-2 mb-0">{{ form.custom_encounter_start_time.format('h:mm A') }}</h4>
+              </div>
             </div>
           </template>
         </Card>
@@ -67,11 +80,12 @@
             <Card :class="['h-100 rounded-end-0',{'rounded-0': this.isAffixed}]">
               <template #content>
                 <div class="vital-sign-container d-flex align-items-center">
-                  <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="...">
+                  <!-- <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="..."> -->
+                  <v-avatar v-if="records.patient.image" size="80" class="me-3" :image="records.patient.image"></v-avatar>
                   <div class="text-start d-flex flex-column">
                     <h4 class="mb-0">{{ records.patient.patient_name }}</h4>
                     <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
-                    <p class="mb-1">{{ records.patient.dob + ' (' + records.patient.age + 'yrs), ' + (records.patient.sex.slice(0, 1) || '')}}</p>
+                    <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
                     <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
                   </div>
                 </div>
@@ -144,14 +158,22 @@
                 </v-slide-group>
                 <div class="d-flex align-self-end ms-auto flex-shrink-0">
                   <v-select
-                    v-model="currentVS"
-                    item-title="signs_date"
-                    item-value="name"
-                    return-object
-                    :items="records.vitalSigns"
-                    variant="underlined"
-                    class="w-full align-middle"
+                  v-model="currentVS"
+                  item-title="signs_date"
+                  item-value="name"
+                  return-object
+                  :items="records.vitalSigns"
+                  variant="underlined"
+                  class="w-full align-middle"
                   ></v-select>
+                  <!-- <a-select
+                  class="w-full align-middle"
+                  v-model:value="currentVS"
+                  style="width: 120px"
+                  :options="records.vitalSigns"
+                  :fieldNames="{label: 'signs_date', value: 'name'}"
+                  @change="(value, option) => {currentVS = option}"
+                  ></a-select> -->
                   <v-btn
                     class="ma-2 align-self-center"
                     color="blue"
@@ -168,21 +190,33 @@
             <Card :class="['h-100',{'rounded-0': this.isAffixed}]">
               <template #content>
                 <div class="d-flex align-items-center">
-                  <img 
+                  <!-- <img 
                   v-if="records.practitioner && records.practitioner.image && !practitionerConflict" 
                   class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
                   :src="records.practitioner.image" alt="..."
-                  >
+                  > -->
+                  <v-avatar 
+                  v-if="records.practitioner && records.practitioner.image && !practitionerConflict" 
+                  size="80" 
+                  class="me-3" 
+                  :image="records.practitioner.image">
+                  </v-avatar>
                   <div class="text-start">
                     <div class="d-flex">
                       <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.practitioner.practitioner_name }}</h4>
                       <span v-if="practitionerConflict">&nbsp;&nbsp;->&nbsp;&nbsp;</span>
-                      <img 
-                      v-if="practitionerConflict && $resources.user.image" 
+                      <v-avatar 
+                      v-if="practitionerConflict && $resources.user.practitioner_image" 
+                      size="80" 
+                      class="me-3" 
+                      :image="$resources.user.practitioner_image">
+                      </v-avatar>
+                      <!-- <img 
+                      v-if="practitionerConflict && $resources.user.practitioner_image" 
                       class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
-                      :src="$resources.user.image" alt="..."
-                      >
-                      <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $resources.user.name }}</h4>
+                      :src="$resources.user.practitioner_image" alt="..."
+                      /> -->
+                      <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $resources.user.practitioner_name || $resources.user.name }}</h4>
                     </div>
                     <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
                     <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
@@ -197,9 +231,9 @@
       <div class="col-xl-9 col-12 ps-0 left-column row h-100" style="margin-right: calc(.5 * var(--bs-gutter-x)); padding: 0">
         <div class="mb-3 col-12 pe-0">
           <Card class="p-0" id="past-encounters" style="overflow: hidden;">
-            <template #title>Visit Logs<a class="fs-6 float-end" :class="{'d-none': records.encounters.length <= 4}">See All</a></template>
+            <template #title>Visit Logs<a class="fs-6 float-end" :class="{'d-none': records.encounters.length <= 5}">See All</a></template>
             <template #content>
-              <DataTable :value="records.encounters" selectionMode="single" :metaKeySelection="true" dataKey="id" @row-click="visitLogSelect">
+              <DataTable :value="records.encounters ? records.encounters.slice(0, 5) : records.encounters" selectionMode="single" :metaKeySelection="true" dataKey="id" @row-click="visitLogSelect">
                 <template #empty><v-empty-state title="This Is The First Visit"></v-empty-state></template>
                 <Column field="encounter_date" header="Date"></Column>
                 <Column field="practitioner_name" header="Practitioner"></Column>
@@ -216,7 +250,7 @@
               <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain">Add</v-btn>
             </template>
             <template #content>
-              <DataTable :value="records.services">
+              <DataTable :value="records.services ? records.services.slice(0, 5) : records.services">
                 <template #empty><v-empty-state title="No Service Requests"></v-empty-state></template>
                 <Column field="template_dn" header="Service Name"></Column>
                 <Column field="order_date" header="Ordered On"></Column>
@@ -230,13 +264,13 @@
           <Card class="p-0 mb-3 border-bottom-title" id="attachments" style="overflow: hidden;">
             <template #title>
               Attachments
-              <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain">Add</v-btn>
+              <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain" @click="() => {addAttachmentActive = true}">Add</v-btn>
             </template>
             <template #content>
               <div :class="{'d-none': records.attachments.length > 0}">
                 <v-empty-state
                   title="No Attachments"
-                ></v-empty-state>
+                  ></v-empty-state>
               </div>
               <div
               class="d-flex align-items-center pb-4"
@@ -265,191 +299,202 @@
           </Card>
         </div>
       </div>
+      
       <div class="col-xl-3 col-12 ps-0 right-column">
-        <Card class="p-0 mb-3 gap-card" id="patient-history" style="overflow: hidden;">
+        <Card class="p-0 mb-3" id="patient-history" style="overflow: hidden;">
           <template #title>Patient History</template>
           <template #content>
-            <v-card class="p-0" id="allergies" variant="tonal" color="light-blue">
-              <template v-slot:title>
-                Allergies {{ records.patient.custom_allergies_table.length > 0 ? '(' + records.patient.custom_allergies_table.length + ')' : ''}}
-              </template>
-              <template v-slot:text>
-                <div :class="{'d-none': records.patient.custom_allergies_table.length > 0}">
-                  <v-empty-state
-                    title="No Allergies"
-                  ></v-empty-state>
-                </div>
-                <div class="py-3" v-for="(allergy, index) in records.patient.custom_allergies_table" :key="index">
-                  <div class="d-flex align-items-center justify-content-between mb-1">
-                    <h5>{{ allergy.type }}</h5>
-                    <v-chip :color="getSeverity(allergy.severity).color" >
-                      {{ getSeverity(allergy.severity).severity }}
-                    </v-chip>
+            <ScrollPanel
+            style="width: 100%; height: 750px"
+            :dt="{
+                bar: {
+                  background: 'black'
+                }
+            }"
+            >
+              <v-card class="p-0" id="allergies" variant="tonal" color="light-blue">
+                <template v-slot:title>
+                  Allergies {{ records.patient.custom_allergies_table.length > 0 ? '(' + records.patient.custom_allergies_table.length + ')' : ''}}
+                </template>
+                <template v-slot:text>
+                  <div :class="{'d-none': records.patient.custom_allergies_table.length > 0}">
+                    <v-empty-state
+                      title="No Allergies"
+                    ></v-empty-state>
                   </div>
-                  <p>{{ allergy.note }}</p>
-                  <v-progress-linear
-                    :color="getSeverity(allergy.severity).color"
-                    :model-value="allergy.severity * 20"
-                    rounded
-                  ></v-progress-linear>
-                </div>
-              </template>
-            </v-card>
-            <v-card class="p-0 gap-card" id="infected-diseases" variant="tonal" color="light-green">
-              <template v-slot:title>
-                Infected Diseases
-              </template>
-              <template v-slot:text>
-                <div :class="{'d-none': records.patient.custom_infected_diseases.length > 0}">
-                  <v-empty-state
-                    title="No Infected Diseases"
-                  ></v-empty-state>
-                </div>
-                <div
-                  class="d-flex py-2"
-                  :class="{'d-none': records.patient.custom_infected_diseases.length == 0}"
-                  v-for="(item, index) in records.patient.custom_infected_diseases"
-                  :key="index"
-                >
-                  <div class="d-flex flex-column">
-                    <h5 class="mb-0">{{ item.name1 }}</h5>
-                    <p class="text-fade mb-0">{{ item.note }}</p>
-                  </div>
-                </div>
-              </template>
-            </v-card>
-            <v-card class="p-0 gap-card" id="surgical-history" variant="tonal" color="purple">
-              <template v-slot:title>
-                Surgical History<a class="fs-6 float-end" :class="{'d-none': records.patient.custom_surgical_history_table.length <= 4}">See All</a>
-              </template>
-              <template v-slot:text>
-                <div :class="{'d-none': records.patient.custom_surgical_history_table.length > 0}">
-                  <v-empty-state
-                    title="No Surgical History"
-                  ></v-empty-state>
-                </div>
-                <div
-                  class="py-3"
-                  :class="{'d-none': records.patient.custom_surgical_history_table.length == 0}"
-                  v-for="(item, index) in records.patient.custom_surgical_history_table"
-                  :key="index"
-                >
-                  <div class="d-flex">
-                    <div class="d-flex flex-column flex-grow-1">
-                      <h5 class="mb-0">{{ item.surgery }}</h5>
-                      <p class="text-fade mb-0">{{ item.date }}</p>
-                    </div>
-                    <div class="text-end fw-500">
-                      <h5 class="mb-0">{{ item.practitioner }}</h5>
-                    </div>
-                  </div>
-                  <p class="pt-3 m-0">{{ item.notes }}</p>
-                </div>
-              </template>
-            </v-card>
-            <v-card class="p-0 gap-card" id="medications" variant="tonal" color="pink">
-              <template v-slot:title>
-                Medications ({{ records.patient.custom_medications.length }})
-              </template>
-              <template v-slot:text>
-                <div :class="{'d-none': records.patient.custom_medications.length > 0}">
-                  <v-empty-state
-                    title="No Medications"
-                  ></v-empty-state>
-                </div>
-                <div
-                class="d-flex align-items-center flex-column py-3"
-                :class="{'d-none': records.patient.custom_medications.length == 0}"
-                v-for="(medication, index) in records.patient.custom_medications"
-                :key="index"
-                >
-                  <div class="d-flex flex-row flex-grow-1 justify-content-between w-100">
-                    <h5 class="text-black mb-0 align-middle align-self-center">
-                      {{ medication.name1 }}
-                      <!-- <small class="text-fade">{{ medication.weight }}</small> -->
-                    </h5>
-                    <div class="text-fade mb-0">
-                      <v-chip 
-                      :color=" medication.is_active ? 'grey-lighten-1' : 'grey-darken-2'" 
-                      :variant=" medication.is_active ? 'flat' : 'tonal'"
-                      >
-                        {{ medication.is_active ? 'Active' : 'Inactive'}}
+                  <div class="py-3" v-for="(allergy, index) in records.patient.custom_allergies_table" :key="index">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                      <h5>{{ allergy.type }}</h5>
+                      <v-chip :color="getSeverity(allergy.severity).color" >
+                        {{ getSeverity(allergy.severity).severity }}
                       </v-chip>
                     </div>
+                    <p>{{ allergy.note }}</p>
+                    <v-progress-linear
+                      :color="getSeverity(allergy.severity).color"
+                      :model-value="allergy.severity * 20"
+                      rounded
+                    ></v-progress-linear>
                   </div>
-                  <div class="d-flex flex-row justify-content-between w-100 mt-1">
-                    <p class="text-grey-darken-2 mb-0">{{ medication.reason }}</p>
-                    <p class="text-grey-darken-2 text-center pe-2 mb-0">{{ medication.from_date }}</p>
+                </template>
+              </v-card>
+              <v-card class="p-0 mt-4" id="infected-diseases" variant="tonal" color="light-green">
+                <template v-slot:title>
+                  Infected Diseases
+                </template>
+                <template v-slot:text>
+                  <div :class="{'d-none': records.patient.custom_infected_diseases.length > 0}">
+                    <v-empty-state
+                      title="No Infected Diseases"
+                    ></v-empty-state>
                   </div>
-                </div>
-              </template>
-            </v-card>
-            <v-card class="p-0 gap-card" id="habits" variant="tonal" color="teal">
-              <template v-slot:title>
-                Habits / Social
-              </template>
-              <template v-slot:text>
-                <div :class="{'d-none': records.patient.custom_habits__social.length > 0}">
-                  <v-empty-state
-                    title="No Habits / Social"
-                  ></v-empty-state>
-                </div>
-                <div
-                  class="d-flex py-2"
-                  :class="{'d-none': records.patient.custom_habits__social.length == 0}"
-                  v-for="(item, index) in records.patient.custom_habits__social"
+                  <div
+                    class="d-flex py-2"
+                    :class="{'d-none': records.patient.custom_infected_diseases.length == 0}"
+                    v-for="(item, index) in records.patient.custom_infected_diseases"
+                    :key="index"
+                  >
+                    <div class="d-flex flex-column">
+                      <h5 class="mb-0">{{ item.name1 }}</h5>
+                      <p class="text-fade mb-0">{{ item.note }}</p>
+                    </div>
+                  </div>
+                </template>
+              </v-card>
+              <v-card class="p-0 mt-4" id="surgical-history" variant="tonal" color="purple">
+                <template v-slot:title>
+                  Surgical History<a class="fs-6 float-end" :class="{'d-none': records.patient.custom_surgical_history_table.length <= 4}">See All</a>
+                </template>
+                <template v-slot:text>
+                  <div :class="{'d-none': records.patient.custom_surgical_history_table.length > 0}">
+                    <v-empty-state
+                      title="No Surgical History"
+                    ></v-empty-state>
+                  </div>
+                  <div
+                    class="py-3"
+                    :class="{'d-none': records.patient.custom_surgical_history_table.length == 0}"
+                    v-for="(item, index) in records.patient.custom_surgical_history_table"
+                    :key="index"
+                  >
+                    <div class="d-flex">
+                      <div class="d-flex flex-column flex-grow-1">
+                        <h5 class="mb-0">{{ item.surgery }}</h5>
+                        <p class="text-fade mb-0">{{ item.date }}</p>
+                      </div>
+                      <div class="text-end fw-500">
+                        <h5 class="mb-0">{{ item.practitioner }}</h5>
+                      </div>
+                    </div>
+                    <p class="pt-3 m-0">{{ item.notes }}</p>
+                  </div>
+                </template>
+              </v-card>
+              <v-card class="p-0 mt-4" id="medications" variant="tonal" color="pink">
+                <template v-slot:title>
+                  Medications ({{ records.patient.custom_medications.length }})
+                </template>
+                <template v-slot:text>
+                  <div :class="{'d-none': records.patient.custom_medications.length > 0}">
+                    <v-empty-state
+                      title="No Medications"
+                    ></v-empty-state>
+                  </div>
+                  <div
+                  class="d-flex align-items-center flex-column py-3"
+                  :class="{'d-none': records.patient.custom_medications.length == 0}"
+                  v-for="(medication, index) in records.patient.custom_medications"
                   :key="index"
-                >
+                  >
+                    <div class="d-flex flex-row flex-grow-1 justify-content-between w-100">
+                      <h5 class="text-black mb-0 align-middle align-self-center">
+                        {{ medication.name1 }}
+                        <!-- <small class="text-fade">{{ medication.weight }}</small> -->
+                      </h5>
+                      <div class="text-fade mb-0">
+                        <v-chip 
+                        :color=" medication.is_active ? 'grey-lighten-1' : 'grey-darken-2'" 
+                        :variant=" medication.is_active ? 'flat' : 'tonal'"
+                        >
+                          {{ medication.is_active ? 'Active' : 'Inactive'}}
+                        </v-chip>
+                      </div>
+                    </div>
+                    <div class="d-flex flex-row justify-content-between w-100 mt-1">
+                      <p class="text-grey-darken-2 mb-0">{{ medication.reason }}</p>
+                      <p class="text-grey-darken-2 text-center pe-2 mb-0">{{ medication.from_date }}</p>
+                    </div>
+                  </div>
+                </template>
+              </v-card>
+              <v-card class="p-0 mt-4" id="habits" variant="tonal" color="teal">
+                <template v-slot:title>
+                  Habits / Social
+                </template>
+                <template v-slot:text>
+                  <div :class="{'d-none': records.patient.custom_habits__social.length > 0}">
+                    <v-empty-state
+                      title="No Habits / Social"
+                    ></v-empty-state>
+                  </div>
+                  <div
+                    class="d-flex py-2"
+                    :class="{'d-none': records.patient.custom_habits__social.length == 0}"
+                    v-for="(item, index) in records.patient.custom_habits__social"
+                    :key="index"
+                  >
+                    <div class="d-flex flex-column">
+                      <h5 class="mb-0">{{ item.habit }}</h5>
+                      <p class="text-fade mb-0">{{ item.note }}</p>
+                    </div>
+                  </div>
+                </template>
+              </v-card>
+              <v-card class="p-0 mt-4" id="family-history" variant="tonal" color="brown">
+                <template v-slot:title>
+                  Family History
+                </template>
+                <template v-slot:text>
+                  <div :class="{'d-none': records.patient.custom_chronic_diseases || records.patient.custom_genetic_conditions}">
+                    <v-empty-state
+                      title="No Family History"
+                    ></v-empty-state>
+                  </div>
                   <div class="d-flex flex-column">
-                    <h5 class="mb-0">{{ item.habit }}</h5>
-                    <p class="text-fade mb-0">{{ item.note }}</p>
+                    <div class="d-flex flex-row flex-grow-1 pb-3">
+                      <h4 class="mb-0">Chronic Diseases:&nbsp;</h4>
+                      <p class="text-fade mb-0">{{ records.patient.custom_chronic_diseases }}</p>
+                    </div>
+                    <div class="d-flex flex-row flex-grow-1 pb-3">
+                      <h4 class="mb-0">Genetic Diseases:&nbsp;</h4>
+                      <p class="text-fade mb-0">{{ records.patient.custom_genetic_conditions }}</p>
+                    </div>
                   </div>
-                </div>
-              </template>
-            </v-card>
-            <v-card class="p-0 gap-card" id="family-history" variant="tonal" color="brown">
-              <template v-slot:title>
-                Family History
-              </template>
-              <template v-slot:text>
-                <div :class="{'d-none': records.patient.custom_chronic_diseases || records.patient.custom_genetic_conditions}">
-                  <v-empty-state
-                    title="No Family History"
-                  ></v-empty-state>
-                </div>
-                <div class="d-flex flex-column">
-                  <div class="d-flex flex-row flex-grow-1 pb-3">
-                    <h4 class="mb-0">Chronic Diseases:&nbsp;</h4>
-                    <p class="text-fade mb-0">{{ records.patient.custom_chronic_diseases }}</p>
+                </template>
+              </v-card>
+              <v-card class="p-0 mt-4" id="risk-factors" variant="tonal" color="deep-orange">
+                <template v-slot:title>
+                  Risk Factors
+                </template>
+                <template v-slot:text>
+                  <div :class="{'d-none': records.patient.custom_risk_factors_table.length > 0}">
+                    <v-empty-state
+                      title="No Risk Factors"
+                    ></v-empty-state>
                   </div>
-                  <div class="d-flex flex-row flex-grow-1 pb-3">
-                    <h4 class="mb-0">Genetic Diseases:&nbsp;</h4>
-                    <p class="text-fade mb-0">{{ records.patient.custom_genetic_conditions }}</p>
+                  <div class="py-3" v-for="(risk, index) in records.patient.custom_risk_factors_table" :key="index">
+                    <div class="d-flex ">
+                      <h5>{{ risk.type }}</h5>
+                      <v-chip label class="ms-auto" :color="getSeverity(risk.severity).color">
+                        {{ getSeverity(risk.severity).risk }}
+                      </v-chip>
+                    </div>
+                    <p class="mb-0">{{ risk.note }}</p>
                   </div>
-                </div>
-              </template>
-            </v-card>
-            <v-card class="p-0 gap-card" id="risk-factors" variant="tonal" color="deep-orange">
-              <template v-slot:title>
-                Risk Factors
-              </template>
-              <template v-slot:text>
-                <div :class="{'d-none': records.patient.custom_risk_factors_table.length > 0}">
-                  <v-empty-state
-                    title="No Risk Factors"
-                  ></v-empty-state>
-                </div>
-                <div class="py-3" v-for="(risk, index) in records.patient.custom_risk_factors_table" :key="index">
-                  <div class="d-flex ">
-                    <h5>{{ risk.type }}</h5>
-                    <v-chip label class="ms-auto" :color="getSeverity(risk.severity).color">
-                      {{ getSeverity(risk.severity).risk }}
-                    </v-chip>
-                  </div>
-                  <p class="mb-0">{{ risk.note }}</p>
-                </div>
-              </template>
-            </v-card>
+                </template>
+              </v-card>
+
+            </ScrollPanel>
           </template>
         </Card>
       </div> 
@@ -458,8 +503,153 @@
         <Card class="mb-4">
           <template #content>
             <a-form layout="vertical" :model="form">
-              <Stepper orientation="vertical">
-                <StepperPanel header="Complaint">
+              <SelectButton v-model="formState" :options="formOptions" class="text-center" :allowEmpty="false" @change="setStepperValue"/>
+              <Stepper orientation="vertical" v-model:value="stepperValue">
+                <!-- Procedural Panels -->
+                <StepperPanel value="Procedure Info" header="Procedure Info" v-if="formState === 'Procedural'">
+                  <template #content="{ nextCallback }">
+                    <v-sheet>
+                      <v-container>
+                        <v-row>
+                          <v-col cols="12" md="6">
+                            <a-form-item label="Clinical Procedure Category">
+                              <a-select
+                                allowClear
+                                v-model:value="form.symptoms"
+                                :options="$resources.complaints"
+                                :fieldNames="{label: 'complaints', value: 'complaints'}"
+                                style="width: 100%"
+                              ></a-select>
+                            </a-form-item>
+                            <a-form-item label="Practitioner">
+                              <a-select
+                                allowClear
+                                v-model:value="form.practitioner"
+                                :options="$resources.practitioners"
+                                :fieldNames="{label: 'practitioner_name', value: 'name'}"
+                                style="width: 100%"
+                              ></a-select>
+                            </a-form-item>
+                            <a-form-item label="Medical Department">
+                              <a-select
+                                allowClear
+                                v-model:value="form.medical_department"
+                                :options="$resources.departments"
+                                :fieldNames="{label: 'department', value: 'department'}"
+                                style="width: 100%"
+                              ></a-select>
+                            </a-form-item>
+                            <a-form-item label="Medical Department">
+                              <a-select
+                                allowClear
+                                v-model:value="records.appointment.service_unit"
+                                :options="$resources.serviceUnits"
+                                :fieldNames="{label: 'name', value: 'name'}"
+                                style="width: 100%"
+                              ></a-select>
+                            </a-form-item>
+                          </v-col>
+                          <v-col cols="12" md="6">
+                            <a-form-item label="Procedure Template">
+                              <a-select
+                                allowClear
+                                v-model:value="form.symptoms"
+                                :options="$resources.complaints"
+                                :fieldNames="{label: 'complaints', value: 'complaints'}"
+                                style="width: 100%"
+                              ></a-select>
+                            </a-form-item>
+                            <a-form-item label="Start Date">
+                              <a-date-picker 
+                                v-model:value="form.procedure_date"
+                                @change="()=>{$emit('show-slots')}" 
+                                format="DD-MM-YYYY" 
+                                style="width: 100%;"
+                              />
+                            </a-form-item>
+                            <a-form-item label="Start Time">
+                              <a-time-picker v-model:value="form.procedure_date" use12-hours format="h:mm a" style="width: 100%;"/>
+                            </a-form-item>
+                            <a-form-item label="Notes">
+                              <a-textarea :rows="4" />
+                            </a-form-item>
+                          </v-col>
+                        </v-row>
+                      </v-container>
+                    </v-sheet>
+                    <div class="d-flex pt-4">
+                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                    </div>
+                  </template>
+                </StepperPanel>
+                <StepperPanel value="Pre Procedure" header="Pre Procedure" v-if="formState === 'Procedural'">
+                  <template #content="{ nextCallback }">
+                    <v-sheet>
+                      <v-container>
+                        <v-row>
+                          <v-col>
+                            <a-form-item label="Sample">
+                              <a-select
+                                allowClear
+                                v-model:value="form.symptoms"
+                                :options="$resources.complaints"
+                                :fieldNames="{label: 'complaints', value: 'complaints'}"
+                                style="width: 100%"
+                              ></a-select>
+                            </a-form-item>
+                            <a-form-item label="Pre Operative Diagnosis">
+                              <a-textarea :rows="4" />
+                            </a-form-item>
+                          </v-col>
+                        </v-row>
+                      </v-container>
+                    </v-sheet>
+                    <div class="d-flex pt-4">
+                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                    </div>
+                  </template>
+                </StepperPanel>
+                <StepperPanel value="Procedure" header="Procedure" v-if="formState === 'Procedural'">
+                  <template #content="{ nextCallback }">
+                    <v-sheet>
+                      <v-container>
+                        <v-row>
+                          <v-col>
+                            <div class="d-flex gap-2">
+                              <v-btn variant="flat" color="orange" disabled>Predefined Areas</v-btn>
+                              <v-btn variant="flat" color="orange" disabled>Predefined Annotations</v-btn>
+                              <v-btn variant="flat" color="orange" @click="() => {procedureActive = true}">Free Drawing</v-btn>
+                            </div>
+                          </v-col>
+                        </v-row>
+                      </v-container>
+                    </v-sheet>
+                    <div class="d-flex pt-4">
+                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                    </div>
+                  </template>
+                </StepperPanel>
+                <StepperPanel value="Post Procedure" header="Post Procedure" v-if="formState === 'Procedural'">
+                  <template #content="{ nextCallback }">
+                    <v-sheet>
+                      <v-container>
+                        <v-row>
+                          <v-col>
+                            <a-form-item label="Post Operative Diagnosis">
+                              <a-textarea :rows="4" />
+                            </a-form-item>
+                          </v-col>
+                        </v-row>
+                      </v-container>
+                    </v-sheet>
+                    <div class="d-flex pt-4">
+                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                    </div>
+                  </template>
+                </StepperPanel>
+                
+                <!-- Diagnostic & Follow-up Panels -->
+                <StepperPanel value="Complaint" header="Complaint" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -489,7 +679,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel header="Investigation">
+                <StepperPanel value="Investigation" header="Investigation" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
                   <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -516,7 +706,23 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel header="Assessment And Diagnosis">
+                <StepperPanel value="Illness Progression" header="Illness Progression" v-if="formState === 'Follow-up'">
+                  <template #content="{ nextCallback }">
+                    <v-sheet>
+                      <v-container>
+                        <v-row>
+                          <v-col>
+                            <a-textarea v-model:value="form.illness_progression" :rows="4" />
+                          </v-col>
+                        </v-row>
+                      </v-container>
+                    </v-sheet>
+                    <div class="d-flex pt-4">
+                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                    </div>
+                  </template>
+                </StepperPanel>
+                <StepperPanel value="Assessment And Diagnosis" header="Assessment And Diagnosis" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
                   <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -553,7 +759,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel header="Treatment">
+                <StepperPanel value="Treatment" header="Treatment" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
                   <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -564,6 +770,7 @@
                               <v-btn variant="flat" color="orange" disabled>Surgical Procedure</v-btn>
                               <v-btn variant="flat" color="orange" disabled>Therapeutic Procedure</v-btn>
                               <v-btn variant="flat" color="orange" disabled>Physiotherapy Session</v-btn>
+                              <v-btn variant="flat" color="orange" @click="() => {procedureActive = true}">Chartings</v-btn>
                             </div>
                           </v-col>
                         </v-row>
@@ -575,7 +782,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel header="Order">
+                <StepperPanel value="Order" header="Order" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
                   <template #content="{ prevCallback }">
                     <v-sheet>
                       <v-container>
@@ -597,40 +804,61 @@
                     </div>
                   </template>
                 </StepperPanel>
+
+                <!-- Session Panels -->
+
               </Stepper>
               <div class="d-flex py-4 gap-2">
-                <v-btn variant="flat" color="blue-darken-2" @click="submitEncounter()">Save</v-btn>
-                <v-btn variant="flat" color="purple-darken-4" @click="submitEncounter(true)">Submit</v-btn>
+                <v-btn variant="flat" color="lime" @click="submitEncounter()">Save</v-btn>
+                <v-btn variant="flat" color="amber" @click="submitEncounter(true)">Submit</v-btn>
               </div>
             </a-form>
           </template>
         </Card>
       </div> 
     </div>
-    <vitalSignsDialog 
-    :isOpen="vitalSignsActive" 
-    @update:isOpen="vitalSignsActive = $event" 
-    @show-alert="showAlert" 
-    :appointment="records.appointment"
-    />
-    <patientEncounterDialog 
-    :isOpen="pastVisitsActive" 
-    @update:isOpen="pastVisitsActive = $event" 
-    @show-alert="showAlert" 
-    :form="pastVisitEditRow"
-    />
-    <labTestDialog 
-    :isOpen="labTestActive" 
-    @update:isOpen="labTestActive = $event" 
-    @show-alert="showAlert" 
-    :appointment="records.appointment"
-    />
-    <medicationRequestDialog 
-    :isOpen="medicationRequestActive" 
-    @update:isOpen="medicationRequestActive = $event" 
-    @show-alert="showAlert" 
-    :appointment="records.appointment"
-    />
+
+    <div class="dialogs">
+      <vitalSignsDialog 
+      :isOpen="vitalSignsActive" 
+      @update:isOpen="vitalSignsActive = $event" 
+      @show-alert="showAlert" 
+      :appointment="records.appointment"
+      />
+      <patientEncounterDialog 
+      :isOpen="pastVisitsActive" 
+      @update:isOpen="pastVisitsActive = $event" 
+      @show-alert="showAlert" 
+      :form="pastVisitEditRow"
+      />
+      <labTestDialog 
+      :isOpen="labTestActive" 
+      @update:isOpen="labTestActive = $event" 
+      @show-alert="showAlert" 
+      :appointment="records.appointment"
+      />
+      <medicationRequestDialog 
+      :isOpen="medicationRequestActive" 
+      @update:isOpen="medicationRequestActive = $event" 
+      @show-alert="showAlert" 
+      :appointment="records.appointment"
+      />
+      <addAttachmentDialog 
+      :isOpen="addAttachmentActive" 
+      @update:isOpen="addAttachmentActive = $event" 
+      @show-alert="showAlert" 
+      doctype="Patient Encounter Attachments"
+      :parentType="form.doctype"
+      :parent="form.name"
+      fieldName="custom_attachments"
+      :isChild="true"
+      />
+      <procedureDialog 
+      :isOpen="procedureActive" 
+      @update:isOpen="procedureActive = $event" 
+      @show-alert="showAlert" 
+      />
+    </div>
   </div>
 </template>
 
@@ -645,7 +873,9 @@ import { VSelect } from 'vuetify/components/VSelect';
 import { VDivider } from 'vuetify/components/VDivider';
 import { VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem } from 'vuetify/components/VStepper';
 import { VSheet } from 'vuetify/components/VSheet';
-import { VHover } from 'vuetify/components/VHover'
+import { VHover } from 'vuetify/components/VHover';
+import { VAvatar } from 'vuetify/components/VAvatar';
+import ExcalidrawWrapper from '@/components/ExcalidrawWrapper.vue';
 
 import { ref, reactive } from 'vue';
 import { Form } from 'ant-design-vue';
@@ -658,36 +888,12 @@ import celsiusImage from '@/assets/img/celsius.png';
 export default {
   inject: ['$call'],
   components: {
-    VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VContainer,
+    VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VContainer, VAvatar,
     VRow, VCol, VSelect, VDivider, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet,
-    Image, VHover
+    Image, VHover, ExcalidrawWrapper,
   }, 
   computed: {
-    form() {
-      return reactive({
-        doctype: 'Patient Encounter',
-        custom_encounter_start_time: dayjs(),
-        symptoms: [],
-        period: 0,
-        note: '',
-        physicalExamination: '',
-        otherExamination: '',
-        diagnosis: [],
-        differentialDiagnosis: [],
-        diagnosisNote: '',
-
-        appointment: this.records.appointment.name,
-        appointment_type: this.records.appointment.appointment_type,
-        custom_appointment_category: this.records.appointment.appointment_type,
-        patient: this.records.patient.name,
-        patient_name: this.records.patient.patient_name,
-        patient_sex: this.records.patient.patient_sex,
-        patient_age: this.records.patient.patient_age,
-        practitioner: this.records.patient.practitioner,
-        practitioner_name: this.records.patient.practitioner_name,
-        medical_department: this.records.appointment.department,
-			});
-    },
+    
   },
   data() {
     return {
@@ -707,18 +913,51 @@ export default {
       celsiusImage:celsiusImage,
       soundImage:soundImage,
       pastVisitEditRow: '',
-      diagnosisFormSteps:['Complaint', 'Investigation', 'Assessment and Diagnosis', 'Treatment', 'Order'],
       practitionerConflict: false,
       vitalSignsActive: false,
       pastVisitsActive: false,
       labTestActive: false,
       medicationRequestActive: false,
+      addAttachmentActive: false,
+      procedureActive: false,
       message: '',
       alertVisible: false,
+      formOptions: ['Procedural', 'Diagnostic', 'Follow-up', 'Session'],
+      stepperValue: 'Complaint',
+      formState: 'Diagnostic',
+      form: reactive({
+        doctype: 'Patient Encounter',
+        name: '',
+        custom_encounter_start_time: dayjs(),
+        procedure_date: dayjs(),
+        symptoms: [],
+        period: 0,
+        note: '',
+        physicalExamination: '',
+        otherExamination: '',
+        diagnosis: [],
+        differentialDiagnosis: [],
+        diagnosisNote: '',
+        appointment: '',
+        appointment_type: '',
+        custom_appointment_category: '',
+        patient: '',
+        patient_name: '',
+        patient_sex: '',
+        patient_age: '',
+        original_practitioner: '',
+        original_practitioner_name: '',
+        practitioner: '',
+        practitioner_name: '',
+        medical_department: '',
+        illness_progression: '',
+			}),
     };
   },
   created() {
     this.fetchRecords();
+  },
+  mounted() {
   },
   methods: {
     affixChenge(affixed){
@@ -732,10 +971,14 @@ export default {
       return {risk: 'Low', color: 'green', severity: 'Mild'}
     },
     fetchRecords(){
-      this.$call('healthcare_doworks.api.methods.patient_encounter_records', {appointment: this.$route.params.appointmentId}).then(response => {
+      this.lodingOverlay = true;
+      this.$call('healthcare_doworks.api.methods.patient_encounter_records', {appointment_id: this.$route.params.appointmentId})
+      .then(response => {
         console.log(response)
+        response.current_encounter.custom_encounter_start_time = dayjs(response.current_encounter.custom_encounter_start_time)
+        this.form = {...this.form, ...response.current_encounter}
         response.patient.dob = dayjs(response.patient.dob).format('DD/MM/YYYY')
-        response.patient.age = dayjs().diff(response.patient.dob, 'y')
+        response.patient.age = ' (' + dayjs().diff(response.patient.dob, 'y') + 'yrs), '
         response.encounters = response.encounters.map((encounter, index) => {
           encounter.encounter_date = dayjs(encounter.encounter_date).format('DD/MM/YYYY')
           encounter.diagnosisArray = encounter.diagnosis.map((value, index) => {
@@ -781,8 +1024,8 @@ export default {
         let formClone = {...this.form}
         formClone.encounter_date = dayjs().format('YYYY-MM-DD')
         formClone.encounter_time = dayjs().format('HH:mm')
-        formClone.custom_encounter_start_time = this.form.custom_encounter_start_time.format('HH:mm')
-        this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone, submit: submit})
+        formClone.custom_encounter_start_time = dayjs().format('YYYY-MM-DD HH:mm')
+        this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone, submit: submit})
         .then(response => {
           this.lodingOverlay = false;
           
@@ -811,7 +1054,29 @@ export default {
       this.previewUrl = row.url;
       this.previewType = row.type;
       this.previewVisible = true;
-    }
+    },
+    setStepperValue() {
+      if(this.formState === 'Diagnostic'){
+        this.stepperValue = 'Complaint';
+        return;
+      }
+      if(this.formState === 'Follow-up'){
+        this.stepperValue = 'Illness Progression';
+        return;
+      }
+      if(this.formState === 'Procedural'){
+        this.stepperValue = 'Procedure Info';
+        return;
+      }
+      this.stepperValue = 'Complaint';
+    },
+    // saveImage() {
+    //   if (window.ExcalidrawAPI && window.ExcalidrawAPI.saveCanvasAsImage) {
+    //     window.ExcalidrawAPI.saveCanvasAsImage();
+    //   } else {
+    //     console.error('Save function is not yet registered by React component');
+    //   }
+    // },
   }
 };
 </script>

@@ -103,7 +103,6 @@ export default {
         },
     },
     mounted() {
-        console.log(this.patient)
         window.addEventListener('resize', this.handleResize);
     },
     beforeUnmount() {

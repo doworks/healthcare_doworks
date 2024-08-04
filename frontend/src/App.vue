@@ -17,7 +17,9 @@
 
 
 <script>
-import { loadStyles } from "@/loadStyles";
+import '@/assets/css/feather.css';
+// import '@/assets/css/custom.css';
+import '@/assets/css/prime.css';
 import { VLayout } from 'vuetify/components/VLayout'
 import { VMain } from 'vuetify/components/VMain'
 export default {
@@ -27,7 +29,7 @@ export default {
 		VMain,
 	},
 	setup() {
-		loadStyles();
+		// loadStyles();
 
 		// Your other setup logic
 		// ...
