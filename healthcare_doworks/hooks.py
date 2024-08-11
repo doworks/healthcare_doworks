@@ -71,6 +71,7 @@ app_license = "mit"
 
 # before_install = "healthcare_doworks.install.before_install"
 # after_install = "healthcare_doworks.install.after_install"
+after_install = "healthcare_doworks.install.add_custom_fields"
 
 # Uninstallation
 # ------------
