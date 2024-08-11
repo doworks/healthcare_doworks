@@ -1,40 +1,12 @@
 import frappe
 
-def get_custom_fields_in_healthcare():
-    # Get all DocTypes that belong to the Healthcare module
-    healthcare_doctypes = frappe.get_all(
-        'DocType',
-        filters={'module': 'Healthcare'},
-        fields=['name']
-    )
-
-    # Extract the names of the DocTypes
-    healthcare_doctype_names = [doctype['name'] for doctype in healthcare_doctypes]
-
-    # Retrieve custom fields for these DocTypes
-    custom_fields = frappe.get_all(
-        'Custom Field',
-        filters={'dt': ['in', healthcare_doctype_names]},
-        fields=['name', 'dt', 'fieldname', 'label', 'fieldtype', 'creation', 'reqd', 'insert_after', 'description', 'options'],
-        order_by='dt, creation desc'
-    )
-
-    # Print details of each custom field
-    for field in custom_fields:
-        print(f"Doctype: {field['dt']}, Fieldname: {field['fieldname']}, Label: {field['label']}, Fieldtype: {field['fieldtype']}, Created on: {field['creation']}")
-
-    return custom_fields
-
-if __name__ == "__main__":
-    custom_fields_in_healthcare = get_custom_fields_in_healthcare()
-
-
 def add_custom_fields():
     """
     Ensure that each custom field in the list exists in the specified DocType.
     
     :param custom_fields_list: List of custom field definitions. Each definition is a dictionary.
     """
+    print(custom_fields)
     for field in custom_fields:
         doctype = field.get('dt')
         fieldname = field.get('fieldname')
