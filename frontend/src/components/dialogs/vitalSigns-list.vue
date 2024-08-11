@@ -102,6 +102,7 @@ export default {
                     label: 'Add Vital Signs',
                     icon: 'pi pi-plus',
                     command: () => {
+                        console.log(this.appointment)
                         this.vsDialogOpen = true
                     }
                 },

@@ -315,23 +315,39 @@ export default {
             validate().then(() => {
                 this.lodingOverlay = true;
                 let formClone = {...this.form}
-                formClone.signs_date = dayjs(formClone.signs_date).format('YYYY-MM-DD')
-                formClone.signs_time = dayjs(formClone.signs_time).format('HH:mm')
-                const old = formClone.name && true
-                console.log(old)
-                this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone})
-                .then(response => {
-                    this.lodingOverlay = false;
-                    this.closeDialog()
-                }).catch(error => {
-                    console.error(error);
-                    let message = error.message.split('\n');
-                    message = message.find(line => line.includes('frappe.exceptions'));
-                    if(message){
-                        const firstSpaceIndex = message.indexOf(' ');
-                        this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-                    }
-                });
+                formClone.signs_date = dayjs(this.form.signs_date).format('YYYY-MM-DD')
+                formClone.signs_time = dayjs(this.form.signs_time).format('HH:mm')
+                const old = !!formClone.name
+                if(old){
+                    this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone})
+                    .then(response => {
+                        this.lodingOverlay = false;
+                        this.closeDialog()
+                    }).catch(error => {
+                        console.error(error);
+                        let message = error.message.split('\n');
+                        message = message.find(line => line.includes('frappe.exceptions'));
+                        if(message){
+                            const firstSpaceIndex = message.indexOf(' ');
+                            this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+                        }
+                    });
+                }
+                else{
+                    this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone})
+                    .then(response => {
+                        this.lodingOverlay = false;
+                        this.closeDialog()
+                    }).catch(error => {
+                        console.error(error);
+                        let message = error.message.split('\n');
+                        message = message.find(line => line.includes('frappe.exceptions'));
+                        if(message){
+                            const firstSpaceIndex = message.indexOf(' ');
+                            this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+                        }
+                    });
+                }
             })
             .catch(err => {
                 console.log('error', err);

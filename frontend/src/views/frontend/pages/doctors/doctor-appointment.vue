@@ -138,7 +138,7 @@
     :isOpen="vitalSignsOpen" 
     @update:isOpen="vitalSignsOpen = $event" 
     @show-alert="showAlert" 
-    :appointment="{'name': selectedRow.name, 'patient': selectedRow.patient}"
+    :appointment="{'name': selectedRow.appointment_id, 'patient': selectedRow.patient_details.id}"
     />
     <v-dialog v-model="appointmentNoteOpen" width="auto">
       <v-card
@@ -328,7 +328,7 @@ export default {
       message: '',
       alertVisible: false,
       appointmentForm: {},
-      selectedRow: {patient: ''},
+      selectedRow: {appointment_id: '', patient_details: {id: ''}},
       dateFilterType: 'span',
       selectedSpan: 'today',
       selectedDates: ref([dayjs()]),

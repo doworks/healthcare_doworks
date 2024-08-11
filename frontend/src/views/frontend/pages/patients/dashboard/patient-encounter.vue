@@ -13,6 +13,18 @@
     >
       <div v-html="message"></div>
     </v-alert>
+    <Toast position="bottom-right"/>
+    <ConfirmPopup group="headless">
+      <template #container="{ message, acceptCallback, rejectCallback }">
+        <div class="rounded p-4">
+          <span>{{ message.message }}</span>
+          <div class="d-flex align-items-center gap-2 mt-4">
+            <v-btn @click="acceptCallback" color="primary" size="small">Save</v-btn>
+            <v-btn outlined @click="rejectCallback" size="small" text>Cancel</v-btn>
+          </div>
+        </div>
+      </template>
+    </ConfirmPopup>
     <div class="row w-100 mx-0">
       <div class="ps-0 pe-md-0 mt-2 mb-md-3 d-block col-12 col-md-6 d-xl-none">
         <Card class="h-100" :class="{'rounded-bottom-0': $vuetify.display.smAndDown, 'rounded-end-0': !$vuetify.display.smAndDown}">
@@ -64,7 +76,7 @@
                 </div>
                 <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
                 <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
-                <h4 class="mt-2 mb-0">{{ form.custom_encounter_start_time.format('h:mm A') }}</h4>
+                <h4 class="mt-2 mb-0">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
               </div>
             </div>
           </template>
@@ -220,7 +232,7 @@
                     </div>
                     <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
                     <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
-                    <h4 class="mt-2 mb-0">{{ form.custom_encounter_start_time.format('h:mm A') }}</h4>
+                    <h4 class="mt-2 mb-0">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
                   </div>
                 </div>
               </template>
@@ -233,7 +245,13 @@
           <Card class="p-0" id="past-encounters" style="overflow: hidden;">
             <template #title>Visit Logs<a class="fs-6 float-end" :class="{'d-none': records.encounters.length <= 5}">See All</a></template>
             <template #content>
-              <DataTable :value="records.encounters ? records.encounters.slice(0, 5) : records.encounters" selectionMode="single" :metaKeySelection="true" dataKey="id" @row-click="visitLogSelect">
+              <DataTable 
+              :value="records.encounters ? records.encounters.slice(0, 5) : records.encounters" 
+              selectionMode="single" 
+              :metaKeySelection="true" 
+              dataKey="id" 
+              @row-click="visitLogSelect"
+              >
                 <template #empty><v-empty-state title="This Is The First Visit"></v-empty-state></template>
                 <Column field="encounter_date" header="Date"></Column>
                 <Column field="practitioner_name" header="Practitioner"></Column>
@@ -247,7 +265,7 @@
           <Card class="p-0" id="services" style="overflow: hidden;">
             <template #title>
               <span class="align-middle">Service Requests / Results ({{ records.services && records.services.length }})</span>
-              <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain">Add</v-btn>
+              <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain" @click="()=>{serviceRequestActive = true}">Add</v-btn>
             </template>
             <template #content>
               <DataTable :value="records.services ? records.services.slice(0, 5) : records.services">
@@ -502,29 +520,29 @@
       <div class="ps-0 mt-3 col-12 mb-25">
         <Card class="mb-4">
           <template #content>
-            <a-form layout="vertical" :model="form">
-              <SelectButton v-model="formState" :options="formOptions" class="text-center" :allowEmpty="false" @change="setStepperValue"/>
-              <Stepper orientation="vertical" v-model:value="stepperValue">
+            <a-form layout="vertical" :model="procedureForm">
+              <SelectButton v-model="encounterForm.custom_encounter_state" :options="formOptions" class="text-center" :allowEmpty="false" @change="setStepperValue"/>
+              <Stepper orientation="vertical">
                 <!-- Procedural Panels -->
-                <StepperPanel value="Procedure Info" header="Procedure Info" v-if="formState === 'Procedural'">
+                <StepperPanel value="Procedure Info" header="Procedure Info" v-if="encounterForm.custom_encounter_state === 'Procedural'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
                         <v-row>
                           <v-col cols="12" md="6">
-                            <a-form-item label="Clinical Procedure Category">
+                            <a-form-item label="Procedure Template">
                               <a-select
                                 allowClear
-                                v-model:value="form.symptoms"
-                                :options="$resources.complaints"
-                                :fieldNames="{label: 'complaints', value: 'complaints'}"
+                                v-model:value="procedureForm.procedure_template"
+                                :options="$resources.clinicalProcedureTemplate"
+                                :fieldNames="{label: 'name', value: 'name'}"
                                 style="width: 100%"
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Practitioner">
                               <a-select
                                 allowClear
-                                v-model:value="form.practitioner"
+                                v-model:value="procedureForm.practitioner"
                                 :options="$resources.practitioners"
                                 :fieldNames="{label: 'practitioner_name', value: 'name'}"
                                 style="width: 100%"
@@ -533,16 +551,16 @@
                             <a-form-item label="Medical Department">
                               <a-select
                                 allowClear
-                                v-model:value="form.medical_department"
+                                v-model:value="procedureForm.medical_department"
                                 :options="$resources.departments"
                                 :fieldNames="{label: 'department', value: 'department'}"
                                 style="width: 100%"
                               ></a-select>
                             </a-form-item>
-                            <a-form-item label="Medical Department">
+                            <a-form-item label="Service Unit">
                               <a-select
                                 allowClear
-                                v-model:value="records.appointment.service_unit"
+                                v-model:value="procedureForm.service_unit"
                                 :options="$resources.serviceUnits"
                                 :fieldNames="{label: 'name', value: 'name'}"
                                 style="width: 100%"
@@ -550,28 +568,18 @@
                             </a-form-item>
                           </v-col>
                           <v-col cols="12" md="6">
-                            <a-form-item label="Procedure Template">
-                              <a-select
-                                allowClear
-                                v-model:value="form.symptoms"
-                                :options="$resources.complaints"
-                                :fieldNames="{label: 'complaints', value: 'complaints'}"
-                                style="width: 100%"
-                              ></a-select>
-                            </a-form-item>
                             <a-form-item label="Start Date">
                               <a-date-picker 
-                                v-model:value="form.procedure_date"
-                                @change="()=>{$emit('show-slots')}" 
+                                v-model:value="procedureForm.start_date"
                                 format="DD-MM-YYYY" 
                                 style="width: 100%;"
                               />
                             </a-form-item>
                             <a-form-item label="Start Time">
-                              <a-time-picker v-model:value="form.procedure_date" use12-hours format="h:mm a" style="width: 100%;"/>
+                              <a-time-picker v-model:value="procedureForm.start_time" format="h:mm a" style="width: 100%;"/>
                             </a-form-item>
                             <a-form-item label="Notes">
-                              <a-textarea :rows="4" />
+                              <a-textarea :rows="4" v-model:value="procedureForm.notes"/>
                             </a-form-item>
                           </v-col>
                         </v-row>
@@ -582,7 +590,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Pre Procedure" header="Pre Procedure" v-if="formState === 'Procedural'">
+                <StepperPanel value="Pre Procedure" header="Pre Procedure" v-if="encounterForm.custom_encounter_state === 'Procedural'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -591,15 +599,30 @@
                             <a-form-item label="Sample">
                               <a-select
                                 allowClear
-                                v-model:value="form.symptoms"
-                                :options="$resources.complaints"
-                                :fieldNames="{label: 'complaints', value: 'complaints'}"
+                                v-model:value="procedureForm.sample"
+                                :options="$resources.sampleCollections"
+                                :fieldNames="{label: 'name', value: 'name'}"
                                 style="width: 100%"
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Pre Operative Diagnosis">
-                              <a-textarea :rows="4" />
+                              <a-textarea :rows="4" v-model:value="procedureForm.custom_pre_operative_diagnosis"/>
                             </a-form-item>
+                            <v-btn 
+                            variant="flat" 
+                            color="red-accent-4" 
+                            
+                            @click="showConsentForm"
+                            >
+                              Consent Form
+                            </v-btn>
+                            <v-icon
+                            v-if="!!procedureForm.custom_patient_consent_signature"
+                            color="green"
+                            icon="mdi mdi-check-decagram"
+                            size="large"
+                            class="ms-2"
+                            ></v-icon>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -609,7 +632,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Procedure" header="Procedure" v-if="formState === 'Procedural'">
+                <StepperPanel value="Procedure" header="Procedure" v-if="encounterForm.custom_encounter_state === 'Procedural'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -629,27 +652,24 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Post Procedure" header="Post Procedure" v-if="formState === 'Procedural'">
-                  <template #content="{ nextCallback }">
+                <StepperPanel value="Post Procedure" header="Post Procedure" v-if="encounterForm.custom_encounter_state === 'Procedural'">
+                  <template #content>
                     <v-sheet>
                       <v-container>
                         <v-row>
                           <v-col>
                             <a-form-item label="Post Operative Diagnosis">
-                              <a-textarea :rows="4" />
+                              <a-textarea :rows="4" v-model:value="procedureForm.custom_post_operative_diagnosis"/>
                             </a-form-item>
                           </v-col>
                         </v-row>
                       </v-container>
                     </v-sheet>
-                    <div class="d-flex pt-4">
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
-                    </div>
                   </template>
                 </StepperPanel>
                 
-                <!-- Diagnostic & Follow-up Panels -->
-                <StepperPanel value="Complaint" header="Complaint" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
+                <!-- Encounter & Follow-up Panels -->
+                <StepperPanel value="Complaint" header="Complaint" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -657,7 +677,8 @@
                           <v-col>
                             <a-form-item label="Symptoms">
                               <a-select
-                                v-model:value="form.symptoms"
+                                v-model:value="encounterForm.symptoms"
+                                label-in-value
                                 :options="$resources.complaints"
                                 :fieldNames="{label: 'complaints', value: 'complaints'}"
                                 mode="multiple"
@@ -665,10 +686,10 @@
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Symptoms Duration">
-                              <a-input v-model:value="form.period" />
+                              <a-input v-model:value="encounterForm.period" />
                             </a-form-item>
                             <a-form-item label="Note">
-                              <a-textarea v-model:value="form.note" :rows="4" />
+                              <a-textarea v-model:value="encounterForm.note" :rows="4" />
                             </a-form-item>
                           </v-col>
                         </v-row>
@@ -679,19 +700,19 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Investigation" header="Investigation" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
+                <StepperPanel value="Pysical Examination & Investigation" header="Pysical Examination & Investigation" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
                         <v-row>
                           <v-col>
                             <a-form-item label="Physical Examination">
-                              <a-textarea v-model:value="form.physicalExamination" :rows="4" />
+                              <a-textarea v-model:value="encounterForm.physicalExamination" :rows="4" />
                             </a-form-item>
                             <a-form-item label="Other Examination">
-                              <a-textarea v-model:value="form.otherExamination" :rows="4" />
+                              <a-textarea v-model:value="encounterForm.otherExamination" :rows="4" />
                             </a-form-item>
-                            <h3 class="mt-3">Diagnostic Procedure</h3>
+                            <h3 class="mt-3">Encounter Procedure</h3>
                             <div class="d-flex gap-2">
                               <v-btn variant="flat" color="primary" @click="() => {labTestActive = true}">Lab Test</v-btn>
                               <v-btn variant="flat" color="primary" disabled>Radiology Test</v-btn>
@@ -706,13 +727,13 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Illness Progression" header="Illness Progression" v-if="formState === 'Follow-up'">
+                <StepperPanel value="Illness Progression" header="Illness Progression" v-if="encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
                         <v-row>
                           <v-col>
-                            <a-textarea v-model:value="form.illness_progression" :rows="4" />
+                            <a-textarea v-model:value="encounterForm.illness_progression" :rows="4" />
                           </v-col>
                         </v-row>
                       </v-container>
@@ -722,7 +743,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Assessment And Diagnosis" header="Assessment And Diagnosis" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
+                <StepperPanel value="Diagnosis" header="Diagnosis" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -730,7 +751,8 @@
                           <v-col>
                             <a-form-item label="Diagnosis">
                               <a-select
-                                v-model:value="form.diagnosis"
+                                v-model:value="encounterForm.diagnosis"
+                                label-in-value
                                 :options="$resources.diagnosis"
                                 :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
                                 mode="multiple"
@@ -739,7 +761,8 @@
                             </a-form-item>
                             <a-form-item label="Differential Diagnosis">
                               <a-select
-                                v-model:value="form.differentialDiagnosis"
+                                v-model:value="encounterForm.differentialDiagnosis"
+                                label-in-value
                                 :options="$resources.diagnosis"
                                 :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
                                 mode="multiple"
@@ -747,7 +770,7 @@
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Diagnosis Note">
-                              <a-textarea v-model:value="form.diagnosisNote" :rows="4" />
+                              <a-textarea v-model:value="encounterForm.diagnosisNote" :rows="4" />
                             </a-form-item>
                           </v-col>
                         </v-row>
@@ -759,7 +782,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Treatment" header="Treatment" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
+                <StepperPanel value="Treatment" header="Treatment" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -770,7 +793,7 @@
                               <v-btn variant="flat" color="orange" disabled>Surgical Procedure</v-btn>
                               <v-btn variant="flat" color="orange" disabled>Therapeutic Procedure</v-btn>
                               <v-btn variant="flat" color="orange" disabled>Physiotherapy Session</v-btn>
-                              <v-btn variant="flat" color="orange" @click="() => {procedureActive = true}">Chartings</v-btn>
+                              <v-btn variant="flat" color="orange" @click="() => {procedureActive = true}">Annotation</v-btn>
                             </div>
                           </v-col>
                         </v-row>
@@ -782,7 +805,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Order" header="Order" v-if="formState === 'Diagnostic' || formState === 'Follow-up'">
+                <StepperPanel value="Order" header="Order" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ prevCallback }">
                     <v-sheet>
                       <v-container>
@@ -848,8 +871,8 @@
       @update:isOpen="addAttachmentActive = $event" 
       @show-alert="showAlert" 
       doctype="Patient Encounter Attachments"
-      :parentType="form.doctype"
-      :parent="form.name"
+      :parentType="encounterForm.doctype"
+      :parent="encounterForm.name"
       fieldName="custom_attachments"
       :isChild="true"
       />
@@ -858,6 +881,35 @@
       @update:isOpen="procedureActive = $event" 
       @show-alert="showAlert" 
       />
+      <serviceRequestDialog 
+      :isOpen="serviceRequestActive" 
+      @update:isOpen="serviceRequestActive = $event" 
+      @show-alert="showAlert" 
+      :patient="records.patient"
+      :encounter="records.current_encounter"
+      />
+      <v-dialog v-model="consentFormDialog" width="auto">
+        <v-toolbar color="red-accent-4" :style="{borderTopRightRadius: '12px', borderTopLeftRadius: '12px'}">
+          <v-btn variant="text" icon="mdi mdi-close" @click="consentFormDialog = false"></v-btn>
+
+          <v-toolbar-title>Consent Form</v-toolbar-title>
+
+          <v-spacer></v-spacer>
+          
+          <v-toolbar-items>
+            <v-btn
+              text="Save"
+              variant="text"
+              @click="saveSignature"
+            ></v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
+
+        <v-card>
+          <pdfSignature :html="consentFormHtml" ref="consentFrom"/>
+        </v-card>
+
+      </v-dialog>
     </div>
   </div>
 </template>
@@ -868,35 +920,40 @@ import { VEmptyState } from 'vuetify/labs/VEmptyState';
 import { VSlideGroup, VSlideGroupItem } from 'vuetify/components/VSlideGroup';
 import { VProgressLinear } from 'vuetify/components/VProgressLinear';
 import { VChip } from 'vuetify/components/VChip';
-import { VContainer, VRow, VCol } from 'vuetify/components/VGrid';
+import { VSpacer } from 'vuetify/components/VGrid';
 import { VSelect } from 'vuetify/components/VSelect';
-import { VDivider } from 'vuetify/components/VDivider';
 import { VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem } from 'vuetify/components/VStepper';
 import { VSheet } from 'vuetify/components/VSheet';
 import { VHover } from 'vuetify/components/VHover';
 import { VAvatar } from 'vuetify/components/VAvatar';
+import { VToolbar, VToolbarItems, VToolbarTitle } from 'vuetify/components/VToolbar';
+import { VIcon } from 'vuetify/components/VIcon';
+
 import ExcalidrawWrapper from '@/components/ExcalidrawWrapper.vue';
 
 import { ref, reactive } from 'vue';
 import { Form } from 'ant-design-vue';
 
 import encounterRecords from '@/assets/json/encounterrecords.json'
+import pdfSignature from '@/components/pdfSignature.vue';
 import soundImage from '@/assets/img/sound.png';
 import lungsImage from '@/assets/img/lungs.png';
 import celsiusImage from '@/assets/img/celsius.png';
 
 export default {
-  inject: ['$call'],
+  inject: ['$socket', '$call'],
   components: {
-    VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VContainer, VAvatar,
-    VRow, VCol, VSelect, VDivider, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet,
-    Image, VHover, ExcalidrawWrapper,
-  }, 
+    VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VAvatar, VIcon,
+    VSelect, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet,
+    Image, VHover, ExcalidrawWrapper, pdfSignature, VToolbar, VToolbarItems, VToolbarTitle, VSpacer,
+  },
   computed: {
     
   },
   data() {
     return {
+      consentFormDialog: false,
+      consentFormHtml: '',
       currentFormStep: 0,
       currentVS: {
         name: '',
@@ -916,23 +973,23 @@ export default {
       practitionerConflict: false,
       vitalSignsActive: false,
       pastVisitsActive: false,
+      serviceRequestActive: false,
       labTestActive: false,
       medicationRequestActive: false,
       addAttachmentActive: false,
       procedureActive: false,
       message: '',
       alertVisible: false,
-      formOptions: ['Procedural', 'Diagnostic', 'Follow-up', 'Session'],
-      stepperValue: 'Complaint',
-      formState: 'Diagnostic',
-      form: reactive({
+      formOptions: ['Procedural', 'Encounter', 'Follow-up', 'Session'],
+      previousState: 'Encounter',
+      encounterForm: reactive({
         doctype: 'Patient Encounter',
         name: '',
         custom_encounter_start_time: dayjs(),
         procedure_date: dayjs(),
         symptoms: [],
         period: 0,
-        note: '',
+        symptomNote: '',
         physicalExamination: '',
         otherExamination: '',
         diagnosis: [],
@@ -941,6 +998,7 @@ export default {
         appointment: '',
         appointment_type: '',
         custom_appointment_category: '',
+        custom_encounter_state: 'Encounter',
         patient: '',
         patient_name: '',
         patient_sex: '',
@@ -952,12 +1010,45 @@ export default {
         medical_department: '',
         illness_progression: '',
 			}),
+
+      procedureForm: reactive({
+        doctype: 'Clinical Procedure',
+        name: '',
+        custom_patient_consent_signature: '',
+
+        custom_patient_encounter: '',
+        procedure_template: 'Botox Injection',
+        
+        patient: '',
+        patient_name: '',
+        patient_sex: '',
+        patient_age: '',
+        inpatient_record: '',
+        notes: '',
+        practitioner: '',
+        practitioner_name: '',
+        medical_department: '',
+        service_unit: '',
+        start_date: dayjs(),
+        start_time: dayjs(),
+        sample: '',
+
+        custom_pre_operative_diagnosis: '',
+        custom_post_operative_diagnosis: '',
+			}),
     };
   },
   created() {
     this.fetchRecords();
-  },
-  mounted() {
+    this.$socket.on('services', response => {
+      let thisPatient = false
+      this.records.services = response.filter(service => {
+        thisPatient = true
+        return service.patient == this.encounterForm.patient
+      })
+      if(thisPatient) 
+        this.$toast.add({ severity: 'success', summary: 'Update', detail: 'Service Requests have been updated', life: 2000 });
+    })
   },
   methods: {
     affixChenge(affixed){
@@ -976,7 +1067,19 @@ export default {
       .then(response => {
         console.log(response)
         response.current_encounter.custom_encounter_start_time = dayjs(response.current_encounter.custom_encounter_start_time)
-        this.form = {...this.form, ...response.current_encounter}
+        response.current_procedure.start_time = dayjs(response.current_procedure.start_date + ' ' + response.current_procedure.start_time)
+        response.current_procedure.start_date = dayjs(response.current_procedure.start_date)
+
+        response.current_encounter.diagnosis.forEach(value => {
+          value.label = value.diagnosis
+          value.value = value.diagnosis
+        })
+        response.current_encounter.symptoms.forEach(value => {
+          value.label = value.complaint
+          value.value = value.complaint
+        })
+        this.encounterForm = {...this.encounterForm, ...response.current_encounter}
+        this.procedureForm = {...this.procedureForm, ...response.current_procedure}
         response.patient.dob = dayjs(response.patient.dob).format('DD/MM/YYYY')
         response.patient.age = ' (' + dayjs().diff(response.patient.dob, 'y') + 'yrs), '
         response.encounters = response.encounters.map((encounter, index) => {
@@ -1018,10 +1121,10 @@ export default {
       // }, duration);
     },
     submitEncounter(submit = false) {
-      const { validate } = Form.useForm(this.form, this.rules);
+      const { validate } = Form.useForm(this.encounterForm, this.rules);
       validate().then(() => {
         this.lodingOverlay = true;
-        let formClone = {...this.form}
+        let formClone = {...this.encounterForm}
         formClone.encounter_date = dayjs().format('YYYY-MM-DD')
         formClone.encounter_time = dayjs().format('HH:mm')
         formClone.custom_encounter_start_time = dayjs().format('YYYY-MM-DD HH:mm')
@@ -1029,6 +1132,33 @@ export default {
         .then(response => {
           this.lodingOverlay = false;
           
+        }).catch(error => {
+          console.error(error);
+          let message = error.message.split('\n');
+          message = message.find(line => line.includes('frappe.exceptions'));
+          if(message){
+            const firstSpaceIndex = message.indexOf(' ');
+            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+          }
+        });
+      })
+      .catch(err => {
+        console.log('error', err);
+      });
+    },
+    autoSave() {
+      const { validate } = Form.useForm(this.encounterForm, this.rules);
+      validate().then(() => {
+        this.lodingOverlay = true;
+        let formClone = {...this.encounterForm}
+        formClone.encounter_date = dayjs().format('YYYY-MM-DD')
+        formClone.encounter_time = dayjs().format('HH:mm')
+        formClone.custom_encounter_start_time = dayjs().format('YYYY-MM-DD HH:mm')
+        formClone.modified = undefined
+        this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone})
+        .then(response => {
+          this.lodingOverlay = false;
+          this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
         }).catch(error => {
           console.error(error);
           let message = error.message.split('\n');
@@ -1055,20 +1185,86 @@ export default {
       this.previewType = row.type;
       this.previewVisible = true;
     },
-    setStepperValue() {
-      if(this.formState === 'Diagnostic'){
-        this.stepperValue = 'Complaint';
+    setStepperValue({event, value}) {
+      if(value === 'Procedural' && !this.procedureForm.name){
+        this.requireConfirmation(event, value)
+        this.encounterForm.custom_encounter_state = this.previousState
         return;
       }
-      if(this.formState === 'Follow-up'){
-        this.stepperValue = 'Illness Progression';
-        return;
-      }
-      if(this.formState === 'Procedural'){
-        this.stepperValue = 'Procedure Info';
-        return;
-      }
-      this.stepperValue = 'Complaint';
+      this.previousState = value;
+      this.autoSave()
+    },
+    requireConfirmation(event) {
+      this.$confirm.require({
+        target: event.currentTarget,
+        group: 'headless',
+        message: 'Do you want to create a clinical procedure?',
+        accept: () => {
+          // console.log(this.procedureForm)
+          this.createProcedure()
+        },
+        // reject: () => {
+          //   this.$toast.add({ severity: 'error', summary: 'Rejected', detail: 'You have rejected', life: 3000 });
+          // }
+        });
+    },
+    createProcedure(){
+      this.lodingOverlay = true;
+      let formClone = {...this.procedureForm}
+      formClone.start_date = dayjs().format('YYYY-MM-DD')
+      formClone.start_time = dayjs().format('HH:mm')
+      this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone})
+      .then(response => {
+        this.lodingOverlay = false;
+        this.encounterForm.custom_encounter_state = 'Procedural'
+        this.procedureForm.name = response.name
+        this.$toast.add({ severity: 'success', summary: 'Success', detail: 'A new Clinical Procedure has been created', life: 2000 });
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
+      });
+    },
+    showConsentForm() {
+      this.$call('healthcare_doworks.api.methods.get_print_html', 
+      {doctype: 'Clinical Procedure', docname: this.procedureForm.name, print_format: 'Consent Form'})
+      .then(response => {
+        this.consentFormHtml = response
+        this.consentFormDialog = true
+
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
+      });
+    },
+    saveSignature() {
+      const signature = this.$refs.consentFrom.saveSignature();
+
+      this.$call('healthcare_doworks.api.methods.upload_signature', 
+        {docname: this.procedureForm.name, doctype: 'Clinical Procedure', file_data: signature}
+      )
+      .then(response => {
+        this.procedureForm.custom_patient_consent_signature = true
+        this.consentFormDialog = false
+        this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
+      });
     },
     // saveImage() {
     //   if (window.ExcalidrawAPI && window.ExcalidrawAPI.saveCanvasAsImage) {
@@ -1077,6 +1273,7 @@ export default {
     //     console.error('Save function is not yet registered by React component');
     //   }
     // },
+
   }
 };
 </script>

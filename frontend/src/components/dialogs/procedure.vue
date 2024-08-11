@@ -6,7 +6,7 @@
       fullscreen
     >
       <v-card>
-        <v-toolbar>
+        <v-toolbar color="yellow-darken-1">
           <v-btn
             icon="mdi mdi-close"
             @click="dialogVisible = false"

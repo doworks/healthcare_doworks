@@ -10,10 +10,13 @@ import Auth from "../../../doppio/libs/controllers/auth";
             				// My App //
 // import primevue/ vutify
 import PrimeVue from 'primevue/config';
+import ConfirmationService from 'primevue/confirmationservice';
+import ToastService from 'primevue/toastservice';
 import Aura from '@primevue/themes/aura';
 import { createVuetify } from 'vuetify';
 import {
-	VDivider, VDialog, VBtn, VAlert, VOverlay, VProgressCircular, VBadge, VCard, VCardTitle, VCardText, VCardActions, VWindow, VWindowItem, VTab, VTabs
+	VDivider, VDialog, VBtn, VAlert, VOverlay, VProgressCircular, VBadge, VCard, VCardTitle, 
+	VCardText, VCardActions, VWindow, VWindowItem, VTab, VTabs, VContainer, VRow, VCol,
 } from 'vuetify/components'
 
 // Other UI libraries
@@ -56,6 +59,9 @@ import LabTestDialog from '@/components/dialogs/labTest.vue'
 import AddAttachmentDialog from '@/components/dialogs/addAttachment.vue'
 import PatientEncounterDialog from '@/components/dialogs/patientEncounter.vue'
 import ProcedureDialog from '@/components/dialogs/procedure.vue'
+import ServiceRequestDialog from '@/components/dialogs/serviceRequest.vue'
+
+import VueKonva from 'vue-konva';
 						  // My App End //
 
 
@@ -78,6 +84,7 @@ app.component('labTestDialog',LabTestDialog)
 app.component('addAttachmentDialog',AddAttachmentDialog)
 app.component('patientEncounterDialog',PatientEncounterDialog)
 app.component('procedureDialog',ProcedureDialog)
+app.component('serviceRequestDialog',ServiceRequestDialog)
 // Use other UI libraries and plugins
 app.use(Antd);
 
@@ -85,7 +92,7 @@ app.component(VueFeather.name, VueFeather);
 const vuetify = createVuetify({
 	components: {
 		VDivider, VDialog, VBtn, VAlert, VOverlay, VProgressCircular, VBadge, VCard, VCardTitle, VCardText, 
-		VCardActions, VWindow, VWindowItem, VTab, VTabs
+		VCardActions, VWindow, VWindowItem, VTab, VTabs, VContainer, VRow, VCol,
 	},
     icons: {
         defaultSet: 'fa',
@@ -118,8 +125,9 @@ app.use(PrimeVue, {
             cssLayer: false
         }
     }
-});
+}).use(ConfirmationService).use(ToastService);
 app.use(vuetify);
+app.use(VueKonva);
 // End Of My App (Again)
 
 // Plugins
@@ -168,6 +176,17 @@ let resources = reactive({
 	prescriptionDosages: [],
 	prescriptionDurations: [],
 	labTestTemplates: [],
+	codeValues: [],
+	docTypes: [],
+	roles: [],
+	patientCareTypes: [],
+	serviceUnitTypes: [],
+	therapyTypes: [],
+	clinicalProcedureTemplates: [],
+	observationTemplate: [],
+	healthcareActivity: [],
+	clinicalProcedureTemplate: [],
+	sampleCollections: [],
 });
 
 call('healthcare_doworks.api.methods.fetch_resources').then(response => {

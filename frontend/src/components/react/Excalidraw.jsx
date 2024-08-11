@@ -151,7 +151,7 @@ const InjectableVars = [
   },
   {
     label: 'ML',
-    label: 'ml',
+    name: 'ml',
     type: 'select',
     options: [
       { value: '2ml', label: '2ml' },
@@ -445,7 +445,7 @@ const ExcalidrawWrapper = () => {
               options={variable.options}
               />
 
-              : variable.type === 'data' ? <Input defaultValue={injectableVars[variable.name]} onChange={event => {
+              : variable.type === 'data' ? <Input value={injectableVars[variable.name]} onChange={event => {
                 const newVars = {
                   ...injectableVars,
                   [variable.name]: event.target.value
