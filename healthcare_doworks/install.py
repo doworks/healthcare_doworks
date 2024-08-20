@@ -25,8 +25,8 @@ import frappe
 
 #     return custom_fields
 
-if __name__ == "__main__":
-    custom_fields_in_healthcare = get_custom_fields_in_healthcare()
+# if __name__ == "__main__":
+#     custom_fields_in_healthcare = get_custom_fields_in_healthcare()
 
 
 def add_custom_fields():
