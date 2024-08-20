@@ -20,7 +20,7 @@
             <v-btn
               text="Save"
               variant="text"
-              @click="dialogVisible = false"
+              @click="triggerReactFunction"
             ></v-btn>
           </v-toolbar-items>
         </v-toolbar>
@@ -52,6 +52,20 @@ export default {
       required: true,
       default: false,
     },
+    doctype: {
+      type: String,
+      required: true,
+      default: '',
+    },
+    docname: {
+      type: String,
+      required: true,
+      default: '',
+    },
+    encounterType: {
+      type: String,
+      default: '',
+    },
 	},
   computed: {
     dialogVisible: {
@@ -78,31 +92,37 @@ export default {
     closeDialog() {
       this.updateIsOpen(false);
     },
-    onSubmit() {
-      const { validate } = Form.useForm(this.form, this.rules);
-      validate().then(() => {
-        this.lodingOverlay = true;
-        let formClone = {...this.form}
-        formClone.signs_date = dayjs(formClone.signs_date).format('YYYY-MM-DD')
-        formClone.signs_time = dayjs(formClone.signs_time).format('HH:mm')
-        const old = formClone.name && true
-        console.log(old)
-        this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone})
-        .then(response => {
-          this.lodingOverlay = false;
-          this.closeDialog()
-        }).catch(error => {
-          console.error(error);
-          let message = error.message.split('\n');
-          message = message.find(line => line.includes('frappe.exceptions'));
-          if(message){
-            const firstSpaceIndex = message.indexOf(' ');
-            this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+    triggerReactFunction() {
+      const event = new CustomEvent('vueToReactEvent', {
+        detail: {
+          callback: async (data) => {
+            const base64Image = await this.convertBlobToBase64(data.blob);
+            console.log(base64Image)
+            this.$call('healthcare_doworks.api.methods.upload_annotation', {
+              doctype: this.doctype, 
+              docname: this.docname, 
+              encounter_type: this.encounterType,
+              annotation_template: data.annotationsTemplate,
+              file_data: base64Image,
+              jsonText: data.jsonText,
+            }).then(response => {
+              this.closeDialog()
+            })
           }
-        });
-      })
-      .catch(err => {
-        console.log('error', err);
+        }
+      });
+      window.dispatchEvent(event);
+    },
+    async convertBlobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          // Create the base64 string with the MIME type prefix
+          const base64String = reader.result;
+          resolve(base64String);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
       });
     }
 	},

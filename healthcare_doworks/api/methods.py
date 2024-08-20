@@ -273,6 +273,52 @@ def upload_signature(docname, doctype, file_data=None):
 	return {"file_url": file_doc.file_url}
 
 @frappe.whitelist()
+def upload_annotation(docname, doctype, annotation_template, encounter_type='', file_data=None, jsonText='', annotation_type='Free Drawing'):
+	if not file_data:
+		frappe.throw("File data is missing")
+
+	health_annotation = frappe.new_doc('Health Annotation')
+	health_annotation.annotation_type = annotation_type
+	health_annotation.annotation_template = annotation_template
+	health_annotation.json = jsonText
+	health_annotation.insert()
+	# Parse the data URL to get the file type and the Base64 data
+	if file_data.startswith('data:image'):
+		header, base64_data = file_data.split(',', 1)
+		# Extract the file extension from the header
+		extension = header.split('/')[1].split(';')[0]
+		file_name = f"annotation.{extension}"
+	else:
+		frappe.throw("Invalid file data")
+
+	# Decode the Base64 string
+	file_content = base64.b64decode(base64_data)
+
+	# Save the file
+	file_doc = save_file(file_name, file_content, health_annotation.doctype, health_annotation.name, is_private=1)
+
+	# Update the doctype with the file URL
+	health_annotation.image = file_doc.file_url
+	health_annotation.save()
+	
+	doc = frappe.get_doc(doctype, docname)
+	doc.append("custom_annotations", {
+		"annotation": health_annotation.name,
+		"type": encounter_type,
+	})
+	doc.save()
+
+	return {"file_url": file_doc.file_url}
+
+@frappe.whitelist()
+def annotations_records():
+	templates = frappe.db.get_list('Annotation Template', fields= ['label', 'gender', 'kid', 'image', 'name'], order_by='creation asc',)
+	treatments = frappe.db.get_list('Annotation Treatment', fields= ['treatment', 'name', 'color'])
+	for treatment in treatments:
+		treatment.variables = frappe.db.get_all('Treatment Variables Table', fields=['variable_name', 'type', 'options'], filters={'parent': treatment.name})
+	return {'templates': templates, 'treatments': treatments}
+
+@frappe.whitelist()
 def vital_signs_list(patient):
 	if patient:
 		return frappe.db.get_list('Vital Signs', 
@@ -285,6 +331,62 @@ def vital_signs_list(patient):
 			fields=['signs_date', 'signs_time', 'temperature', 'pulse', 'name', 'appointment', 'title', 'modified', 'modified_by', 'patient'], 
 			order_by='signs_date desc, signs_time desc',
 		)
+
+@frappe.whitelist()
+def save_patient_history(patient='', 
+	allergies=None , 
+	infected_diseases=None, 
+	surgical_history=None, 
+	medicaitons=None, 
+	habits=None, 
+	risk_factors=None,
+	chronic_diseases='',
+	genetic_diseases=''):
+	doc = frappe.get_doc('Patient', patient)
+	if allergies:
+		doc.custom_allergies_table = []
+		for item in allergies:
+			del item['name']
+			doc.append("custom_allergies_table", item)
+	if infected_diseases:
+		doc.custom_infected_diseases = []
+		for item in infected_diseases:
+			if 'creation' in item:
+				del item['name']
+			doc.append("custom_infected_diseases", item)
+	if surgical_history:
+		doc.custom_surgical_history_table = []
+		for item in surgical_history:
+			if 'creation' in item:
+				del item['name']
+			doc.append("custom_surgical_history_table", item)
+	if medicaitons:
+		doc.custom_medications = []
+		for item in medicaitons:
+			if 'creation' in item:
+				del item['name']
+			doc.append("custom_medications", item)
+	if habits:
+		doc.custom_habits__social = []
+		for item in habits:
+			if 'creation' in item:
+				del item['name']
+			doc.append("custom_habits__social", item)
+	if risk_factors:
+		doc.custom_risk_factors_table = []
+		for item in risk_factors:
+			if 'creation' in item:
+				del item['name']
+			doc.append("custom_risk_factors_table", item)
+	doc.custom_chronic_diseases = chronic_diseases
+	doc.custom_genetic_conditions = genetic_diseases
+	doc.custom_medical_history_last_updated = frappe.utils.now()
+	doc.save()
+
+@frappe.whitelist()
+def patient(patient=''):
+	doc = frappe.get_doc('Patient', patient)
+	return {'doc': doc}
 
 @frappe.whitelist()
 def edit_doc(form, submit=False):
@@ -358,7 +460,6 @@ def get_updated_encounter(doc, method):
 
 def get_services(*args):
 	services = frappe.db.get_list('Service Request',
-		filters={'staff_role': 'Nursing User'}, 
 		fields=[
 			'status', 'order_date', 'order_time', 'practitioner', 'practitioner_email', 'medical_department', 'referred_to_practitioner', 
 			'source_doc', 'order_group', 'sequence', 'staff_role', 'patient_care_type', 'intent', 'priority', 'quantity', 'dosage_form', 
@@ -372,7 +473,7 @@ def get_services(*args):
 		status = frappe.get_doc('Code Value', service.status)
 		service.practitioner = practitioner.practitioner_name
 		service.status = status.display
-	frappe.publish_realtime("services", service)
+	frappe.publish_realtime("services", services)
 	return services
 
 def get_appointments(*args):

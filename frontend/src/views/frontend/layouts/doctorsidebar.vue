@@ -6,15 +6,15 @@
       mobile-breakpoint="none"
     >
       <v-list>
-        <v-list-item :title="$resources.user.name">
+        <v-list-item :title="$myresources.user.name">
           <template #prepend>
-            <v-avatar :color="!$resources.user.image ? currenColor : ''">
+            <v-avatar :color="!$myresources.user.image ? currenColor : ''">
               <img
-                v-if="$resources.user.image"
+                v-if="$myresources.user.image"
                 class="h-100 w-100"
-                :src="$resources.user.image"
+                :src="$myresources.user.image"
               />
-              <span v-if="!$resources.user.image" class="text-h5">{{ $resources.user.name ? $resources.user.name[0] : '' }}</span>
+              <span v-if="!$myresources.user.image" class="text-h5">{{ $myresources.user.name ? $myresources.user.name[0] : '' }}</span>
             </v-avatar>
           </template>
         </v-list-item>
@@ -23,13 +23,11 @@
       <v-divider></v-divider>
 
       <v-list nav>
-        <v-list-item prepend-icon="fa fa-display" title="Dashboard" value="doctorDashboard" nav to="/doctor-dashboard"></v-list-item>
-        <v-list-item prepend-icon="fa fa-display" title="Dashboard" value="nurseDashboard" nav to="/nurse-dashboard" 
-        v-if="isNurse"
-        >
-        </v-list-item>
+        <v-list-item v-if="isHealthcareAdministrator" prepend-icon="fa fa-display" title="Dashboard" value="doctorDashboard" nav to="/doctor-dashboard"></v-list-item>
+        <v-list-item v-if="isNurse" prepend-icon="fa fa-display" title="Dashboard" value="nurseDashboard" nav to="/nurse-dashboard"></v-list-item>
         <v-list-item prepend-icon="fa fa-calendar-check" title="Appointments" value="appointments" to="/appointments"></v-list-item>
         <v-list-item prepend-icon="fa fa-user-injured" title="Patient Encounter" value="patientEncounter" to="/patient-encounter-list"></v-list-item>
+        <v-list-item prepend-icon="fa fa-user" title="Patient" value="patient" to="/patient" :class="{ 'v-list-item--active': $route.path.startsWith('/patient') }"></v-list-item>
       </v-list>
     </v-navigation-drawer>
 </template>
@@ -50,24 +48,25 @@
       }
     },
     components:{
-      VNavigationDrawer,
-      VList,
-      VListItem,
-      VDivider,
-      VAvatar,
+      VNavigationDrawer, VList, VListItem, VDivider, VAvatar,
     },
     data() {
       return {
         currenColor: '',
         isNurse: false,
+        isHealthcareAdministrator: false
       };
     },
+    mounted() {
+
+    },
     watch: {
-      '$resources.user': {
+      '$myresources.user': {
         handler(newValue) {
-          if(this.$resources.user.name){
-            this.currenColor = this.getColorFromName(this.$resources.user.name)
-            this.isNurse = this.$resources.user.roles.some(value => value.role == 'Nursing User')
+          if(this.$myresources.user.name){
+            this.currenColor = this.getColorFromName(this.$myresources.user.name)
+            this.isHealthcareAdministrator = this.$myresources.user.roles.some(value => value.role == 'Healthcare Administrator')
+            this.isNurse = this.$myresources.user.roles.some(value => value.role == 'Nursing User')
           }
         },
         immediate: true,

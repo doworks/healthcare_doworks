@@ -14,7 +14,6 @@
                                 <a-form-item label="Date" name="signs_date">
                                     <a-date-picker 
                                         v-model:value="form.signs_date"
-                                        @change="()=>{$emit('show-slots')}" 
                                         format="DD/MM/YYYY" 
                                         style="z-index: 3000"
                                     />

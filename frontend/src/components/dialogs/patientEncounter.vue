@@ -55,7 +55,7 @@
                                 <a-form-item label="Symptoms" name="symptoms">
                                     <a-select
                                     v-model:value="form.symptomsArray"
-                                    :options="$resources.complaints"
+                                    :options="$myresources.complaints"
                                     :fieldNames="{label: 'complaints', value: 'complaints'}"
                                     mode="multiple"
                                     style="width: 100%"
@@ -67,7 +67,7 @@
                                 <a-form-item label="Diagnosis" name="diagnosis">
                                     <a-select
                                     v-model:value="form.diagnosisArray"
-                                    :options="$resources.diagnosis"
+                                    :options="$myresources.diagnosis"
                                     :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
                                     mode="multiple"
                                     style="width: 100%"

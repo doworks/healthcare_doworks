@@ -14,14 +14,14 @@
                                 <a-form-item label="Medication" name="medication">
                                     <a-select
                                         v-model:value="form.medication"
-                                        :options="$resources.medications"
+                                        :options="$myresources.medications"
                                         :fieldNames="{label: 'name', value: 'name'}"
                                     ></a-select>
                                 </a-form-item>
                                 <a-form-item label="Medication Item" name="medication_item">
                                     <a-select
                                         v-model:value="form.medication_item"
-                                        :options="$resources.items"
+                                        :options="$myresources.items"
                                         :fieldNames="{label: 'item_name', value: 'item_name'}"
                                     ></a-select>
                                 </a-form-item>
@@ -54,14 +54,14 @@
                                 <a-form-item label="Dosage Form" name="dosage_form">
                                     <a-select
                                         v-model:value="form.dosage_form"
-                                        :options="$resources.dosageForms"
+                                        :options="$myresources.dosageForms"
                                         :fieldNames="{label: 'dosage_form', value: 'dosage_form'}"
                                     ></a-select>
                                 </a-form-item>
                                 <a-form-item label="Dosage" name="dosage">
                                     <a-select
                                         v-model:value="form.dosage"
-                                        :options="$resources.prescriptionDosages"
+                                        :options="$myresources.prescriptionDosages"
                                         :fieldNames="{label: 'dosage', value: 'dosage'}"
                                     ></a-select>
                                 </a-form-item>
@@ -73,7 +73,7 @@
                                 <a-form-item label="Period" name="period">
                                     <a-select
                                         v-model:value="form.period"
-                                        :options="$resources.prescriptionDurations"
+                                        :options="$myresources.prescriptionDurations"
                                         :fieldNames="{label: 'name', value: 'name'}"
                                     ></a-select>
                                 </a-form-item>

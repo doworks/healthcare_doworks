@@ -160,7 +160,7 @@
 						style="width: 100%; align-items: center;"
 						placeholder="Any Practitioner"
 						max-tag-count="responsive"
-						:options="$resources.practitioners"
+						:options="$myresources.practitioners"
 						:fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
 						>
 							<template #option="{ practitioner_name, image }">
@@ -222,7 +222,7 @@
 							class="p-column-filter"
 							style="width: 100%; align-items: center;"
 							placeholder="Any"
-							:options="$resources.serviceUnits"
+							:options="$myresources.serviceUnits"
 							:fieldNames="{label: 'name', value: 'name'}"
 							allowClear
 						>
@@ -418,7 +418,7 @@ export default {
 		};
 	},
 	watch: {
-		'$resources.practitioners': {
+		'$myresources.practitioners': {
 			handler(newValue) {
 				if(newValue)
 					newValue.forEach(value => {

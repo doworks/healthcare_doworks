@@ -444,7 +444,7 @@ export default {
     },
     adjustAppointments(data) {
       return [...(data || [])].filter(value => {
-        const practitioner = value.practitioner === this.$resources.user.practitioner;
+        const practitioner = value.practitioner === this.$myresources.user.practitioner;
         const date = dayjs().isSame(dayjs(value.appointment_date), 'day')
         return date
       }).map((d) => {

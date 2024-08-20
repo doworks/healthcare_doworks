@@ -1,221 +1,235 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Excalidraw, Sidebar, exportToBlob } from '@excalidraw/excalidraw';
-
-import MaleFace3D from '@/assets/img/chartings/3d-male-face.jpeg';
-import MaleBodyFB3d from '@/assets/img/chartings/body F&B.jpg';
-import BodyFemale from '@/assets/img/chartings/Body female.jpeg';
-import BodyMale from '@/assets/img/chartings/Body male.jpeg';
-import BodyMaleAndFemale from '@/assets/img/chartings/Body male and female.jpeg';
-import FaceAndScalpFemale from '@/assets/img/chartings/Face and scalp female.jpeg';
-import FaceFemale1 from '@/assets/img/chartings/Face female 1.jpeg';
-import FaceFemale2 from '@/assets/img/chartings/Face female 2.jpeg';
-import Head from '@/assets/img/chartings/Head.jpeg';
+import React, { useState, useEffect } from 'react';
+import { Excalidraw, Sidebar, exportToBlob, exportToClipboard } from '@excalidraw/excalidraw';
+import call from "../../../../../doppio/libs/controllers/call";
 
 import { 
   List, ListItemDecorator, ListItemButton, Tabs, TabList, Tab, TabPanel, Radio, 
   RadioGroup, Sheet, Button, Badge, Option, FormLabel, Input, Card,
 } from '@mui/joy';
-// import { CssVarsProvider, extendTheme } from '@mui/joy/styles';
 import { tabClasses } from '@mui/joy/Tab';
 import { radioClasses } from '@mui/joy/Radio';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import Select from 'react-select'
 
-
 const generateFileId = (img) => {
   // Generate a unique fileId using a combination of the image name and a timestamp or any other unique identifier
   return `${img.name}-${Date.now()}`;
 };
-const Applications = [
-  {
-    name: 'Laser',
-    color: '#1971c2'
-  },
-  {
-    name: 'Mesotherapy',
-    color: '#ffd43b'
-  },
-  {
-    name: 'Botox',
-    color: '#e03131'
-  },
-  {
-    name: 'Fillers',
-    color: '#69db7c'
-  },
-  {
-    name: 'Neofound',
-    color: '#f783ac'
-  },
-  {
-    name: 'Other',
-    color: '#868e96'
-  },
-]
 
-const LaserVariables = [
-  {
-    label: "Fluence", 
-    name: "fluence", 
-    type: "select", 
-    options: [
-      { value: '1', label: '1' },
-      { value: '2', label: '2' },
-      { value: '3', label: '3' },
-      { value: '4', label: '4' },
-      { value: '5', label: '5' },
-      { value: '6', label: '6' },
-      { value: '7', label: '7' },
-      { value: '8', label: '8' },
-      { value: '9', label: '9' },
-    ]
-  },
-  {
-    label: "Spot Size", 
-    name: "spot_size", 
-    type: "select", 
-    options: [
-      { value: '2', label: '2' },
-      { value: '3', label: '3' },
-      { value: '4', label: '4' },
-      { value: '5', label: '5' },
-      { value: '6', label: '6' },
-      { value: '7', label: '7' },
-      { value: '8', label: '8' },
-      { value: '9', label: '9' },
-      { value: '10', label: '10' },
-    ]
-  },
-  {
-    label: "Pulse Duration", 
-    name: "pulse_duration", 
-    type: "select", 
-    options: [
-      { value: '15s', label: '15s' },
-      { value: '20s', label: '20s' },
-      { value: '25s', label: '25s' },
-      { value: '30s', label: '30s' },
-      { value: '35s', label: '35s' },
-      { value: '40s', label: '40s' },
-      { value: '45s', label: '45s' },
-    ]
-  },
-  {
-    label: "Repetition Rate", 
-    name: "repetition_rate", 
-    type: "select", 
-    options: [
-      { value: '1', label: '1' },
-      { value: '2', label: '2' },
-      { value: '3', label: '3' },
-      { value: '4', label: '4' },
-    ]
-  },
-  {
-    label: "No Of Pulses", 
-    name: "no_of_pulses", 
-    type: "select", 
-    options: [
-      { value: '1', label: '1' },
-      { value: '2', label: '2' },
-      { value: '3', label: '3' },
-    ]
-  }
-]
+// let ANNOTTATION_IMAGES;
+// call('frappe.client.get_list', {doctype: 'Annotation Template', fields: ['label', 'gender', 'kid', 'image']})
+// .then(response => {
+//   ANNOTTATION_IMAGES = response
+// })
 
-const InjectableVars = [
-  {
-    label: 'Injectable',
-    name: 'injectable',
-    type: 'select',
-    options: [
-      { value: 'Botox', label: 'Botox' },
-      { value: 'Fillers', label: 'Fillers' },
-      { value: 'Aethoxysklerol', label: 'Aethoxysklerol' },
-    ]
-  },
-  { 
-    label: 'Lot No', 
-    name: 'lot_no',
-    type: 'data' 
-  },
-  {
-    label: 'Units',
-    name: 'units',
-    type: 'select',
-    options: [
-      { value: '1u', label: '1u' },
-      { value: '2u', label: '2u' },
-      { value: '3u', label: '3u' },
-    ]
-  },
-  {
-    label: 'ML',
-    name: 'ml',
-    type: 'select',
-    options: [
-      { value: '2ml', label: '2ml' },
-      { value: '3ml', label: '3ml' },
-    ]
-  },
-]
+// const Treatments = [
+//   {
+//     name: 'Laser',
+//     color: '#1971c2'
+//   },
+//   {
+//     name: 'Mesotherapy',
+//     color: '#ffd43b'
+//   },
+//   {
+//     name: 'Botox',
+//     color: '#e03131'
+//   },
+//   {
+//     name: 'Fillers',
+//     color: '#69db7c'
+//   },
+//   {
+//     name: 'Neofound',
+//     color: '#f783ac'
+//   },
+//   {
+//     name: 'Other',
+//     color: '#868e96'
+//   },
+// ]
+
+// const LaserVariables = [
+//   {
+//     label: "Fluence", 
+//     name: "fluence", 
+//     type: "select", 
+//     options: [
+//       { value: '1', label: '1' },
+//       { value: '2', label: '2' },
+//       { value: '3', label: '3' },
+//       { value: '4', label: '4' },
+//       { value: '5', label: '5' },
+//       { value: '6', label: '6' },
+//       { value: '7', label: '7' },
+//       { value: '8', label: '8' },
+//       { value: '9', label: '9' },
+//     ]
+//   },
+//   {
+//     label: "Spot Size", 
+//     name: "spot_size", 
+//     type: "select", 
+//     options: [
+//       { value: '2', label: '2' },
+//       { value: '3', label: '3' },
+//       { value: '4', label: '4' },
+//       { value: '5', label: '5' },
+//       { value: '6', label: '6' },
+//       { value: '7', label: '7' },
+//       { value: '8', label: '8' },
+//       { value: '9', label: '9' },
+//       { value: '10', label: '10' },
+//     ]
+//   },
+//   {
+//     label: "Pulse Duration", 
+//     name: "pulse_duration", 
+//     type: "select", 
+//     options: [
+//       { value: '15s', label: '15s' },
+//       { value: '20s', label: '20s' },
+//       { value: '25s', label: '25s' },
+//       { value: '30s', label: '30s' },
+//       { value: '35s', label: '35s' },
+//       { value: '40s', label: '40s' },
+//       { value: '45s', label: '45s' },
+//     ]
+//   },
+//   {
+//     label: "Repetition Rate", 
+//     name: "repetition_rate", 
+//     type: "select", 
+//     options: [
+//       { value: '1', label: '1' },
+//       { value: '2', label: '2' },
+//       { value: '3', label: '3' },
+//       { value: '4', label: '4' },
+//     ]
+//   },
+//   {
+//     label: "No Of Pulses", 
+//     name: "no_of_pulses", 
+//     type: "select", 
+//     options: [
+//       { value: '1', label: '1' },
+//       { value: '2', label: '2' },
+//       { value: '3', label: '3' },
+//     ]
+//   }
+// ]
+
+// const InjectableVars = [
+//   {
+//     label: 'Injectable',
+//     name: 'injectable',
+//     type: 'select',
+//     options: [
+//       { value: 'Botox', label: 'Botox' },
+//       { value: 'Fillers', label: 'Fillers' },
+//       { value: 'Aethoxysklerol', label: 'Aethoxysklerol' },
+//     ]
+//   },
+//   { 
+//     label: 'Lot No', 
+//     name: 'lot_no',
+//     type: 'data' 
+//   },
+//   {
+//     label: 'Units',
+//     name: 'units',
+//     type: 'select',
+//     options: [
+//       { value: '1u', label: '1u' },
+//       { value: '2u', label: '2u' },
+//       { value: '3u', label: '3u' },
+//     ]
+//   },
+//   {
+//     label: 'ML',
+//     name: 'ml',
+//     type: 'select',
+//     options: [
+//       { value: '2ml', label: '2ml' },
+//       { value: '3ml', label: '3ml' },
+//     ]
+//   },
+// ]
 
 const ExcalidrawWrapper = () => {
   const [index, setIndex] = useState(0);
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
   const [drawingsSidebar, setDrawingsSidebar] = useState(true);
-  const [applicationSidebar, setApplicationSidebar] = useState(false);
-  const [currentApp, setCurrentApp] = useState('')
+  const [treatmentSidebar, setTreatmentSidebar] = useState(false);
+  const [selectedTreatment, setSelectedTreatment] = useState('')
   const [newElement, setNewElement] = useState('')
   const [selectedElement, setSelectedElement] = useState('')
-  const [laserVars, setLaserVars] = useState({
-    fluence: '',
-    spot_size: '',
-    pulse_duration: '',
-    repetition_rate: '',
-    no_of_pulses: '',
-  })
-  const [injectableVars, setInjectableVars] = useState({
-    injectable: '',
-    lot_no: '',
-    units: '',
-    ml: '',
-  })
-  const [images, setImages] = useState({
-    male: [
-      { name: '3D Face', src: MaleFace3D, id: '' },
-      { name: '3D Body F&B', src: MaleBodyFB3d, id: '' },
-      { name: 'Head', src: Head, id: '' },
-      { name: 'Body', src: BodyMale, id: '' },
-      { name: 'Body Male And Female', src: BodyMaleAndFemale, id: '' },
-    ],
-    female: [
-      { name: 'Face & Scalp', src: FaceAndScalpFemale, id: '' },
-      { name: 'Face1', src: FaceFemale1, id: '' },
-      { name: 'Face2', src: FaceFemale2, id: '' },
-      { name: 'Body', src: BodyFemale, id: '' },
-      { name: 'Body Male And Female', src: BodyMaleAndFemale, id: '' },
-    ],
-  });
+  const [variables, setVariables] = useState({})
+  const [images, setImages] = useState({male:[], female:[]});
+  const [treatments, setTreatments] = useState([]);
+  const [annotationsTemplate, setAnnotationsTemplate] = useState('');
+  useEffect(() => {
+    call('healthcare_doworks.api.methods.annotations_records').then(response => {
+      let vars = {}
+      response.treatments.forEach(treatment => {
+        vars[treatment.treatment] = {}
+        treatment.variables.forEach(value => {
+          vars[treatment.treatment][value.variable_name] = ''
+        })
+      })
+      setVariables(vars)
+      setTreatments(response.treatments)
+      setImages({
+        male: response.templates.filter(doc => doc.gender === 'Male'),
+        female: response.templates.filter(doc => doc.gender === 'Female'),
+      })
+    })
+  }, []);
 
   useEffect(() => {
-    if (excalidrawAPI) {
-      // Register the global save function only after API is set
-      window.ExcalidrawAPI = {
-        saveCanvasAsImage: saveCanvasAsImage
-      };
-    }
-  }, [excalidrawAPI]);
+    const handleSave = async (event) => {
+      if (!excalidrawAPI) {
+        return
+      }
+      const elements = excalidrawAPI.getSceneElements();
+      if (!elements || !elements.length) {
+        return
+      }
+      const blob = await exportToBlob({
+        elements,
+        appState: excalidrawAPI.getAppState(),
+        files: excalidrawAPI.getFiles(),
+        mimeType: 'image/jpeg'
+      });
+      await exportToClipboard({
+        elements,
+        appState: excalidrawAPI.getAppState(),
+        files: excalidrawAPI.getFiles(),
+        type: 'json'
+      })
+      const { callback } = event.detail;
+      const jsonText = await navigator.clipboard.readText();
+      const url = URL.createObjectURL(blob);
+
+      callback({annotationsTemplate, url, jsonText, blob})
+    };
+
+    window.addEventListener('vueToReactEvent', handleSave);
+
+    // Clean up the event listener on unmount
+    return () => {
+      window.removeEventListener('vueToReactEvent', handleSave);
+    };
+
+  }, [excalidrawAPI, annotationsTemplate]);
 
   const updateElementCustomData = (target, newVars) => {
     const sceneElements = excalidrawAPI.getSceneElements().map(element => {
       if(element.id === target.id){
         if(newVars)
           element.customData = newVars
-        else if(currentApp === 'Laser')
-          element.customData = {...laserVars, type: currentApp}
         else
-          element.customData = {...injectableVars, type: currentApp}
+          element.customData = {...variables[selectedTreatment], type: selectedTreatment}
       }
       return element
     })
@@ -228,8 +242,8 @@ const ExcalidrawWrapper = () => {
   const handleExcaliChange = (elements, appState) => {
     const newElements = appState.editingElement
     const cursorButton = appState.cursorButton
-    if(applicationSidebar && currentApp && appState.activeTool.type !== 'freedraw' && appState.activeTool.type !== 'selection' && !selectedElement){
-      setCurrentApp('')
+    if(treatmentSidebar && selectedTreatment && appState.activeTool.type !== 'freedraw' && appState.activeTool.type !== 'selection' && !selectedElement){
+      setSelectedTreatment('')
       // console.log('hi')
       // excalidrawAPI.updateScene({
       //   ...appState,
@@ -241,9 +255,7 @@ const ExcalidrawWrapper = () => {
       setNewElement(newElements)
     }
     if (newElement && cursorButton === 'up' && excalidrawAPI) {
-      updateElementCustomData(newElement)
-      console.log('New element added:', excalidrawAPI.getSceneElements());
-    
+      updateElementCustomData(newElement)    
       setNewElement(null)
     }
   };
@@ -252,34 +264,29 @@ const ExcalidrawWrapper = () => {
     const thisElement = pointerDownState.hit.element;
     if (thisElement && thisElement.type === 'freedraw') {
       console.log('Element selected:', thisElement);
-      if(thisElement.customData.type === 'Laser'){
-        setLaserVars(thisElement.customData)
-      }
-      else{
-        setInjectableVars(thisElement.customData)
-      }
+      setVariables({...variables, [thisElement.customData.type]: thisElement.customData})
       setSelectedElement(thisElement)
-      setCurrentApp(thisElement.customData.type)
+      setSelectedTreatment(thisElement.customData.type)
     }
     else{
       if(activeTool.type === "selection"){
         setSelectedElement('')
-        setCurrentApp('')
+        setSelectedTreatment('')
       }
     }
   };
 
-  const handleDrawModeClick = (app) => {
+  const handleDrawModeClick = (treatment) => {
     if (!excalidrawAPI) return;
 
-    setCurrentApp(app.name);
+    setSelectedTreatment(treatment.treatment);
     excalidrawAPI.updateScene({
       appState: {
         ...excalidrawAPI.getAppState(),
         activeTool: {
           type: "freedraw",
         },
-        currentItemStrokeColor: app.color, // Set your desired stroke color here
+        currentItemStrokeColor: treatment.color, // Set your desired stroke color here
       },
       commitToHistory: true,
     });
@@ -293,9 +300,9 @@ const ExcalidrawWrapper = () => {
     const canvasContainer = document.querySelector('.excalidraw__canvas'); // Assuming Excalidraw canvas has this class
     const canvasHeight = canvasContainer.clientHeight;
     const canvasWidth = canvasContainer.clientWidth;
-  
+    setAnnotationsTemplate(img.name)
     const image = new Image();
-    image.src = img.src;
+    image.src = img.image;
     image.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = image.width; // Set canvas width to image width
@@ -314,7 +321,7 @@ const ExcalidrawWrapper = () => {
           created: Date.now(),
         }]);
         const newArray = array.map(val => {
-          if (val.src === img.src) val.id = fileId;
+          if (val.image === img.image) val.id = fileId;
           return val;
         });
         setImages({ ...images, [gender]: newArray });
@@ -331,7 +338,7 @@ const ExcalidrawWrapper = () => {
         version: 1,
         versionNonce: 123456,
         isDeleted: false,
-        id: img.name,
+        id: img.label,
         fillStyle: 'solid',
         strokeWidth: 2,
         strokeStyle: 'solid',
@@ -372,90 +379,45 @@ const ExcalidrawWrapper = () => {
     };
   };
 
-  const saveCanvasAsImage = async () => {
-    try {
-      if (!excalidrawAPI) {
-        console.error('Excalidraw API not initialized');
-        return;
-      }
-      const blob = await excalidrawAPI.exportToBlob({ mimeType: 'image/png' });
-      const url = URL.createObjectURL(blob);
-
-      // Call the Vue callback with the image URL
-      if (setImageCallback) {
-        setImageCallback(url);
-      }
-
-      console.log('Canvas saved as image');
-    } catch (error) {
-      console.error('Failed to save the canvas as an image:', error);
-    }
-  };
-
   return (
     <div style={{ height: '100%' }}>
-      <div className={'excalidraw-wrapper ' + (currentApp ? 'leftdrawer-open' : '')} style={{ height: '100%', position: 'relative'}}>
-        {currentApp && <Card variant='soft' sx={{ width: 240, zIndex: 10, marginTop: '40px', height: 'fit-content', position: 'absolute'}}>
-          {currentApp === 'Laser' ? 
-            LaserVariables.map((variable, index) => <div key={index}>
-              <FormLabel>{variable.label}</FormLabel>
-              {variable.type === 'select' ? 
+      <div className={'excalidraw-wrapper ' + (selectedTreatment ? 'leftdrawer-open' : '')} style={{ height: '100%', position: 'relative'}}>
+        {selectedTreatment && <Card variant='soft' sx={{ width: 240, zIndex: 10, marginTop: '40px', height: 'fit-content', position: 'absolute'}}>
+          {treatments.find(treatment => treatment.treatment == selectedTreatment).variables.map((variable, index) => {
+            if(variable.type === 'Select'){
+              let optionsArray = variable.options.split('\n')
+              variable.selectOptions = optionsArray.map(option => {return {label: option, value: option}})
+            }
+            return <div key={index}>
+              <FormLabel>{variable.variable_name}</FormLabel>
+              {variable.type === 'Select' ? 
                 <Select 
-                name={variable.name}
+                name={variable.variable_name}
                 isClearable
-                value={variable.options.find(option => option.value === laserVars[variable.name]) || ''}
+                value={variable.selectOptions.find(option => option.value === variables[selectedTreatment][variable.variable_name]) || ''}
                 onChange={(selectedOption) => {
                   const newVars = {
-                    ...laserVars,
-                    [variable.name]: selectedOption ? selectedOption.value : ''
+                    ...variables[selectedTreatment],
+                    [variable.variable_name]: selectedOption ? selectedOption.value : ''
                   }
-                  setLaserVars(newVars);
+                  setVariables({...variables, [selectedTreatment]: newVars});
                   if(selectedElement)
                     updateElementCustomData(selectedElement, newVars)
                 }}
-                options={variable.options}
+                options={variable.selectOptions}
                 />
-              : variable.type === 'data' ? <Input value={laserVars[variable.name]} onChange={event => {
+              : variable.type === 'Data' ? <Input value={variables[selectedTreatment][variable.variable_name]} onChange={event => {
                 const newVars = {
-                  ...laserVars,
-                  [variable.name]: event.target.value
+                  ...variables[selectedTreatment],
+                  [variable.variable_name]: event.target.value
                 }
-                setLaserVars(newVars);
+                setVariables({...variables, [selectedTreatment]: newVars});
                 if(selectedElement)
                   updateElementCustomData(selectedElement, newVars)
               }}/> 
-            : <></>}</div>) :
-
-            InjectableVars.map((variable, index) => <div key={index}>
-            <FormLabel>{variable.label}</FormLabel>
-            {variable.type === 'select' ? 
-              <Select 
-              name={variable.name}
-              isClearable
-              value={variable.options.find(option => option.value === injectableVars[variable.name]) || ''}
-              onChange={(selectedOption) => {
-                const newVars = {
-                  ...injectableVars,
-                  [variable.name]: selectedOption ? selectedOption.value : ''
-                }
-                setInjectableVars(newVars);
-                if(selectedElement)
-                  updateElementCustomData(selectedElement, newVars)
-              }}
-              options={variable.options}
-              />
-
-              : variable.type === 'data' ? <Input value={injectableVars[variable.name]} onChange={event => {
-                const newVars = {
-                  ...injectableVars,
-                  [variable.name]: event.target.value
-                }
-                setInjectableVars(newVars);
-                if(selectedElement)
-                  updateElementCustomData(selectedElement, newVars)
-              }}/> 
-            : <></>}</div>)
-          } 
+              : <></>}
+            </div>
+          })}
         </Card>}
         <Excalidraw
         onChange={handleExcaliChange}
@@ -474,13 +436,13 @@ const ExcalidrawWrapper = () => {
               {!drawingsSidebar && <Button name="drawings" variant="soft" onClick={() => {excalidrawAPI.toggleSidebar({name: 'drawings'})}}>
                 Drawings
               </Button>}
-              {!applicationSidebar && <Button 
-              name="applications" 
+              {!treatmentSidebar && <Button 
+              name="treatments" 
               color="success" 
               variant="soft" 
-              onClick={() => {excalidrawAPI.toggleSidebar({name: 'applications'})}}
+              onClick={() => {excalidrawAPI.toggleSidebar({name: 'treatments'})}}
               >
-                Applications
+                Treatments
               </Button>}
             </>
           );
@@ -532,11 +494,11 @@ const ExcalidrawWrapper = () => {
                   <div>
                     <List>
                       {images.male.map((img, index, array) => (
-                        <ListItemButton key={img.name} onClick={() => {handleImageClick(img, array, 'male')}}>
+                        <ListItemButton key={img.label} onClick={() => {handleImageClick(img, array, 'male')}}>
                           <ListItemDecorator>
-                            <img src={img.src} alt={img.name} style={{ width: '50px', height: '50px', marginRight: '15px' }} />
+                            <img src={img.image} alt={img.label} style={{ width: '50px', height: '50px', marginRight: '15px' }} />
                           </ListItemDecorator>
-                          {img.name}
+                          {img.label}
                         </ListItemButton>
                       ))}
                     </List>
@@ -546,11 +508,11 @@ const ExcalidrawWrapper = () => {
                   <div>
                     <List>
                       {images.female.map((img, index, array) => (
-                        <ListItemButton key={img.name} onClick={() => {handleImageClick(img, array, 'female')}}>
+                        <ListItemButton key={img.label} onClick={() => {handleImageClick(img, array, 'female')}}>
                           <ListItemDecorator>
-                            <img src={img.src} alt={img.name} style={{ width: '50px', height: '50px', marginRight: '15px' }} />
+                            <img src={img.image} alt={img.label} style={{ width: '50px', height: '50px', marginRight: '15px' }} />
                           </ListItemDecorator>
-                          {img.name}
+                          {img.label}
                         </ListItemButton>
                       ))}
                     </List>
@@ -560,10 +522,10 @@ const ExcalidrawWrapper = () => {
             </Sidebar.Tabs>
           </Sidebar>
 
-          <Sidebar name="applications" className='applications-sidebar' docked onStateChange={setApplicationSidebar}>
+          <Sidebar name="treatments" className='treatments-sidebar' docked onStateChange={setTreatmentSidebar}>
             <RadioGroup
             overlay
-            name="applications"
+            name="treatments"
             sx={{
               display: 'flex',
               flexWrap: 'wrap',
@@ -590,7 +552,7 @@ const ExcalidrawWrapper = () => {
               },
             }}
             >
-              {Applications.map((value, index) => (
+              {treatments.map((value, index) => (
                 <Sheet
                   key={index}
                   variant="outlined"
@@ -613,8 +575,8 @@ const ExcalidrawWrapper = () => {
                     }
                   }}>
                   </Badge>
-                  <Radio id={value.name} value={value.name} checkedIcon={<CheckCircleRoundedIcon />}/>
-                  {value.name}
+                  <Radio id={value.treatment} value={value.treatment} checkedIcon={<CheckCircleRoundedIcon />}/>
+                  {value.treatment}
                 </Sheet>
               ))}
             </RadioGroup>

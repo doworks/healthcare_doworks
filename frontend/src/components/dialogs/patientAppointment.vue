@@ -20,7 +20,7 @@
                 <a-form-item label="Appointment Type" name="appointment_type">
                   <a-select
                     v-model:value="appointmentForm.appointment_type"
-                    :options="$resources.appointmentTypes"
+                    :options="$myresources.appointmentTypes"
                     @change="(value, option) => {
                       appointmentForm.appointment_for = option.allow_booking_for;
                       appointmentForm.duration = option.default_duration;
@@ -49,7 +49,7 @@
                 >
                   <a-select
                     v-model:value="appointmentForm.practitioner_name"
-                    :options="$resources.practitioners"
+                    :options="$myresources.practitioners"
                     :fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
                     show-search
                     @change="(value, option) => {
@@ -65,7 +65,7 @@
                 >
                   <a-select
                     v-model:value="appointmentForm.department"
-                    :options="$resources.departments"
+                    :options="$myresources.departments"
                     :fieldNames="{label: 'department', value: 'department'}"
                     show-search
                   ></a-select>
@@ -77,7 +77,7 @@
                 >
                   <a-select
                     v-model:value="appointmentForm.service_unit"
-                    :options="$resources.serviceUnits"
+                    :options="$myresources.serviceUnits"
                     :fieldNames="{label: 'name', value: 'name'}"
                     show-search
                   ></a-select>
@@ -103,7 +103,7 @@
                 <a-form-item label="Patient" name="patient">
                   <a-select
                   v-model:value="appointmentForm.patient_name"
-                  :options="$resources.patients"
+                  :options="$myresources.patients"
                   :fieldNames="{label: 'patient_name', value: 'patient_name'}"
                   @change="(value, option) => {
                     appointmentForm.patient = option.name;

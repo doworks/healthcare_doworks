@@ -36,7 +36,7 @@
                     style="width: 100%; align-items: center; max-height: 62px;"
                     placeholder="Departments"
                     max-tag-count="responsive"
-                    :options="$resources.departments"
+                    :options="$myresources.departments"
                     :fieldNames="{label:'department', value: 'department'}"
                     size="large"
                   >
@@ -151,7 +151,7 @@
           <v-card-text>
             <a-select
               v-model:value="appointmentForm.service_unit"
-              :options="$resources.serviceUnits"
+              :options="$myresources.serviceUnits"
               :fieldNames="{label: 'name', value: 'name'}"
               show-search
               style="min-width: 400px; max-width: 600px;"
@@ -186,7 +186,7 @@
           <v-card-text>
             <a-select
               v-model:value="appointmentForm.practitioner_name"
-              :options="$resources.practitioners"
+              :options="$myresources.practitioners"
               :fieldNames="{label: 'practitioner_name', value: 'name'}"
               show-search
               style="min-width: 400px; max-width: 600px;"
@@ -382,7 +382,7 @@
       appointmentDialog(formType, isNew, row) {
         if(isNew){
           let duration = 0
-          this.$resources.appointmentTypes.forEach(value => {
+          this.$myresources.appointmentTypes.forEach(value => {
             if(value.appointment_type === 'Practitioner')
               duration = value.default_duration
           })

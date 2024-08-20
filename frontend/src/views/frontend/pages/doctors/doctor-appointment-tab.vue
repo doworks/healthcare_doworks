@@ -28,7 +28,7 @@
 				>
 					<template #body="{ data }">
 						<!-- <router-link to="patient-profile"> -->
-							<div class="d-flex align-items-center gap-2">
+							<div class="flex align-items-center gap-2">
 								<v-avatar>
 									<img
 									class="h-100 w-100"
@@ -139,7 +139,7 @@
 				style="width: 20%"
 				>
 					<template #body="{ data }">
-						<div class="d-flex align-items-center gap-2">
+						<div class="flex align-items-center gap-2">
 							<v-avatar :color="!data.practitioner_image ? colorCache[data.practitioner_name] || '': ''">
 								<img
 								v-if="data.practitioner_image"
@@ -160,7 +160,7 @@
 						style="width: 100%; align-items: center;"
 						placeholder="Any Practitioner"
 						max-tag-count="responsive"
-						:options="$resources.practitioners"
+						:options="$myresources.practitioners"
 						:fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
 						>
 							<template #option="{ practitioner_name, image }">
@@ -222,7 +222,7 @@
 							class="p-column-filter"
 							style="width: 100%; align-items: center;"
 							placeholder="Any"
-							:options="$resources.serviceUnits"
+							:options="$myresources.serviceUnits"
 							:fieldNames="{label: 'name', value: 'name'}"
 							allowClear
 						>
@@ -247,7 +247,7 @@
 						</v-btn>
 						<i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
 						<OverlayPanel ref="op">
-							<div class="d-flex flex-column gap-3 w-25rem">
+							<div class="flex flex-column gap-3 w-25rem">
 								<div v-if="data.notes">
 									<span class="fw-semibold d-block mb-2">Appointment Notes</span>
 									<a-textarea v-model:value="data.notes" disabled/>
@@ -255,12 +255,12 @@
 								<div v-if="data.visit_notes.length > 0 && data.visit_notes[0]?.note">
 									<span class="fw-semibold d-block mb-2">Visit Notes</span>
 									<ul class="list-none p-0 m-0 flex flex-column">
-										<li v-for="(note, index) in data.visit_notes" :key="index" class="d-flex align-items-center gap-2 mb-3">
+										<li v-for="(note, index) in data.visit_notes" :key="index" class="flex align-items-center gap-2 mb-3">
 											<div>
 												<a-textarea v-model:value="note.note" disabled/>
 												<span>{{ note.time }}</span>
 											</div>
-											<div class="d-flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
+											<div class="flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
 												<span>{{ note.provider }}</span>
 											</div>
 										</li>
@@ -436,7 +436,7 @@ export default {
 		};
 	},
 	watch: {
-		'$resources.practitioners': {
+		'$myresources.practitioners': {
 			handler(newValue) {
 				if(newValue)
 					newValue.forEach(value => {

@@ -27,7 +27,7 @@
                     <a-select
                     v-model:value="form.status"
                     :fieldNames="{label: 'display', value: 'name'}"
-                    :options="$resources.codeValues.filter(item => item.code_system === 'Request Status')"
+                    :options="$myresources.codeValues.filter(item => item.code_system === 'Request Status')"
                     style="width: 100%"
                     ></a-select>
                   </a-form-item>
@@ -47,7 +47,7 @@
                   <a-form-item label="Ordered by Practitioner" name="practitioner">
                     <a-select
                     v-model:value="form.practitioner"
-                    :options="$resources.practitioners"
+                    :options="$myresources.practitioners"
                     :fieldNames="{label: 'practitioner_name', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -61,7 +61,7 @@
                   <a-form-item label="Referred to Practitioner" name="referred_to_practitioner">
                     <a-select
                     v-model:value="form.referred_to_practitioner"
-                    :options="$resources.practitioners"
+                    :options="$myresources.practitioners"
                     :fieldNames="{label: 'practitioner_name', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -71,7 +71,7 @@
                   <a-form-item label="Source Doc" name="source_doc">
                     <a-select
                     v-model:value="form.source_doc"
-                    :options="$resources.doctypes"
+                    :options="$myresources.doctypes"
                     :fieldNames="{label: 'display', value: 'name'}"
                     disabled
                     style="width: 100%"
@@ -92,7 +92,7 @@
                   <a-form-item label="Staff Role" name="staff_role" extra="The role responsible for performing the service">
                     <a-select
                     v-model:value="form.staff_role"
-                    :options="$resources.roles"
+                    :options="$myresources.roles"
                     :fieldNames="{label: 'name', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -100,7 +100,7 @@
                   <a-form-item label="Patient Care Type" name="patient_care_type">
                     <a-select
                     v-model:value="form.patient_care_type"
-                    :options="$resources.patientCareTypes"
+                    :options="$myresources.patientCareTypes"
                     :fieldNames="{label: 'name', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -110,7 +110,7 @@
                   <a-form-item label="Intent" name="intent" extra=" ">
                     <a-select
                     v-model:value="form.intent"
-                    :options="$resources.codeValues.filter(item => item.code_system === 'Intent')"
+                    :options="$myresources.codeValues.filter(item => item.code_system === 'Intent')"
                     :fieldNames="{label: 'display', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -118,7 +118,7 @@
                   <a-form-item label="Priority" name="priority">
                     <a-select
                     v-model:value="form.priority"
-                    :options="$resources.codeValues.filter(item => item.code_system === 'Priority')"
+                    :options="$myresources.codeValues.filter(item => item.code_system === 'Priority')"
                     :fieldNames="{label: 'display', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -148,7 +148,7 @@
                   <a-form-item label="Healthcare Service Unit Type" name="healthcare_service_unit_type">
                     <a-select
                     v-model:value="form.healthcare_service_unit_type"
-                    :options="$resources.serviceUnitTypes"
+                    :options="$myresources.serviceUnitTypes"
                     :fieldNames="{label: 'name', value: 'name'}"
                     style="width: 100%"
                     @change="setTemplateOptions"
@@ -274,9 +274,9 @@
           inpatient_record: this.patient.inpatient_record,
           inpatient_status: this.patient.inpatient_status,
 
-          practitioner: this.$resources.user.practitioner,
-          practitioner_email: this.$resources.user.user,
-          medical_department: this.$resources.user.practitioner_department,
+          practitioner: this.$myresources.user.practitioner,
+          practitioner_email: this.$myresources.user.user,
+          medical_department: this.$myresources.user.practitioner_department,
           referred_to_practitioner: null,
           source_doc: 'Patient Encounter',
           order_group: this.encounter.name,
@@ -385,17 +385,17 @@
       },
       setTemplateOptions(value) {
         if(value === 'Therapy Type')
-          this.template_dn_options = this.$resources.therapyTypes
+          this.template_dn_options = this.$myresources.therapyTypes
         else if(value === 'Lab Test Template')
-          this.template_dn_options = this.$resources.labTestTemplates
+          this.template_dn_options = this.$myresources.labTestTemplates
         else if(value === 'Clinical Procedure Template')
-          this.template_dn_options = this.$resources.clinicalProcedureTemplates
+          this.template_dn_options = this.$myresources.clinicalProcedureTemplates
         else if(value === 'Appointment Type')
-          this.template_dn_options = this.$resources.appointmentTypes
+          this.template_dn_options = this.$myresources.appointmentTypes
         else if(value === 'Observation Template')
-          this.template_dn_options = this.$resources.observationTemplate
+          this.template_dn_options = this.$myresources.observationTemplate
         else if(value === 'Healthcare Activity')
-          this.template_dn_options = this.$resources.healthcareActivity
+          this.template_dn_options = this.$myresources.healthcareActivity
         else
           this.template_dn_options = []
       },

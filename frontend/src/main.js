@@ -7,6 +7,8 @@ import call from "../../../doppio/libs/controllers/call";
 import socket from "../../../doppio/libs/controllers/socket";
 import Auth from "../../../doppio/libs/controllers/auth";
 
+// Import Frappe UI
+import { FrappeUI, setConfig, frappeRequest, resourcesPlugin } from 'frappe-ui'
             				// My App //
 // import primevue/ vutify
 import PrimeVue from 'primevue/config';
@@ -32,7 +34,7 @@ import 'bootstrap-vue/dist/bootstrap-vue.css';
 import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
-// import 'primevue/resources/themes/aura-light-blue/theme.css'
+import 'primevue/resources/themes/aura-light-blue/theme.css'
 import 'primeicons/primeicons.css' 
 
 import '@mdi/font/css/materialdesignicons.css'
@@ -60,6 +62,7 @@ import AddAttachmentDialog from '@/components/dialogs/addAttachment.vue'
 import PatientEncounterDialog from '@/components/dialogs/patientEncounter.vue'
 import ProcedureDialog from '@/components/dialogs/procedure.vue'
 import ServiceRequestDialog from '@/components/dialogs/serviceRequest.vue'
+import PatientMedicalHistoryDialog from '@/components/dialogs/patientMedicalHistory.vue'
 
 import VueKonva from 'vue-konva';
 						  // My App End //
@@ -69,6 +72,7 @@ const app = createApp(App);
 const auth = reactive(new Auth());
 
 // My App (Again)
+// app.component('ListView', ListView)
 
 app.component('footerindex',Footer)
 app.component('indexfooter',IndexFooter)
@@ -85,6 +89,7 @@ app.component('addAttachmentDialog',AddAttachmentDialog)
 app.component('patientEncounterDialog',PatientEncounterDialog)
 app.component('procedureDialog',ProcedureDialog)
 app.component('serviceRequestDialog',ServiceRequestDialog)
+app.component('patientMedicalHistoryDialog',PatientMedicalHistoryDialog)
 // Use other UI libraries and plugins
 app.use(Antd);
 
@@ -132,7 +137,8 @@ app.use(VueKonva);
 
 // Plugins
 app.use(router);
-app.use(resourceManager);
+setConfig('resourceFetcher', frappeRequest)
+app.use(FrappeUI).use(resourcesPlugin)
 
 // Global Properties,
 // components can inject this
@@ -199,6 +205,6 @@ call('healthcare_doworks.api.methods.fetch_resources').then(response => {
 	console.error('Error fetching records:', error);
 });
 
-app.config.globalProperties.$resources = resources;
+app.config.globalProperties.$myresources = resources;
 
 app.mount("#app");

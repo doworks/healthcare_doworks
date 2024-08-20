@@ -46,36 +46,17 @@
         <Card class="h-100" :class="{'rounded-top-0': $vuetify.display.smAndDown, 'rounded-start-0': !$vuetify.display.smAndDown}">
           <template #content>
             <div class="d-flex align-items-center">
-              <!-- <img 
-              v-if="records.practitioner && records.practitioner.image && !practitionerConflict" 
-              class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
-              :src="records.practitioner.image" alt="..."
-              > -->
               <v-avatar 
-              v-if="records.practitioner && records.practitioner.image && !practitionerConflict" 
+              v-if="records.practitioner.image"
               size="80" 
               class="me-3" 
               :image="records.practitioner.image">
               </v-avatar>
               <div class="text-start">
-                <div class="d-flex">
-                  <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.practitioner.practitioner_name }}</h4>
-                  <span v-if="practitionerConflict">&nbsp;&nbsp;->&nbsp;&nbsp;</span>
-                  <v-avatar 
-                  v-if="practitionerConflict && $resources.user.practitioner_image" 
-                  size="80" 
-                  class="me-3" 
-                  :image="$resources.user.practitioner_image">
-                  </v-avatar>
-                  <!-- <img 
-                  v-if="practitionerConflict && $resources.user.practitioner_image" 
-                  class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
-                  :src="$resources.user.practitioner_image" alt="..."
-                  /> -->
-                  <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $resources.user.practitioner_name || $resources.user.name }}</h4>
-                </div>
+                <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
+                <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
+                <p v-if="records.appointment.department" class="mb-0">Department: {{ records.appointment.department }}</p>
                 <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
-                <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
                 <h4 class="mt-2 mb-0">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
               </div>
             </div>
@@ -202,36 +183,17 @@
             <Card :class="['h-100',{'rounded-0': this.isAffixed}]">
               <template #content>
                 <div class="d-flex align-items-center">
-                  <!-- <img 
-                  v-if="records.practitioner && records.practitioner.image && !practitionerConflict" 
-                  class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
-                  :src="records.practitioner.image" alt="..."
-                  > -->
                   <v-avatar 
-                  v-if="records.practitioner && records.practitioner.image && !practitionerConflict" 
+                  v-if="records.practitioner.image"
                   size="80" 
                   class="me-3" 
                   :image="records.practitioner.image">
                   </v-avatar>
                   <div class="text-start">
-                    <div class="d-flex">
-                      <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.practitioner.practitioner_name }}</h4>
-                      <span v-if="practitionerConflict">&nbsp;&nbsp;->&nbsp;&nbsp;</span>
-                      <v-avatar 
-                      v-if="practitionerConflict && $resources.user.practitioner_image" 
-                      size="80" 
-                      class="me-3" 
-                      :image="$resources.user.practitioner_image">
-                      </v-avatar>
-                      <!-- <img 
-                      v-if="practitionerConflict && $resources.user.practitioner_image" 
-                      class="me-3 avatar avatar-xl bg-primary-light rounded-circle"
-                      :src="$resources.user.practitioner_image" alt="..."
-                      /> -->
-                      <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $resources.user.practitioner_name || $resources.user.name }}</h4>
-                    </div>
-                    <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: {{ records.appointment.service_unit }}</p>
-                    <p v-if="records.appointment.department" class="mb-0">{{ records.appointment.department }}</p>
+                    <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
+                    <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
+                    <p v-if="records.appointment.department" class="mb-0">Department: <span class="font-weight-bold">{{ records.appointment.department }}</span></p>
+                    <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
                     <h4 class="mt-2 mb-0">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
                   </div>
                 </div>
@@ -290,25 +252,27 @@
                   title="No Attachments"
                   ></v-empty-state>
               </div>
-              <div
-              class="d-flex align-items-center pb-4"
-              :class="{'border-bottom': index < records.attachments.length -1, 'pt-4': index > 0, 'd-none': records.attachments.length == 0}"
-              v-for="(doc, index) in records.attachments"
-              :key="index"
-              >
-                <v-hover v-slot="{ isHovering, props }">
+              <div class="flex flex-col">
+                <v-btn
+                class="flex justify-between"
+                variant="text"
+                width="100%"
+                size="x-large"
+                v-for="(doc, index) in records.attachments"
+                :key="index"
+                >
                   <div class="me-4">
-                    <Image v-if="doc.type === 'image'" :src="doc.attachment" preview width="40" :maskVisible="isHovering"/>
-                    <i v-else-if="doc.type === 'pdf' || doc.type === 'word'" :class="`pi pi-file-${doc.type}`" style="font-size: 2.5rem" />
+                    <Image v-if="doc.type === 'image'" :src="doc.attachment" preview width="24"/>
+                    <i v-else-if="doc.type === 'pdf' || doc.type === 'word'" :class="`pi pi-file-${doc.type}`" style="font-size: 1.5rem" />
                     <!-- <v-btn v-else-if="doc.type === 'pdf' || doc.type === 'word'" class="ma-2" :icon="`pi pi-file-${doc.type}`" variant="text" style="font-size: 5.5rem"></v-btn> -->
                   </div>
                   <div class="d-flex flex-column flex-grow-1">
-                    <h4>{{ doc.attachment_name }}</h4>
+                    <h4 class="m-0">{{ doc.attachment_name }}</h4>
                   </div>
                   <div class="text-end fw-500">
                     <p class="text-fade mb-0">{{ doc.creation }}</p>
                   </div>
-                </v-hover>
+                </v-btn>
               </div>
             </template>
             <template #footer>
@@ -320,7 +284,12 @@
       
       <div class="col-xl-3 col-12 ps-0 right-column">
         <Card class="p-0 mb-3" id="patient-history" style="overflow: hidden;">
-          <template #title>Patient History</template>
+          <template #title>
+            Patient History <v-btn icon="mdi mdi-update" variant="text" class="ms-auto" @click="() => {medicalHistoryActive = true}"></v-btn>
+          </template>
+          <template #subtitle>
+            Last updated: <span class="text-black font-weight-bold">{{ records.patient.custom_medical_history_last_updated }}</span>
+          </template>
           <template #content>
             <ScrollPanel
             style="width: 100%; height: 750px"
@@ -534,7 +503,7 @@
                               <a-select
                                 allowClear
                                 v-model:value="procedureForm.procedure_template"
-                                :options="$resources.clinicalProcedureTemplate"
+                                :options="$myresources.clinicalProcedureTemplate"
                                 :fieldNames="{label: 'name', value: 'name'}"
                                 style="width: 100%"
                               ></a-select>
@@ -543,7 +512,7 @@
                               <a-select
                                 allowClear
                                 v-model:value="procedureForm.practitioner"
-                                :options="$resources.practitioners"
+                                :options="$myresources.practitioners"
                                 :fieldNames="{label: 'practitioner_name', value: 'name'}"
                                 style="width: 100%"
                               ></a-select>
@@ -552,7 +521,7 @@
                               <a-select
                                 allowClear
                                 v-model:value="procedureForm.medical_department"
-                                :options="$resources.departments"
+                                :options="$myresources.departments"
                                 :fieldNames="{label: 'department', value: 'department'}"
                                 style="width: 100%"
                               ></a-select>
@@ -561,7 +530,7 @@
                               <a-select
                                 allowClear
                                 v-model:value="procedureForm.service_unit"
-                                :options="$resources.serviceUnits"
+                                :options="$myresources.serviceUnits"
                                 :fieldNames="{label: 'name', value: 'name'}"
                                 style="width: 100%"
                               ></a-select>
@@ -600,7 +569,7 @@
                               <a-select
                                 allowClear
                                 v-model:value="procedureForm.sample"
-                                :options="$resources.sampleCollections"
+                                :options="$myresources.sampleCollections"
                                 :fieldNames="{label: 'name', value: 'name'}"
                                 style="width: 100%"
                               ></a-select>
@@ -641,7 +610,10 @@
                             <div class="d-flex gap-2">
                               <v-btn variant="flat" color="orange" disabled>Predefined Areas</v-btn>
                               <v-btn variant="flat" color="orange" disabled>Predefined Annotations</v-btn>
-                              <v-btn variant="flat" color="orange" @click="() => {procedureActive = true}">Free Drawing</v-btn>
+                              <v-btn variant="flat" color="orange" @click="() => {
+                                annotationDoctype = procedureForm.doctype; 
+                                procedureActive = true
+                              }">Free Drawing</v-btn>
                             </div>
                           </v-col>
                         </v-row>
@@ -668,8 +640,8 @@
                   </template>
                 </StepperPanel>
                 
-                <!-- Encounter & Follow-up Panels -->
-                <StepperPanel value="Complaint" header="Complaint" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
+                <!-- Consultation & Follow-up Panels -->
+                <StepperPanel value="Complaint" header="Complaint" v-if="encounterForm.custom_encounter_state === 'Consultation' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -679,7 +651,7 @@
                               <a-select
                                 v-model:value="encounterForm.symptoms"
                                 label-in-value
-                                :options="$resources.complaints"
+                                :options="$myresources.complaints"
                                 :fieldNames="{label: 'complaints', value: 'complaints'}"
                                 mode="multiple"
                                 style="width: 100%"
@@ -700,7 +672,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Pysical Examination & Investigation" header="Pysical Examination & Investigation" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
+                <StepperPanel value="Pysical Examination & Investigation" header="Pysical Examination & Investigation" v-if="encounterForm.custom_encounter_state === 'Consultation' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -712,11 +684,32 @@
                             <a-form-item label="Other Examination">
                               <a-textarea v-model:value="encounterForm.otherExamination" :rows="4" />
                             </a-form-item>
-                            <h3 class="mt-3">Encounter Procedure</h3>
+                            <h3 class="mt-3">Consultation Procedure</h3>
                             <div class="d-flex gap-2">
                               <v-btn variant="flat" color="primary" @click="() => {labTestActive = true}">Lab Test</v-btn>
                               <v-btn variant="flat" color="primary" disabled>Radiology Test</v-btn>
+                              <v-btn variant="flat" color="yellow-darken-1" @click="() => {
+                                annotationDoctype = encounterForm.doctype; 
+                                encounterAnnotationType='Investigation'; 
+                                procedureActive = true
+                              }">Annotation</v-btn>
                             </div>
+                            <h3 class="mt-3">Annotations</h3>
+                            <!-- <div class="card">
+                              <Galleria 
+                              :value="records.current_encounter.custom_annotations.filter(a => a.type == 'Investigation')" 
+                              :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
+                              :numVisible="5" 
+                              containerStyle="max-width: 640px"
+                              >
+                                <template #item="slotProps">
+                                  <img :src="slotProps.item.itemImageSrc" :alt="slotProps.item.alt" style="width: 100%" />
+                                </template>
+                                <template #thumbnail="slotProps">
+                                  <img :src="slotProps.item.thumbnailImageSrc" :alt="slotProps.item.alt" />
+                                </template>
+                              </Galleria>
+                            </div> -->
                           </v-col>
                         </v-row>
                       </v-container>
@@ -743,7 +736,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Diagnosis" header="Diagnosis" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
+                <StepperPanel value="Diagnosis" header="Diagnosis" v-if="encounterForm.custom_encounter_state === 'Consultation' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -753,7 +746,7 @@
                               <a-select
                                 v-model:value="encounterForm.diagnosis"
                                 label-in-value
-                                :options="$resources.diagnosis"
+                                :options="$myresources.diagnosis"
                                 :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
                                 mode="multiple"
                                 style="width: 100%"
@@ -763,7 +756,7 @@
                               <a-select
                                 v-model:value="encounterForm.differentialDiagnosis"
                                 label-in-value
-                                :options="$resources.diagnosis"
+                                :options="$myresources.diagnosis"
                                 :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
                                 mode="multiple"
                                 style="width: 100%"
@@ -782,7 +775,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Treatment" header="Treatment" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
+                <StepperPanel value="Treatment" header="Treatment" v-if="encounterForm.custom_encounter_state === 'Consultation' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -793,7 +786,11 @@
                               <v-btn variant="flat" color="orange" disabled>Surgical Procedure</v-btn>
                               <v-btn variant="flat" color="orange" disabled>Therapeutic Procedure</v-btn>
                               <v-btn variant="flat" color="orange" disabled>Physiotherapy Session</v-btn>
-                              <v-btn variant="flat" color="orange" @click="() => {procedureActive = true}">Annotation</v-btn>
+                              <v-btn variant="flat" color="yellow-darken-1" @click="() => {
+                                annotationDoctype = encounterForm.doctype; 
+                                encounterAnnotationType='Investigation'; 
+                                procedureActive = true
+                              }">Annotation</v-btn>
                             </div>
                           </v-col>
                         </v-row>
@@ -805,7 +802,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Order" header="Order" v-if="encounterForm.custom_encounter_state === 'Encounter' || encounterForm.custom_encounter_state === 'Follow-up'">
+                <StepperPanel value="Order" header="Order" v-if="encounterForm.custom_encounter_state === 'Consultation' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ prevCallback }">
                     <v-sheet>
                       <v-container>
@@ -880,6 +877,9 @@
       :isOpen="procedureActive" 
       @update:isOpen="procedureActive = $event" 
       @show-alert="showAlert" 
+      :doctype="annotationDoctype"
+      :docname="annotationDoctype == 'Patient Encounter' ? encounterForm.name : procedureForm.name"
+      :encounterType="annotationDoctype == 'Patient Encounter' ? encounterAnnotationType : ''"
       />
       <serviceRequestDialog 
       :isOpen="serviceRequestActive" 
@@ -887,6 +887,12 @@
       @show-alert="showAlert" 
       :patient="records.patient"
       :encounter="records.current_encounter"
+      />
+      <patientMedicalHistoryDialog 
+      :isOpen="medicalHistoryActive" 
+      @update:isOpen="medicalHistoryActive = $event" 
+      @show-alert="showAlert" 
+      :patient="records.patient"
       />
       <v-dialog v-model="consentFormDialog" width="auto">
         <v-toolbar color="red-accent-4" :style="{borderTopRightRadius: '12px', borderTopLeftRadius: '12px'}">
@@ -928,6 +934,7 @@ import { VHover } from 'vuetify/components/VHover';
 import { VAvatar } from 'vuetify/components/VAvatar';
 import { VToolbar, VToolbarItems, VToolbarTitle } from 'vuetify/components/VToolbar';
 import { VIcon } from 'vuetify/components/VIcon';
+import { VBtnGroup } from 'vuetify/components/VBtnGroup';
 
 import ExcalidrawWrapper from '@/components/ExcalidrawWrapper.vue';
 
@@ -943,7 +950,7 @@ import celsiusImage from '@/assets/img/celsius.png';
 export default {
   inject: ['$socket', '$call'],
   components: {
-    VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VAvatar, VIcon,
+    VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VAvatar, VIcon, VBtnGroup,
     VSelect, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet,
     Image, VHover, ExcalidrawWrapper, pdfSignature, VToolbar, VToolbarItems, VToolbarTitle, VSpacer,
   },
@@ -978,10 +985,13 @@ export default {
       medicationRequestActive: false,
       addAttachmentActive: false,
       procedureActive: false,
+      medicalHistoryActive: false,
       message: '',
       alertVisible: false,
-      formOptions: ['Procedural', 'Encounter', 'Follow-up', 'Session'],
-      previousState: 'Encounter',
+      formOptions: ['Consultation', 'Procedural', 'Follow-up', 'Session'],
+      previousState: 'Consultation',
+      annotationDoctype: '',
+      encounterAnnotationType: '',
       encounterForm: reactive({
         doctype: 'Patient Encounter',
         name: '',
@@ -998,7 +1008,7 @@ export default {
         appointment: '',
         appointment_type: '',
         custom_appointment_category: '',
-        custom_encounter_state: 'Encounter',
+        custom_encounter_state: 'Consultation',
         patient: '',
         patient_name: '',
         patient_sex: '',
@@ -1104,7 +1114,7 @@ export default {
           })
           this.currentVS = response.vitalSigns[0];
         }
-        if(response.appointment.practitioner !== this.$resources.user.practitioner){
+        if(response.appointment.practitioner !== this.$myresources.user.practitioner){
           this.practitionerConflict = true
         }
         this.records = response
@@ -1140,6 +1150,8 @@ export default {
             const firstSpaceIndex = message.indexOf(' ');
             this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
           }
+          else
+            this.showAlert('Sorry. There is an error!' , 10000)
         });
       })
       .catch(err => {
@@ -1167,6 +1179,8 @@ export default {
             const firstSpaceIndex = message.indexOf(' ');
             this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
           }
+          else
+            this.showAlert('Sorry. There is an error!' , 10000)
         });
       })
       .catch(err => {
@@ -1227,6 +1241,8 @@ export default {
           const firstSpaceIndex = message.indexOf(' ');
           this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
         }
+        else
+          this.showAlert('Sorry. There is an error!' , 10000)
       });
     },
     showConsentForm() {
@@ -1244,6 +1260,8 @@ export default {
           const firstSpaceIndex = message.indexOf(' ');
           this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
         }
+        else
+          this.showAlert('Sorry. There is an error!' , 10000)
       });
     },
     saveSignature() {
@@ -1264,6 +1282,8 @@ export default {
           const firstSpaceIndex = message.indexOf(' ');
           this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
         }
+        else
+          this.showAlert('Sorry. There is an error!' , 10000)
       });
     },
     // saveImage() {

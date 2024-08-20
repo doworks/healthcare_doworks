@@ -14,7 +14,7 @@
                 <a-form-item label="Test Template" name="template">
                   <a-select
                     v-model:value="form.template"
-                    :options="$resources.labTestTemplates"
+                    :options="$myresources.labTestTemplates"
                     @change="(value, option) => {form.department = option.department}"
                     :fieldNames="{label: 'name', value: 'name'}"
                   ></a-select>

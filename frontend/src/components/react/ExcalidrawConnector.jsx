@@ -11,4 +11,8 @@ export class ExcalidrawConnector {
   render() {
     this.root.render(<ExcalidrawWrapper />);
   }
+
+  unmount() {
+    this.root.unmount(); // Clean up the React component
+  }
 }

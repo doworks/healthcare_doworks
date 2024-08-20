@@ -14,9 +14,10 @@
   {
    "default": "0",
    "fieldname": "severity",
-   "fieldtype": "Int",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "label": "Severity (0 - 5)"
+   "label": "Severity",
+   "options": "0\n1\n2\n3\n4\n5"
   },
   {
    "fieldname": "type",
@@ -34,7 +35,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-05-11 13:10:59.788253",
+ "modified": "2024-08-15 08:24:03.303830",
  "modified_by": "Administrator",
  "module": "Healthcare Doworks",
  "name": "Patient Risk Factors",

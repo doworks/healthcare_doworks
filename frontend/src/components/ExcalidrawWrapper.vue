@@ -5,12 +5,20 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { ExcalidrawConnector } from './react/ExcalidrawConnector';
 
+const reactComponentRef = ref<ExcalidrawConnector | null>(null);
+
 onMounted(() => {
-  const reactComponent = new ExcalidrawConnector(document.getElementById('reactContainer')!);
-  reactComponent.render();
+  reactComponentRef.value = new ExcalidrawConnector(document.getElementById('reactContainer')!);
+  reactComponentRef.value.render();
+});
+
+onBeforeUnmount(() => {
+  if (reactComponentRef.value) {
+    reactComponentRef.value.unmount(); // Unmount the React component
+  }
 });
 </script>
 
