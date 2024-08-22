@@ -253,26 +253,31 @@
                   ></v-empty-state>
               </div>
               <div class="flex flex-col">
-                <v-btn
-                class="flex justify-between"
-                variant="text"
-                width="100%"
-                size="x-large"
-                v-for="(doc, index) in records.attachments"
-                :key="index"
-                >
-                  <div class="me-4">
-                    <Image v-if="doc.type === 'image'" :src="doc.attachment" preview width="24"/>
-                    <i v-else-if="doc.type === 'pdf' || doc.type === 'word'" :class="`pi pi-file-${doc.type}`" style="font-size: 1.5rem" />
-                    <!-- <v-btn v-else-if="doc.type === 'pdf' || doc.type === 'word'" class="ma-2" :icon="`pi pi-file-${doc.type}`" variant="text" style="font-size: 5.5rem"></v-btn> -->
-                  </div>
-                  <div class="d-flex flex-column flex-grow-1">
-                    <h4 class="m-0">{{ doc.attachment_name }}</h4>
-                  </div>
-                  <div class="text-end fw-500">
-                    <p class="text-fade mb-0">{{ doc.creation }}</p>
-                  </div>
-                </v-btn>
+                <v-list>
+                  <v-list-item
+                    v-for="(doc, index) in records.attachments"
+                    :key="index"
+                    :value="doc.name"
+                    color="primary"
+                    @click="openNewWindow(doc.attachment)"
+                    :active-class="''"
+                    :active="false"
+                  >
+                    <template v-slot:prepend>
+                      <Image v-if="doc.type === 'image'" :src="doc.attachment" preview width="24"/>
+                      <i v-else-if="doc.type === 'pdf' || doc.type === 'word'" :class="`pi pi-file-${doc.type}`" style="font-size: 1.5rem" />
+                    </template>
+
+                    <v-list-item-title class="flex ml-4" >
+                      <div class="d-flex flex-column flex-grow-1">
+                        <h4 class="m-0">{{ doc.attachment_name }}</h4>
+                      </div>
+                      <div class="text-end fw-500">
+                        <p class="text-fade mb-0">{{ doc.creation }}</p>
+                      </div>
+                    </v-list-item-title>
+                  </v-list-item>
+                </v-list>
               </div>
             </template>
             <template #footer>
@@ -492,8 +497,8 @@
             <a-form layout="vertical" :model="procedureForm">
               <SelectButton v-model="encounterForm.custom_encounter_state" :options="formOptions" class="text-center" :allowEmpty="false" @change="setStepperValue"/>
               <Stepper orientation="vertical">
-                <!-- Procedural Panels -->
-                <StepperPanel value="Procedure Info" header="Procedure Info" v-if="encounterForm.custom_encounter_state === 'Procedural'">
+                <!-- Procedure Panels -->
+                <StepperPanel value="Procedure Info" header="Procedure Info" v-if="encounterForm.custom_encounter_state === 'Procedure'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -559,7 +564,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Pre Procedure" header="Pre Procedure" v-if="encounterForm.custom_encounter_state === 'Procedural'">
+                <StepperPanel value="Pre Procedure" header="Pre Procedure" v-if="encounterForm.custom_encounter_state === 'Procedure'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -601,7 +606,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Procedure" header="Procedure" v-if="encounterForm.custom_encounter_state === 'Procedural'">
+                <StepperPanel value="Procedure" header="Procedure" v-if="encounterForm.custom_encounter_state === 'Procedure'">
                   <template #content="{ nextCallback }">
                     <v-sheet>
                       <v-container>
@@ -624,7 +629,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Post Procedure" header="Post Procedure" v-if="encounterForm.custom_encounter_state === 'Procedural'">
+                <StepperPanel value="Post Procedure" header="Post Procedure" v-if="encounterForm.custom_encounter_state === 'Procedure'">
                   <template #content>
                     <v-sheet>
                       <v-container>
@@ -935,6 +940,7 @@ import { VAvatar } from 'vuetify/components/VAvatar';
 import { VToolbar, VToolbarItems, VToolbarTitle } from 'vuetify/components/VToolbar';
 import { VIcon } from 'vuetify/components/VIcon';
 import { VBtnGroup } from 'vuetify/components/VBtnGroup';
+import { VList, VListItem, VListItemTitle } from 'vuetify/components/VList';
 
 import ExcalidrawWrapper from '@/components/ExcalidrawWrapper.vue';
 
@@ -952,7 +958,7 @@ export default {
   components: {
     VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VAvatar, VIcon, VBtnGroup,
     VSelect, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet,
-    Image, VHover, ExcalidrawWrapper, pdfSignature, VToolbar, VToolbarItems, VToolbarTitle, VSpacer,
+    Image, VHover, ExcalidrawWrapper, pdfSignature, VToolbar, VToolbarItems, VToolbarTitle, VSpacer, VList, VListItem, VListItemTitle,
   },
   computed: {
     
@@ -988,7 +994,7 @@ export default {
       medicalHistoryActive: false,
       message: '',
       alertVisible: false,
-      formOptions: ['Consultation', 'Procedural', 'Follow-up', 'Session'],
+      formOptions: ['Consultation', 'Procedure', 'Follow-up', 'Session'],
       previousState: 'Consultation',
       annotationDoctype: '',
       encounterAnnotationType: '',
@@ -1073,12 +1079,15 @@ export default {
     },
     fetchRecords(){
       this.lodingOverlay = true;
-      this.$call('healthcare_doworks.api.methods.patient_encounter_records', {appointment_id: this.$route.params.appointmentId})
+      this.$call('healthcare_doworks.api.methods.patient_encounter_records', {encounter_id: this.$route.params.encounterId})
       .then(response => {
         console.log(response)
         response.current_encounter.custom_encounter_start_time = dayjs(response.current_encounter.custom_encounter_start_time)
-        response.current_procedure.start_time = dayjs(response.current_procedure.start_date + ' ' + response.current_procedure.start_time)
-        response.current_procedure.start_date = dayjs(response.current_procedure.start_date)
+        if(response.current_procedure){
+          response.current_procedure.start_time = dayjs(response.current_procedure.start_date + ' ' + response.current_procedure.start_time)
+          response.current_procedure.start_date = dayjs(response.current_procedure.start_date)
+          this.procedureForm = {...this.procedureForm, ...response.current_procedure}
+        }
 
         response.current_encounter.diagnosis.forEach(value => {
           value.label = value.diagnosis
@@ -1089,7 +1098,6 @@ export default {
           value.value = value.complaint
         })
         this.encounterForm = {...this.encounterForm, ...response.current_encounter}
-        this.procedureForm = {...this.procedureForm, ...response.current_procedure}
         response.patient.dob = dayjs(response.patient.dob).format('DD/MM/YYYY')
         response.patient.age = ' (' + dayjs().diff(response.patient.dob, 'y') + 'yrs), '
         response.encounters = response.encounters.map((encounter, index) => {
@@ -1200,7 +1208,7 @@ export default {
       this.previewVisible = true;
     },
     setStepperValue({event, value}) {
-      if(value === 'Procedural' && !this.procedureForm.name){
+      if(value === 'Procedure' && !this.procedureForm.name){
         this.requireConfirmation(event, value)
         this.encounterForm.custom_encounter_state = this.previousState
         return;
@@ -1230,7 +1238,7 @@ export default {
       this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone})
       .then(response => {
         this.lodingOverlay = false;
-        this.encounterForm.custom_encounter_state = 'Procedural'
+        this.encounterForm.custom_encounter_state = 'Procedure'
         this.procedureForm.name = response.name
         this.$toast.add({ severity: 'success', summary: 'Success', detail: 'A new Clinical Procedure has been created', life: 2000 });
       }).catch(error => {
@@ -1286,14 +1294,9 @@ export default {
           this.showAlert('Sorry. There is an error!' , 10000)
       });
     },
-    // saveImage() {
-    //   if (window.ExcalidrawAPI && window.ExcalidrawAPI.saveCanvasAsImage) {
-    //     window.ExcalidrawAPI.saveCanvasAsImage();
-    //   } else {
-    //     console.error('Save function is not yet registered by React component');
-    //   }
-    // },
-
+    openNewWindow(href) {
+      window.open(href, '_blank');
+    }
   }
 };
 </script>

@@ -14,7 +14,7 @@
                 <a-form-item label="Appointment Category">
                   <a-select
                     v-model:value="appointmentForm.custom_appointment_category"
-                    :options="[{label: 'First Time', value: 'First Time'}, {label: 'Follow-up', value: 'Follow-up'}, {label: 'Session', value: 'Session'}]"
+                    :options="categoryOptions"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment Type" name="appointment_type">
@@ -295,6 +295,12 @@ export default {
 	data() {
 		return {
       lodingOverlay: false,
+      categoryOptions: [
+        {label: 'First Time', value: 'First Time'}, 
+        {label: 'Follow-up', value: 'Follow-up'}, 
+        {label: 'Procedure', value: 'Procedure'},
+        {label: 'Session', value: 'Session'},
+      ]
 		};
 	},
 	methods: {

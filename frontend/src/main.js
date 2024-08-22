@@ -2,10 +2,9 @@ import { createApp, reactive } from "vue";
 import App from "./App.vue";
 
 import router from './router';
-import resourceManager from "../../../doppio/libs/resourceManager";
-import call from "../../../doppio/libs/controllers/call";
-import socket from "../../../doppio/libs/controllers/socket";
-import Auth from "../../../doppio/libs/controllers/auth";
+import call from "./utils/call";
+import { initSocket } from './utils/socket'
+import Auth from "./utils/auth";
 
 // Import Frappe UI
 import { FrappeUI, setConfig, frappeRequest, resourcesPlugin } from 'frappe-ui'
@@ -144,7 +143,8 @@ app.use(FrappeUI).use(resourcesPlugin)
 // components can inject this
 app.provide("$auth", auth);
 app.provide("$call", call);
-app.provide("$socket", socket);
+const mysocket = initSocket()
+app.provide("$socket", mysocket);
 
 
 // Configure route gaurds

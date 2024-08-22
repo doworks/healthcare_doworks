@@ -7,7 +7,7 @@
             </v-card-title>
             <v-divider class="m-0"></v-divider>
             <v-card-text>
-                <v-container>
+                <v-container fluid>
                     <v-row>
                         <v-col cols="12" lg="6">
                             <h5>Allergies</h5>
@@ -28,7 +28,7 @@
                                             :options="allergiesOptions"
                                             ></a-select>
                                         </a-form-item>
-                                        <a-form-item label="Type">
+                                        <a-form-item label="Severity">
                                             <a-select
                                             v-model:value="row.severity"
                                             :options="severityOptions"
@@ -94,7 +94,7 @@
                                             <a-input v-model:value="row.practitioner"/>
                                         </a-form-item>
                                         <a-form-item label="Note">
-                                            <a-textarea v-model:value="row.note" :rows="4" />
+                                            <a-textarea v-model:value="row.notes" :rows="4" />
                                         </a-form-item>
                                     </a-form>
                                 </template>
@@ -108,7 +108,7 @@
                                 {label: 'From Date', key: 'from_date'},
                                 {label: 'Status', key: 'status', }
                             ]"
-                            :rows="medicaitons"
+                            :rows="medications"
                             @update="(items) => {medications = items}"
                             title="Medications"
                             >
@@ -312,7 +312,7 @@ export default {
             allergies: [],
             infectedDiseases: [],
             surgicalHistory: [],
-            medicaitons: [],
+            medications: [],
             habits: [],
             riskFactors: [],
             chronicDiseases: '',
@@ -326,7 +326,7 @@ export default {
             sur.dayDate = dayjs(sur.date)
             return sur
         })
-        this.medicaitons = this.patient.custom_medications.map(med => {
+        this.medications = this.patient.custom_medications.map(med => {
             med.dayDate = dayjs(med.from_date)
             return med
         })
@@ -345,7 +345,7 @@ export default {
                         sur.dayDate = dayjs(sur.date)
                         return sur
                     })
-                    this.medicaitons = this.patient.custom_medications.map(med => {
+                    this.medications = this.patient.custom_medications.map(med => {
                         med.dayDate = dayjs(med.from_date)
                         return med
                     })
@@ -370,7 +370,7 @@ export default {
                 allergies: this.allergies,
                 infected_diseases: this.infectedDiseases,
                 surgical_history: this.surgicalHistory,
-                medicaitons: this.medicaitons,
+                medications: this.medications,
                 habits: this.habits,
                 risk_factors: this.riskFactors,
                 chronic_diseases: this.chronicDiseases,

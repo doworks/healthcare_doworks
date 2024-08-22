@@ -1,10 +1,12 @@
+import frappe
+from frappe import _
+
 app_name = "healthcare_doworks"
 app_title = "Healthcare Doworks"
 app_publisher = "S.Mohamed"
 app_description = "An extention for the healthcare frappe app"
 app_email = "sayed10998@gmail.com"
 app_license = "mit"
-
 
 # required_apps = []
 

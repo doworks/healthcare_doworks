@@ -414,10 +414,7 @@ export default {
 				{
 					label: 'Patient Encounter',
 					icon: 'mdi mdi-bandage',
-					command: () => {
-						const appointmentId = this.selectedRow.appointment_id;
-						this.$router.push({ name: 'patient-encounter', params: { appointmentId } });
-					}
+					command: () => {this.goToEncounter()}
 				},
 				{
 					label: 'Request a Service',
@@ -511,6 +508,14 @@ export default {
 				initials += names[names.length - 1].substring(0, 1).toUpperCase();
 			}
 			return initials;
+		},
+		goToEncounter() {
+			this.$call('healthcare_doworks.api.methods.patient_encounter_name', {appointment_id: this.selectedRow.appointment_id})
+			.then(response => {
+				this.$router.push({ name: 'patient-encounter', params: { encounterId: response } });
+			}).catch(error => {
+				console.error(error);
+			});
 		},
 		updateStatus(item) {
 			this.$call('healthcare_doworks.api.methods.change_status',

@@ -70,7 +70,7 @@
                                 <v-btn 
                                 elevation="2" 
                                 class="bg-green-accent-2" 
-                                :to="{ name: 'patient-encounter', params: { appointmentId: patient.appointment_id } }"
+                                @click="goToEncounter"
                                 >
                                     Encounter
                                 </v-btn>
@@ -90,6 +90,7 @@ import maleImage from '@/assets/img/male.png';
 import femaleImage from '@/assets/img/female.png';
 
 export default {
+    inject: ['$call'],
     components: {
         VCol, VRow,
     },
@@ -117,7 +118,16 @@ export default {
         updateOnResize() {
             // Your logic to update on resize
             this.$emit('cardRendered', this.$refs.cardRef.$el.querySelector('.p-card-body').offsetHeight);
-        }
+        },
+        goToEncounter() {
+			this.$call('healthcare_doworks.api.methods.patient_encounter_name', {appointment_id: this.selectedRow.appointment_id})
+			.then(response => {
+				const appointmentId = this.selectedRow.appointment_id;
+				this.$router.push({ name: 'patient-encounter', params: { encounterId: response } });
+			}).catch(error => {
+				console.error(error);
+			});
+		},
     }
 };
 </script>

@@ -23,11 +23,23 @@
       <v-divider></v-divider>
 
       <v-list nav>
-        <v-list-item v-if="isHealthcareAdministrator" prepend-icon="fa fa-display" title="Dashboard" value="doctorDashboard" nav to="/doctor-dashboard"></v-list-item>
-        <v-list-item v-if="isNurse" prepend-icon="fa fa-display" title="Dashboard" value="nurseDashboard" nav to="/nurse-dashboard"></v-list-item>
+        <v-list-item v-if="isHealthcareAdministrator" prepend-icon="fa fa-display" title="Doctor Dashboard" value="doctorDashboard" nav to="/doctor-dashboard"></v-list-item>
+        <v-list-item v-if="isNurse" prepend-icon="fa fa-display" title="Nurse Dashboard" value="nurseDashboard" nav to="/nurse-dashboard"></v-list-item>
+        <v-list-item 
+        prepend-icon="fa fa-user" 
+        title="Patient" 
+        value="patient" 
+        to="/patient" 
+        :class="{ 'v-list-item--active': $route.path.startsWith('/patient/') || $route.path == '/patient/' }"
+        ></v-list-item>
         <v-list-item prepend-icon="fa fa-calendar-check" title="Appointments" value="appointments" to="/appointments"></v-list-item>
-        <v-list-item prepend-icon="fa fa-user-injured" title="Patient Encounter" value="patientEncounter" to="/patient-encounter-list"></v-list-item>
-        <v-list-item prepend-icon="fa fa-user" title="Patient" value="patient" to="/patient" :class="{ 'v-list-item--active': $route.path.startsWith('/patient') }"></v-list-item>
+        <v-list-item 
+        prepend-icon="fa fa-user-injured" 
+        title="Patient Encounter" 
+        value="patientEncounter" 
+        to="/patient-encounter/"
+        :class="{ 'v-list-item--active': $route.path.startsWith('/patient-encounter/') }"
+        ></v-list-item>
       </v-list>
     </v-navigation-drawer>
 </template>

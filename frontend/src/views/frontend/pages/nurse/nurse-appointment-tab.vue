@@ -390,6 +390,11 @@ export default {
 					command: () => this.$emit('vital-sign-dialog', this.selectedRow)
 				},
 				{
+					label: 'Medical History',
+					icon: 'mdi mdi-medical-bag',
+					command: () => this.$emit('medical-history-dialog', this.selectedRow)
+				},
+				{
 					label: 'Update Room',
 					icon: 'mdi mdi-door-open',
 					command: () => this.$emit('service-unit-dialog', this.selectedRow)

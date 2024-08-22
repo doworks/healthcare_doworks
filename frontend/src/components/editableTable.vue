@@ -4,13 +4,13 @@
       <div class="d-flex m-2">
         <v-btn 
         prepend-icon="pi pi-plus" 
-        color="green" 
+        color="green-accent-1" 
         rounded="lg" 
         size="small" 
         class="mr-2" 
         @click="openNew"
         >
-          New
+          Add Row
         </v-btn>
         <v-btn 
         v-if="selectedRows && selectedRows.length"
@@ -130,6 +130,7 @@ export default {
     },
     saveItem(row) {
       if (row) {
+        let isNew = false
         if (row.name) {
           delete row.modified
           delete row.modified_by
@@ -137,14 +138,15 @@ export default {
           this.$toast.add({severity:'success', summary: 'Updated', detail: this.title + ' Updated', life: 3000});
         }
         else {
+          isNew = true
           row.name = this.createId();
           this.items.push(row);
           this.$toast.add({severity:'success', summary: 'Created', detail: this.title + ' Created', life: 3000});
         }
 
         this.rowDialog = false;
+        this.$emit('update', this.items, row, isNew)
         this.row = {};
-        this.$emit('update', this.items)
       }
     },
     findIndexById(id) {

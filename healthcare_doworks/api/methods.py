@@ -121,21 +121,13 @@ def change_status(docname, status):
 
 # Patient Encounter Page
 @frappe.whitelist()
-def patient_encounter_records(appointment_id):
+def patient_encounter_name(appointment_id):
 	if(frappe.db.exists('Patient Appointment', appointment_id)):
 		appointment = frappe.get_doc('Patient Appointment', appointment_id)
-		patient = frappe.get_doc('Patient', appointment.patient)
-		practitioner = frappe.get_doc('Healthcare Practitioner', appointment.practitioner)
-		current_encounter = None
-		current_procedure = None
 		if frappe.db.exists('Patient Encounter', {"appointment": appointment_id}):
-			# current_encounter = frappe.get_last_doc('Patient Encounter', filters={"appointment": appointment_id})
-			appointment_encounters = frappe.db.get_list('Patient Encounter', filters={"appointment": appointment_id}, pluck='name')
-			current_encounter = frappe.get_doc('Patient Encounter', appointment_encounters[-1])
-			if frappe.db.exists('Clinical Procedure', {"custom_patient_encounter": current_encounter.name}):
-				procedures = frappe.db.get_list('Clinical Procedure', filters={"custom_patient_encounter": current_encounter.name}, pluck='name')
-				current_procedure = frappe.get_doc('Clinical Procedure', procedures[-1])
+			return frappe.db.get_list('Patient Encounter', filters={"appointment": appointment_id}, pluck='name')[-1]
 		else:
+			patient = frappe.get_doc('Patient', appointment.patient)
 			new_encounter = frappe.new_doc('Patient Encounter')
 			new_encounter.appointment = appointment_id
 			new_encounter.encounter_date = frappe.utils.nowdate()
@@ -148,7 +140,7 @@ def patient_encounter_records(appointment_id):
 			new_encounter.patient = patient.name
 			new_encounter.patient_name = patient.patient_name
 			new_encounter.patient_sex = patient.sex
-			new_encounter.patient_age = patient.age
+			new_encounter.patient_age = calculate_age(patient.dob)
 			loggedin_practitioner = frappe.db.get_value('Healthcare Practitioner', {'user_id': frappe.session.user}, ['name', 'practitioner_name'])
 			if loggedin_practitioner is not None:
 				new_encounter.practitioner = loggedin_practitioner[0]
@@ -157,28 +149,33 @@ def patient_encounter_records(appointment_id):
 				new_encounter.practitioner = appointment.practitioner
 				new_encounter.practitioner_name = appointment.practitioner_name
 			new_encounter.insert()
-			current_encounter = frappe.get_doc('Patient Encounter', new_encounter.name)
 		
-		# assign default values for the procedure
-		if current_procedure == None:
-			current_procedure = {
-				'custom_patient_encounter': current_encounter.name,
-				'patient': current_encounter.patient,
-				'patient_name': current_encounter.patient_name,
-				'patient_sex': current_encounter.patient_sex,
-				'patient_age': current_encounter.patient_age,
-				'practitioner': current_encounter.practitioner,
-				'practitioner_name': current_encounter.practitioner_name,
-				'medical_department': current_encounter.medical_department,
-				'service_unit': appointment.service_unit
-			}
+			# assign default values for the procedure
+			if appointment.custom_appointment_category == 'Procedure':
+				current_procedure = frappe.new_doc('Clinical Procedure')
+				current_procedure.custom_patient_encounter = new_encounter.name
+				current_procedure.patient = new_encounter.patient
+				current_procedure.patient_name = new_encounter.patient_name
+				current_procedure.patient_sex = new_encounter.patient_sex
+				current_procedure.patient_age = new_encounter.patient_age
+				current_procedure.practitioner = new_encounter.practitioner
+				current_procedure.practitioner_name = new_encounter.practitioner_name
+				current_procedure.medical_department = new_encounter.medical_department
+				current_procedure.service_unit = appointment.service_unit
+				current_procedure.insert()
+			return new_encounter.name
+@frappe.whitelist()
+def patient_encounter_records(encounter_id):
+	if(frappe.db.exists('Patient Encounter', encounter_id)):
+		current_encounter = frappe.get_doc('Patient Encounter', encounter_id)
+		appointment = frappe.get_doc('Patient Appointment', current_encounter.appointment)
+		patient = frappe.get_doc('Patient', appointment.patient)
+		practitioner = frappe.get_doc('Healthcare Practitioner', appointment.practitioner)
+		current_procedure = None
+		if frappe.db.exists('Clinical Procedure', {"custom_patient_encounter": current_encounter.name}):
+			procedures = frappe.db.get_list('Clinical Procedure', filters={"custom_patient_encounter": current_encounter.name}, pluck='name')
+			current_procedure = frappe.get_doc('Clinical Procedure', procedures[-1])
 
-		# for d in current_encounter.diagnosis:
-		# 	d.label = d.diagnosis
-		# 	d.value = d.diagnosis
-		# for c in current_encounter.symptoms:
-		# 	c.label = c.complaint
-		# 	c.value = c.complaint
 		vital_signs = frappe.db.get_list('Vital Signs',
 			filters={'patient': appointment.patient},
 			fields=[
@@ -497,7 +494,7 @@ def get_appointments(*args):
 				AND nutrition_note IS NOT NULL AND nutrition_note != ''
 				GROUP BY patient
 			) latest_vs ON vs.patient = latest_vs.patient AND vs.signs_date = latest_vs.latest_signs_date
-		),					  
+		),
 		LastVisit AS (
 			SELECT
 				pe.`patient`,
@@ -508,8 +505,33 @@ def get_appointments(*args):
 				FROM `tabPatient Encounter` pe2
 				WHERE pe2.`patient` = pe.`patient`
 			)
+		),
+		VisitNotes AS (
+			SELECT
+				vn.`parent` AS `appointment_id`,
+				JSON_ARRAYAGG(
+					JSON_OBJECT(
+						'provider', vn.`provider`,
+						'note', vn.`note`,
+						'time', vn.`time`
+					)
+				) AS `visit_notes`
+			FROM `tabAppointment Note Table` vn
+			GROUP BY vn.`parent`
+		),
+		StatusLogs AS (
+			SELECT
+				tl.`parent` AS `appointment_id`,
+				JSON_ARRAYAGG(
+					JSON_OBJECT(
+						'status', tl.`status`,
+						'time', tl.`time`
+					)
+				) AS `status_log`
+			FROM `tabAppointment Time Logs` tl
+			GROUP BY tl.`parent`
 		)
-							  
+
 		SELECT
 			pa.`name` AS `appointment_id`,
 			pa.`patient_name` AS `patient_name`,
@@ -530,7 +552,6 @@ def get_appointments(*args):
 			pa.`custom_appointment_category` AS `appointment_category`,
 			pa.`service_unit` AS `service_unit`,
 			pa.`custom_payment_type` AS `payment_type`,
-
 			JSON_OBJECT(
 				'id', `tabPatient`.`name`,
 				'image', `tabPatient`.`image`,
@@ -545,43 +566,49 @@ def get_appointments(*args):
 				'last_visit', lpe.`encounter_date`,
 				'nutrition_note', lvs.`nutrition_note`
 			) AS `patient_details`,
-							  
-			JSON_ARRAYAGG(
-				JSON_OBJECT(
-					'provider', vn.`provider`,
-					'note', vn.`note`,
-					'time', vn.`time`
-				)
-			) AS `visit_notes`,
-							  
-			JSON_ARRAYAGG(
-				JSON_OBJECT(
-					'status', tl.`status`,
-					'time', tl.`time`
-				)
-			) AS `status_log`
-			
+			vn.`visit_notes`,
+			tl.`status_log`
 		FROM
 			`tabPatient Appointment` pa
 		LEFT JOIN `tabPatient`
 			ON `tabPatient`.`name` = pa.`patient`
 		LEFT JOIN `tabHealthcare Practitioner` hp
 			ON hp.`name` = pa.`practitioner`
-		LEFT JOIN `tabAppointment Note Table` vn
-			ON vn.`parent` = pa.`name`
-		LEFT JOIN `tabAppointment Time Logs` tl
-			ON tl.`parent` = pa.`name`
 		LEFT JOIN LatestVitalSigns lvs
-    		ON lvs.`patient` = `tabPatient`.`name`
+			ON lvs.`patient` = `tabPatient`.`name`
 		LEFT JOIN LastVisit lpe
 			ON lpe.`patient` = `tabPatient`.`name`
+		LEFT JOIN VisitNotes vn
+			ON vn.`appointment_id` = pa.`name`
+		LEFT JOIN StatusLogs tl
+			ON tl.`appointment_id` = pa.`name`
 		WHERE
 			pa.`status` IN ('Scheduled', 'Rescheduled', 'Walked In')
 		GROUP BY
-    		pa.`name`
+			pa.`name`
 		ORDER BY
 			pa.`appointment_date` ASC,
-    		pa.`appointment_time` ASC
+			pa.`appointment_time` ASC
 	""", as_dict=True)
 	frappe.publish_realtime("patient_appointments", appointments)
 	return appointments
+
+def calculate_age(dob):
+	today = datetime.datetime.today()
+	age_years = today.year - dob.year
+	age_months = today.month - dob.month
+	age_days = today.day - dob.day
+
+	# Adjust for cases where the current day/month is less than the birth day/month
+	if age_days < 0:
+		age_months -= 1
+		last_month = today.month - 1 if today.month > 1 else 12
+		last_month_year = today.year if today.month > 1 else today.year - 1
+		days_in_last_month = (datetime.datetime(last_month_year, last_month + 1, 1) - datetime.datetime(last_month_year, last_month, 1)).days
+		age_days += days_in_last_month
+
+	if age_months < 0:
+		age_years -= 1
+		age_months += 12
+
+	return f"{age_years} Year(s) {age_months} Month(s) {age_days} Day(s)"

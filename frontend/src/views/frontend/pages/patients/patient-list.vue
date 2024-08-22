@@ -158,7 +158,7 @@ export default {
         age--;
       }
 
-      return age;
+      return age + '';
     }
   },
   name: 'Patients List',

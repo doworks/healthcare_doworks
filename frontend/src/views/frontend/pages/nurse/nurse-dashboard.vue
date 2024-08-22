@@ -127,6 +127,7 @@
             ref="appointmentTabRef"
             @appointment-note-dialog="appointmentNoteDialog"
             @vital-sign-dialog="vitalSignDialog"
+            @medical-history-dialog="medicalHistoryDialog"
             />
             </v-window-item>
           </v-window>
@@ -268,6 +269,12 @@
     @update:isOpen="vitalSignsOpen = $event" 
     @show-alert="showAlert" 
     />
+    <patientMedicalHistoryDialog 
+    :isOpen="medicalHistoryActive" 
+    @update:isOpen="medicalHistoryActive = $event" 
+    @show-alert="showAlert" 
+    :patient="patient"
+    />
     <v-dialog v-model="appointmentNoteOpen" width="auto">
       <v-card
         rounded="lg"
@@ -341,10 +348,21 @@ export default {
       isFlipped: false,
       appointmentsLoading: false,
       vitalSignsOpen: false,
+      medicalHistoryActive: false,
       appointmentNoteOpen: false,
       alertVisible: false,
       services: [],
       selectedRow: {patient: ''},
+      patient: {
+        custom_allergies_table: [],
+        custom_infected_diseases: [],
+        custom_surgical_history_table: [],
+        custom_medications: [],
+        custom_habits__social: [],
+        custom_risk_factors_table: [],
+        custom_chronic_diseases: [],
+        custom_genetic_conditions: [],
+      },
     };
   },
   created() {
@@ -441,6 +459,17 @@ export default {
     vitalSignDialog(row) {
       this.selectedRow = row
       this.vitalSignsOpen = true;
+    },
+    medicalHistoryDialog(row) {
+      this.$call('frappe.client.get', {doctype: 'Patient', name: row.patient_details.id})
+      .then(response => {
+        this.patient = response
+        this.medicalHistoryActive = true;
+      })
+      .catch(error => {
+        this.appointmentsLoading = false;
+        console.error('Error fetching records:', error);
+      });
     },
     adjustAppointments(data) {
       return [...(data || [])].filter(value => {

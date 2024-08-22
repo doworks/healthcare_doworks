@@ -18,12 +18,17 @@ const routes = [
     component: Home,
   },
   {
-    path: '/patient-encounter/:appointmentId?',
+    path: '/patient-encounter/',
+    name: 'patient-encounter-list',
+    component: PatientEncounterList
+  },
+  {
+    path: '/patient-encounter/:encounterId',
     name: 'patient-encounter',
     component: PatientEncounter
   },
   {
-    path: '/patient',
+    path: '/patient/',
     name: 'patient-list',
     component: PatientList
   },
@@ -31,11 +36,6 @@ const routes = [
     path: '/patient/:patientId',
     name: 'patient',
     component: Patient
-  },
-  {
-    path: '/patient-encounter-list',
-    name: 'patient-encounter-list',
-    component: PatientEncounterList
   },
   {
     path: '/doctor-dashboard',

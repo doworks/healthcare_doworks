@@ -369,6 +369,7 @@ export default {
       this.appointmentsLoading = true;
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments')
       .then(response => {
+        console.log(response)
         this.appointments = this.adjustAppointments(response)
         this.groupAppointmentsByStatus();
         this.appointmentsLoading = false;
