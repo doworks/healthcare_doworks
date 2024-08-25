@@ -80,6 +80,10 @@ def fetch_resources():
 		'sampleCollections': sampleCollections,
 	}
 
+@frappe.whitelist(allow_guest=True)
+def get_site_name():
+	return frappe.local.site
+
 # Appointments Page
 @frappe.whitelist()
 def fetch_patient_appointments():
@@ -390,7 +394,7 @@ def edit_doc(form, submit=False):
 	doc = frappe.get_doc(form['doctype'], form['name'])
 	del form['doctype']
 	del form['name']
-
+	
 	for key, value in form.items():
 		# Assign the value to the corresponding field in the document
 		if (key == 'diagnosis' or key == 'symptoms'):

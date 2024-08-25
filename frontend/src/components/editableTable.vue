@@ -49,7 +49,7 @@
       </div>
     </div>
 
-    <v-dialog v-model="rowDialog" width="450px">
+    <v-dialog v-model="rowDialog" :width="dialogWidth">
       <v-card :title="title">
         <template v-slot:text>
           <slot name="dialog" :row="row"></slot>
@@ -104,6 +104,10 @@ export default {
       type: String,
       default: '',
     },
+    dialogWidth: {
+      type: String,
+      default: '450px'
+    }
   },
   components: { ListView },
   data() {
@@ -171,8 +175,9 @@ export default {
     deleteSelectedRows() {
       this.items = this.items.filter(val => !this.selectedRows.includes(val.name));
       this.deleteRowsDialog = false;
-      this.selectedRows = [];
       this.$toast.add({severity:'success', summary: 'Deleted', detail: 'Items Deleted', life: 3000});
+      this.$emit('delete', this.selectedRows)
+      this.selectedRows = [];
       this.$emit('update', this.items)
     },
   }

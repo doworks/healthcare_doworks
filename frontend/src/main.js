@@ -139,14 +139,6 @@ app.use(router);
 setConfig('resourceFetcher', frappeRequest)
 app.use(FrappeUI).use(resourcesPlugin)
 
-// Global Properties,
-// components can inject this
-app.provide("$auth", auth);
-app.provide("$call", call);
-const mysocket = initSocket()
-app.provide("$socket", mysocket);
-
-
 // Configure route gaurds
 router.beforeEach(async (to, from, next) => {
 	if (to.matched.some((record) => !record.meta.isLoginPage)) {
@@ -207,4 +199,17 @@ call('healthcare_doworks.api.methods.fetch_resources').then(response => {
 
 app.config.globalProperties.$myresources = resources;
 
-app.mount("#app");
+// Global Properties,
+// components can inject this
+call('healthcare_doworks.api.methods.get_site_name').then(response => {
+	if(response){
+		const mysocket = initSocket(response)
+		app.provide("$socket", mysocket);
+		app.provide("$auth", auth);
+		app.provide("$call", call);
+		app.mount("#app");
+	}
+}).catch(error => {
+	console.error('Error fetching site name: ', error);
+});
+

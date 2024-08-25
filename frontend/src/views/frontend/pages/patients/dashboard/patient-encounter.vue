@@ -64,7 +64,7 @@
         </Card>
       </div>
       <a-affix 
-        @change="affixChenge"
+        @change="affixed => {isAffixed = affixed}"
         class="pe-0"
         :style="this.isAffixed ? {left: '-20px', position: 'relative', width: 'calc(100% + 25px)', maxWidth: 'unset'} : {}"
       >
@@ -264,7 +264,7 @@
                     :active="false"
                   >
                     <template v-slot:prepend>
-                      <Image v-if="doc.type === 'image'" :src="doc.attachment" preview width="24"/>
+                      <Image v-if="doc.type === 'image'" :src="doc.attachment" width="24"/>
                       <i v-else-if="doc.type === 'pdf' || doc.type === 'word'" :class="`pi pi-file-${doc.type}`" style="font-size: 1.5rem" />
                     </template>
 
@@ -629,6 +629,104 @@
                     </div>
                   </template>
                 </StepperPanel>
+                <StepperPanel value="Consumables" header="Consumables" v-if="encounterForm.custom_encounter_state === 'Procedure'">
+                  <template #content="{ nextCallback }">
+                    <v-sheet>
+                      <v-container>
+                        <v-row>
+                          <v-col>
+                            <h5>Consumables</h5>
+                            <EditableTable :columns="[
+                              {label: 'Item', key: 'item_code'},
+                              {label: 'Item Name', key: 'item_name'},
+                              {label: 'Quantity', key: 'qty'},
+                              {label: 'UOM', key: 'uom'},
+                              {label: 'Invoice Separately as Consumables', key: 'invoice_separately_as_consumables'},
+                            ]"
+                            :rows="encounterForm.items"
+                            @update="(items, row, isNew) => {
+                              if(items && row)
+                                newChildRow({
+                                  parentDoctype: 'Clinical Procedure',
+                                  fieldName: 'items', 
+                                  rules: {
+                                    item_code: [{ required: true, message: 'Please choose an item!' }],
+                                    qty: [{ required: true, message: 'Please choose a quantity!' }],
+                                    uom: [{ required: true, message: 'Please choose a uom!' }],
+                                    stock_uom: [{ required: true, message: 'Please choose a stock uom!' }],
+                                  },
+                                  items, row, isNew
+                                })
+                            }"
+                            @delete="rows => {deleteChildRow({parentDoctype: 'Clinical Procedure', fieldName: 'items', rows})}"
+                            dialogWidth="fit-content"
+                            title="Medication"
+                            >
+                              <template v-slot:dialog="{ row }">
+                                <a-form layout="vertical">
+                                  <v-container>
+                                    <v-row>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Item">
+                                          <a-select
+                                          v-model:value="row.item_code"
+                                          :options="$resources.items.data.filter(item => item.is_stock_item)"
+                                          :fieldNames="{label: 'item_code', value: 'name'}"
+                                          @change="(value, option) => {row.item_name = option.item_name}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Item Name">
+                                          <a-input v-model:value="row.item_name" disabled/>
+                                        </a-form-item>
+                                        <a-form-item label="Quantity">
+                                          <a-input v-model:value="row.qty"/>
+                                        </a-form-item>
+                                        <a-form-item label="Barcode">
+                                          <a-input v-model:value="row.barcode"/>
+                                        </a-form-item>
+                                        <a-form-item label="UOM">
+                                          <a-select
+                                          v-model:value="row.uom"
+                                          :options="$resources.uoms.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-checkbox v-model:checked="row.invoice_separately_as_consumables">
+                                          Invoice Separately as Consumables
+                                        </a-checkbox>
+                                      </v-col>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Batch">
+                                          <a-select
+                                          v-model:value="row.batch_no"
+                                          :options="$resources.batches.data.filter(batch => batch.item == row.item_code)"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Conversion Factor">
+                                          <a-input v-model:value="row.conversion_factor" disabled/>
+                                        </a-form-item>
+                                        <a-form-item label="Stock UOM">
+                                          <a-input v-model:value="row.stock_uom" disabled/>
+                                        </a-form-item>
+                                        <a-form-item label="Transfer Qty">
+                                          <a-input v-model:value="row.transfer_qty" disabled/>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                  </v-container>
+                                </a-form>
+                              </template>
+                            </EditableTable>
+                          </v-col>
+                        </v-row>
+                      </v-container>
+                    </v-sheet>
+                    <div class="d-flex pt-4">
+                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                    </div>
+                  </template>
+                </StepperPanel>
                 <StepperPanel value="Post Procedure" header="Post Procedure" v-if="encounterForm.custom_encounter_state === 'Procedure'">
                   <template #content>
                     <v-sheet>
@@ -689,9 +787,84 @@
                             <a-form-item label="Other Examination">
                               <a-textarea v-model:value="encounterForm.otherExamination" :rows="4" />
                             </a-form-item>
-                            <h3 class="mt-3">Consultation Procedure</h3>
-                            <div class="d-flex gap-2">
-                              <v-btn variant="flat" color="primary" @click="() => {labTestActive = true}">Lab Test</v-btn>
+                          </v-col>
+                        </v-row>
+                        <v-row>
+                          <v-col>
+                            <h3 class="my-3">Investigation Procedure</h3>
+                            <h5>Lab Tests</h5>
+                            <EditableTable :columns="[
+                              {label: 'Observation', key: 'observation_template'},
+                              {label: 'Comments', key: 'lab_test_comment'},
+                            ]"
+                            :rows="encounterForm.lab_test_prescription"
+                            @update="(items, row, isNew) => {
+                              if(items && row)
+                                newChildRow({fieldName: 'lab_test_prescription', rules: {}, items, row, isNew})
+                            }"
+                            @delete="rows => {deleteChildRow({fieldName: 'lab_test_prescription', rows})}"
+                            dialogWidth="fit-content"
+                            title="Lab Test"
+                            >
+                              <template v-slot:dialog="{ row }">
+                                <a-form layout="vertical">
+                                  <v-container>
+                                    <v-row>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Lab Test">
+                                          <a-select
+                                          v-model:value="row.lab_test_code"
+                                          :options="$resources.labTests.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Observation">
+                                          <a-select
+                                          v-model:value="row.observation_template"
+                                          :options="$resources.observationTemplate.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                      </v-col>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Comments">
+                                          <a-textarea v-model:value="row.lab_test_comment" :rows="4"/>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                    <v-divider></v-divider>
+                                    <v-row>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Patient Care Type">
+                                          <a-select
+                                          v-model:value="row.patient_care_type"
+                                          :options="$resources.patientCareTypes.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                      </v-col>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Intent">
+                                          <a-select
+                                          v-model:value="row.intent"
+                                          :options="$resources.codeValues.data.filter(value => value.code_system == 'Intent')"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Priority">
+                                          <a-select
+                                          v-model:value="row.priority"
+                                          :options="$resources.codeValues.data.filter(value => value.code_system == 'Priority')"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                  </v-container>
+                                </a-form>
+                              </template>
+                            </EditableTable>
+                            <div class="d-flex gap-2 mt-10">
                               <v-btn variant="flat" color="primary" disabled>Radiology Test</v-btn>
                               <v-btn variant="flat" color="yellow-darken-1" @click="() => {
                                 annotationDoctype = encounterForm.doctype; 
@@ -699,6 +872,10 @@
                                 procedureActive = true
                               }">Annotation</v-btn>
                             </div>
+                          </v-col>
+                        </v-row>
+                        <v-row>
+                          <v-col>
                             <h3 class="mt-3">Annotations</h3>
                             <!-- <div class="card">
                               <Galleria 
@@ -786,11 +963,323 @@
                       <v-container>
                         <v-row>
                           <v-col>
+                            <h5>Medications</h5>
+                            <EditableTable :columns="[
+                              {label: 'Medication', key: 'medication'},
+                              {label: 'Drug Code', key: 'drug_code'},
+                              {label: 'Dosage', key: 'dosage'},
+                              {label: 'Period', key: 'period'},
+                              {label: 'Dosage Form', key: 'dosage_form'},
+                            ]"
+                            :rows="encounterForm.drug_prescription"
+                            @update="(items, row, isNew) => {
+                              if(items && row)
+                                newChildRow({
+                                  fieldName: 'drug_prescription', 
+                                  rules: {
+                                    medication: [{ required: true, message: 'Please choose a medication!' }],
+                                    drug_code: [{ required: true, message: 'Please choose a drug code!' }],
+                                    dosage_form: [{ required: true, message: 'Please choose a dosage form!' }],
+                                    dosage: [{ required: !row.dosage_by_interval, message: 'Please choose a dosage!' }],
+                                    interval: [{ required: row.dosage_by_interval, message: 'Please choose a interval!' }],
+                                    interval_uom: [{ required: row.dosage_by_interval, message: 'Please choose a interval uom!' }],
+                                    period: [{ required: true, message: 'Please choose a period!' }],
+                                  },
+                                  items, row, isNew
+                                })
+                            }"
+                            @delete="rows => {deleteChildRow({fieldName: 'drug_prescription', rows})}"
+                            dialogWidth="fit-content"
+                            title="Medication"
+                            >
+                              <template v-slot:dialog="{ row }">
+                                <a-form layout="vertical">
+                                  <v-container>
+                                    <v-row>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Medication">
+                                          <a-select
+                                          v-model:value="row.medication"
+                                          :options="$resources.medications.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          @change="(value, option) => {
+                                            row.strength = option.strength
+                                            row.strength_uom = option.strength_uom
+                                            row.dosage_form = option.dosage_form
+                                            row.dosage = option.default_prescription_dosage
+                                            row.period = option.default_prescription_duration
+                                          }"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Drug Code">
+                                          <a-select
+                                          v-model:value="row.drug_code"
+                                          :options="$resources.items.data.filter(item => item.name = row.medication)"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Drug Name / Description">
+                                          <a-input v-model:value="row.drug_name" disabled/>
+                                        </a-form-item>
+                                        <a-form-item label="Strength">
+                                          <a-input v-model:value="row.strength" disabled/>
+                                        </a-form-item>
+                                        <a-form-item label="Strength UOM">
+                                          <a-input v-model:value="row.strength_uom" disabled/>
+                                        </a-form-item>
+                                        <a-form-item label="Dosage Form">
+                                          <a-select
+                                          v-model:value="row.dosage_form"
+                                          :options="$resources.dosageForms.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                      </v-col>
+                                      <v-col cols="12" lg="6">
+                                        <a-checkbox v-model:checked="row.dosage_by_interval">Dosage by Time Interval</a-checkbox>
+                                        <a-form-item label="Dosage" v-if="!row.dosage_by_interval">
+                                          <a-select
+                                          v-model:value="row.dosage"
+                                          :options="$resources.dosages.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Interval" v-if="row.dosage_by_interval">
+                                          <a-input v-model:value="row.interval"/>
+                                        </a-form-item>
+                                        <a-form-item label="Interval UOM" v-if="row.dosage_by_interval">
+                                          <a-select
+                                          v-model:value="row.interval_uom"
+                                          :options="[{label: '', value: ''}, {label: 'Hour', value: 'Hour'}, {label: 'Day', value: 'Day'}]"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Period">
+                                          <a-select
+                                          v-model:value="row.period"
+                                          :options="$resources.prescriptionDurations.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Number Of Repeats Allowed">
+                                          <a-input v-model:value="row.number_of_repeats_allowed"/>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                    <v-divider></v-divider>
+                                    <v-row>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Intent">
+                                          <a-select
+                                          v-model:value="row.intent"
+                                          :options="$resources.codeValues.data.filter(value => value.code_system == 'Intent')"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Priority">
+                                          <a-select
+                                          v-model:value="row.priority"
+                                          :options="$resources.codeValues.data.filter(value => value.code_system == 'Priority')"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Medication Request" v-if="row.medication_request">
+                                          <a-input v-model:value="row.medication_request" disabled/>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                    <v-divider></v-divider>
+                                    <v-row>
+                                      <v-col>
+                                        <a-form-item label="Comment">
+                                          <a-textarea v-model:value="row.comment" :rows="4"/>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                  </v-container>
+                                </a-form>
+                              </template>
+                            </EditableTable>
+                          </v-col>
+                        </v-row>
+                        <v-divider></v-divider>
+                        <v-row>
+                          <v-col>
+                            <h5>Procedures</h5>
+                            <EditableTable :columns="[
+                              {label: 'Clinical Procedure', key: 'procedure'},
+                              {label: 'Procedure Name', key: 'procedure_name'},
+                              {label: 'Referring Practitioner', key: 'practitioner'},
+                              {label: 'Date', key: 'date'},
+                            ]"
+                            :rows="encounterForm.procedure_prescription"
+                            @update="(items, row, isNew) => {
+                              if(items && row)
+                                newChildRow({
+                                  fieldName: 'procedure_prescription', 
+                                  rules: {procedure: [{ required: true, message: 'Please choose a procedure!' }]},
+                                  items, row, isNew
+                                })
+                            }"
+                            @delete="rows => {deleteChildRow({fieldName: 'procedure_prescription', rows})}"
+                            dialogWidth="fit-content"
+                            title="Procedure"
+                            >
+                              <template v-slot:dialog="{ row }">
+                                <a-form layout="vertical">
+                                  <v-container>
+                                    <v-row>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Clinical Procedure">
+                                          <a-select
+                                          v-model:value="row.procedure"
+                                          :options="$resources.clinicalProcedureTemplates.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          @change="(value, option) => {
+                                            row.procedure_name = option.template
+                                            row.department = medical_department
+                                          }"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Procedure Name">
+                                          <a-input v-model:value="row.procedure_name"/>
+                                        </a-form-item>
+                                        <a-form-item label="Department">
+                                          <a-select
+                                          v-model:value="row.department"
+                                          :options="$resources.departments.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Referring Practitioner">
+                                          <a-select
+                                          v-model:value="row.practitioner"
+                                          :options="$resources.practitioners.data"
+                                          :fieldNames="{label: 'practitioner_name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Service Request" v-if="row.service_request">
+                                          <a-input v-model:value="row.service_request" disabled/>
+                                        </a-form-item>
+                                      </v-col>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Date">
+                                          <a-date-picker v-model:value="row.date" format="DD/MM/YYYY" class="w-full"/>
+                                        </a-form-item>
+                                        <a-form-item label="Comments">
+                                          <a-textarea v-model:value="row.comments" :rows="4"/>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                    <v-divider></v-divider>
+                                    <v-row>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Patient Care Type">
+                                          <a-select
+                                          v-model:value="row.patient_care_type"
+                                          :options="$resources.patientCareTypes.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                      </v-col>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Intent">
+                                          <a-select
+                                          v-model:value="row.intent"
+                                          :options="$resources.codeValues.data.filter(value => value.code_system == 'Intent')"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Priority">
+                                          <a-select
+                                          v-model:value="row.priority"
+                                          :options="$resources.codeValues.data.filter(value => value.code_system == 'Priority')"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                  </v-container>
+                                </a-form>
+                              </template>
+                            </EditableTable>
+                          </v-col>
+                        </v-row>
+                        <v-divider></v-divider>
+                        <v-row>
+                          <v-col>
+                            <h5>Thrapies</h5>
+                            <EditableTable :columns="[
+                              {label: 'Therapy Type', key: 'therapy_type'},
+                              {label: 'No of Sessions', key: 'no_of_sessions'},
+                            ]"
+                            :rows="encounterForm.therapies"
+                            @update="(items, row, isNew) => {
+                              if(items && row)
+                                newChildRow({
+                                  fieldName: 'therapies', 
+                                  rules: {therapy_type: [{ required: true, message: 'Please choose a therapy_type!' }]},
+                                  items, row, isNew
+                                })
+                            }"
+                            @delete="rows => {deleteChildRow({fieldName: 'therapies', rows})}"
+                            dialogWidth="fit-content"
+                            title="Therapy"
+                            >
+                              <template v-slot:dialog="{ row }">
+                                <a-form layout="vertical">
+                                  <v-container>
+                                    <v-row>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Therapy Type">
+                                          <a-select
+                                          v-model:value="row.therapy_type"
+                                          :options="$resources.therapyTypes.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="No of Sessions">
+                                          <a-input v-model:value="row.no_of_sessions"/>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                    <v-divider></v-divider>
+                                    <v-row>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Patient Care Type">
+                                          <a-select
+                                          v-model:value="row.patient_care_type"
+                                          :options="$resources.patientCareTypes.data"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                      </v-col>
+                                      <v-col cols="12" lg="6">
+                                        <a-form-item label="Intent">
+                                          <a-select
+                                          v-model:value="row.intent"
+                                          :options="$resources.codeValues.data.filter(value => value.code_system == 'Intent')"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                        <a-form-item label="Priority">
+                                          <a-select
+                                          v-model:value="row.priority"
+                                          :options="$resources.codeValues.data.filter(value => value.code_system == 'Priority')"
+                                          :fieldNames="{label: 'name', value: 'name'}"
+                                          ></a-select>
+                                        </a-form-item>
+                                      </v-col>
+                                    </v-row>
+                                  </v-container>
+                                </a-form>
+                              </template>
+                            </EditableTable>
+                          </v-col>
+                        </v-row>
+                        <v-divider></v-divider>
+                        <v-row>
+                          <v-col>
                             <div class="d-flex gap-2">
-                              <v-btn variant="flat" color="orange" @click="() => {medicationRequestActive = true}">Medications</v-btn>
-                              <v-btn variant="flat" color="orange" disabled>Surgical Procedure</v-btn>
-                              <v-btn variant="flat" color="orange" disabled>Therapeutic Procedure</v-btn>
-                              <v-btn variant="flat" color="orange" disabled>Physiotherapy Session</v-btn>
                               <v-btn variant="flat" color="yellow-darken-1" @click="() => {
                                 annotationDoctype = encounterForm.doctype; 
                                 encounterAnnotationType='Investigation'; 
@@ -942,7 +1431,7 @@ import { VIcon } from 'vuetify/components/VIcon';
 import { VBtnGroup } from 'vuetify/components/VBtnGroup';
 import { VList, VListItem, VListItemTitle } from 'vuetify/components/VList';
 
-import ExcalidrawWrapper from '@/components/ExcalidrawWrapper.vue';
+import EditableTable from '@/components/editableTable.vue';
 
 import { ref, reactive } from 'vue';
 import { Form } from 'ant-design-vue';
@@ -958,10 +1447,115 @@ export default {
   components: {
     VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VAvatar, VIcon, VBtnGroup,
     VSelect, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet,
-    Image, VHover, ExcalidrawWrapper, pdfSignature, VToolbar, VToolbarItems, VToolbarTitle, VSpacer, VList, VListItem, VListItemTitle,
+    Image, VHover, pdfSignature, VToolbar, VToolbarItems, VToolbarTitle, VSpacer, VList, VListItem, VListItemTitle,
   },
-  computed: {
-    
+  resources: {
+    medications() { return { 
+      type: 'list', 
+      doctype: 'Medication', 
+      fields: ['*'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    items() { return { 
+      type: 'list', 
+      doctype: 'Item', 
+      fields: ['name', 'item_code', 'item_name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    dosageForms() { return { 
+      type: 'list', 
+      doctype: 'Dosage Form', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    dosages() { return { 
+      type: 'list', 
+      doctype: 'Prescription Dosage', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    prescriptionDurations() { return { 
+      type: 'list', 
+      doctype: 'Prescription Duration', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    codeValues() { return { 
+      type: 'list', 
+      doctype: 'Code Value', 
+      fields: ['name', 'code_system'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    clinicalProcedureTemplates() { return { 
+      type: 'list', 
+      doctype: 'Clinical Procedure Template', 
+      fields: ['name', 'template', 'medical_department'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    departments() { return { 
+      type: 'list', 
+      doctype: 'Department', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    practitioners() { return { 
+      type: 'list', 
+      doctype: 'Healthcare Practitioner', 
+      fields: ['name', 'practitioner_name'], 
+      auto: true,
+      orderBy: 'practitioner_name'
+    }},
+    patientCareTypes() { return { 
+      type: 'list', 
+      doctype: 'Patient Care Type', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    therapyTypes() { return { 
+      type: 'list', 
+      doctype: 'Therapy Type', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    labTests() { return { 
+      type: 'list', 
+      doctype: 'Lab Test Template', 
+      fields: ['name'], 
+      filters: {is_billable: 1},
+      auto: true,
+      orderBy: 'name'
+    }},
+    observationTemplate() { return { 
+      type: 'list', 
+      doctype: 'Observation Template', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    uoms() { return { 
+      type: 'list', 
+      doctype: 'UOM', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    batches() { return { 
+      type: 'list', 
+      doctype: 'Batch', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
   },
   data() {
     return {
@@ -995,7 +1589,7 @@ export default {
       message: '',
       alertVisible: false,
       formOptions: ['Consultation', 'Procedure', 'Follow-up', 'Session'],
-      previousState: 'Consultation',
+      previousState: '',
       annotationDoctype: '',
       encounterAnnotationType: '',
       encounterForm: reactive({
@@ -1014,7 +1608,7 @@ export default {
         appointment: '',
         appointment_type: '',
         custom_appointment_category: '',
-        custom_encounter_state: 'Consultation',
+        custom_encounter_state: '',
         patient: '',
         patient_name: '',
         patient_sex: '',
@@ -1033,7 +1627,7 @@ export default {
         custom_patient_consent_signature: '',
 
         custom_patient_encounter: '',
-        procedure_template: 'Botox Injection',
+        procedure_template: '',
         
         patient: '',
         patient_name: '',
@@ -1089,13 +1683,15 @@ export default {
           this.procedureForm = {...this.procedureForm, ...response.current_procedure}
         }
 
-        response.current_encounter.diagnosis.forEach(value => {
+        response.current_encounter.diagnosis = response.current_encounter.diagnosis.map(value => {
           value.label = value.diagnosis
           value.value = value.diagnosis
+          return value
         })
-        response.current_encounter.symptoms.forEach(value => {
+        response.current_encounter.symptoms = response.current_encounter.symptoms.map(value => {
           value.label = value.complaint
           value.value = value.complaint
+          return value
         })
         this.encounterForm = {...this.encounterForm, ...response.current_encounter}
         response.patient.dob = dayjs(response.patient.dob).format('DD/MM/YYYY')
@@ -1195,17 +1791,88 @@ export default {
         console.log('error', err);
       });
     },
+    newChildRow({parentDoctype ,fieldName, rules, items, row, isNew}) {
+      const { validate } = Form.useForm(row, rules);
+      validate().then(() => {
+        this.lodingOverlay = true;
+        let formClone = {...row}
+        delete formClone.modified
+        delete formClone.modified_by
+        delete formClone.name
+        if(isNew){
+          this.$call('healthcare_doworks.api.general_methods.add_child_entry', {
+            parent_doctype: parentDoctype || 'Patient Encounter', 
+            parent_doc_name: this.encounterForm.name, 
+            child_table_fieldname: fieldName, 
+            child_data: formClone
+          }).then(response => {
+            this.lodingOverlay = false;
+          }).catch(error => {
+            console.error(error);
+            let message = error.message.split('\n');
+            message = message.find(line => line.includes('frappe.exceptions'));
+            if(message){
+              const firstSpaceIndex = message.indexOf(' ');
+              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+            }
+            else
+              this.showAlert('Sorry. There is an error!' , 10000)
+          });
+        }
+        else{
+          this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {
+            parent_doctype: parentDoctype || 'Patient Encounter', 
+            parent_doc_name: this.encounterForm.name, 
+            child_table_fieldname: fieldName, 
+            filters: {name: row.name}, 
+            update_data: formClone
+          }).then(response => {
+            this.lodingOverlay = false;
+          }).catch(error => {
+            console.error(error);
+            let message = error.message.split('\n');
+            message = message.find(line => line.includes('frappe.exceptions'));
+            if(message){
+              const firstSpaceIndex = message.indexOf(' ');
+              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+            }
+            else
+              this.showAlert('Sorry. There is an error!' , 10000)
+          });
+        }
+      })
+      .catch(err => {
+        console.log('error', err);
+      });
+    },
+    deleteChildRow({parentDoctype, fieldName, rows}) {
+      rows.forEach(row => {
+        this.$call('healthcare_doworks.api.general_methods.delete_child_entry', {
+          parent_doctype: parentDoctype || 'Patient Encounter', 
+          parent_doc_name: this.encounterForm.name, 
+          child_table_fieldname: fieldName, 
+          filters: {name: row}
+        }).then(response => {
+          this.lodingOverlay = false;
+        }).catch(error => {
+          console.error(error);
+          let message = error.message.split('\n');
+          message = message.find(line => line.includes('frappe.exceptions'));
+          if(message){
+            const firstSpaceIndex = message.indexOf(' ');
+            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+          }
+          else
+            this.showAlert('Sorry. There is an error!' , 10000)
+        })
+        .catch(err => {
+          console.log('error', err);
+        });
+      })
+    },
     visitLogSelect(row) {
       this.pastVisitEditRow = row.data;
       this.pastVisitsActive = true;
-    },
-    hidePreview() {
-      this.previewUrl = null;
-    },
-    openPreview(row) {
-      this.previewUrl = row.url;
-      this.previewType = row.type;
-      this.previewVisible = true;
     },
     setStepperValue({event, value}) {
       if(value === 'Procedure' && !this.procedureForm.name){
@@ -1222,13 +1889,9 @@ export default {
         group: 'headless',
         message: 'Do you want to create a clinical procedure?',
         accept: () => {
-          // console.log(this.procedureForm)
           this.createProcedure()
         },
-        // reject: () => {
-          //   this.$toast.add({ severity: 'error', summary: 'Rejected', detail: 'You have rejected', life: 3000 });
-          // }
-        });
+      });
     },
     createProcedure(){
       this.lodingOverlay = true;

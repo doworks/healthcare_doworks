@@ -180,10 +180,16 @@
                                 <template v-slot:dialog="{ row }">
                                     <a-form layout="vertical">
                                         <a-form-item label="Type">
-                                            <a-input v-model:value="row.type"/>
+                                            <a-select
+                                            v-model:value="row.type"
+                                            :options="riskFactorsOptions"
+                                            ></a-select>
                                         </a-form-item>
                                         <a-form-item label="Severity">
-                                            <a-input v-model:value="row.severity"/>
+                                            <a-select
+                                            v-model:value="row.severity"
+                                            :options="severityOptions"
+                                            ></a-select>
                                         </a-form-item>
                                         <a-form-item label="Note">
                                             <a-textarea v-model:value="row.note" :rows="4" />
@@ -308,6 +314,11 @@ export default {
                 {label: 'Animal', value: 'Animal'},
                 {label: 'Environmental', value: 'Environmental'},
                 {label: 'Other', value: 'Other'},
+            ],
+            riskFactorsOptions: [
+                {label: 'Occupation', value: 'Occupation'},
+                {label: 'Living Place', value: 'Living Place'},
+                {label: 'Others', value: 'Others'},
             ],
             allergies: [],
             infectedDiseases: [],

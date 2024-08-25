@@ -3,14 +3,13 @@ import { socketio_port } from '../../../../../sites/common_site_config.json'
 import { getCachedListResource } from 'frappe-ui/src/resources/listResource'
 import { getCachedResource } from 'frappe-ui/src/resources/resources'
 
-export function initSocket() {
+export function initSocket(siteName) {
   let host = window.location.hostname
   // let siteName = window.site_name
-  let siteName = 'dev.do-works.net'
+  // let siteName = 'dev.do-works.net'
   let port = window.location.port ? `:${socketio_port}` : ''
   let protocol = port ? 'http' : 'https'
   let url = `${protocol}://${host}${port}/${siteName || ''}`
-  console.log(window.site_name)
 
   let socket = io(url, {
     withCredentials: true,

@@ -235,7 +235,7 @@
 				<Column style="width: 5%">
 					<template #body="{ data }">
 						<v-btn 
-							v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0]?.note)" 
+							v-if="data.notes || data.visit_notes" 
 							size="small" 
 							variant="text" 
 							icon
@@ -252,19 +252,35 @@
 									<span class="fw-semibold d-block mb-2">Appointment Notes</span>
 									<a-textarea v-model:value="data.notes" disabled/>
 								</div>
-								<div v-if="data.visit_notes.length > 0 && data.visit_notes[0]?.note">
-									<span class="fw-semibold d-block mb-2">Visit Notes</span>
+								<div v-if="data.visit_notes">
+									<!-- <span class="fw-semibold d-block mb-2">Visit Notes</span>
 									<ul class="list-none p-0 m-0 flex flex-column">
 										<li v-for="(note, index) in data.visit_notes" :key="index" class="flex align-items-center gap-2 mb-3">
 											<div>
-												<a-textarea v-model:value="note.note" disabled/>
+												<a-textarea v-model:value="note" disabled/>
 												<span>{{ note.time }}</span>
 											</div>
 											<div class="flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
 												<span>{{ note.provider }}</span>
 											</div>
 										</li>
-									</ul>
+									</ul> -->
+									<DataTable 
+									:value="data.visit_notes" 
+									selectionMode="single" 
+									:metaKeySelection="true" 
+									dataKey="name" 
+									class="max-h-72 overflow-y-auto"
+									>
+										<template #header>
+											<div class="flex flex-wrap items-center justify-between gap-2">
+												<span class="text-xl font-bold">Visit Notes</span>
+											</div>
+										</template>
+										<Column field="time"></Column>
+										<Column field="provider"></Column>
+										<Column field="note"></Column>
+									</DataTable>
 								</div>
 							</div>
 						</OverlayPanel>

@@ -479,15 +479,24 @@ export default {
       }).map((d) => {
         try {
           if(typeof d.patient_details === 'string'){
-            d.patient_details = JSON.parse(d.patient_details)
-            d.visit_notes = JSON.parse(d.visit_notes)
+            d.patient_details = JSON.parse(d.patient_details)    
+          }
+          if(typeof d.visit_notes === 'string'){
+            let notes = JSON.parse(d.visit_notes).map(note => {
+              note.time = dayjs(note.time).format('h:mm A DD/MM/YYYY')
+              return note
+            })
+            d.visit_notes = notes
+          }
+          if(typeof d.status_log === 'string'){
             d.status_log = JSON.parse(d.status_log)
-            d.arriveTime = null
+            d.arriveTime = '-'
             d.status_log.forEach(value => {
               if(value.status == 'Arrived')
-                d.arriveTime = dayjs(value.time)
+              d.arriveTime = dayjs(value.time)
             })
           }
+          
         } catch (error) {
           console.error('Error parsing JSON:', error);
         }

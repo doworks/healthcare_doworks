@@ -366,7 +366,7 @@
                     selectionMode="single" 
                     :metaKeySelection="true" 
                     dataKey="id" 
-                    @row-click="consultationSelect"
+                    @row-click="encounterSelect"
                     class="max-h-72 overflow-y-auto"
                     >
                       <Column headerStyle="width:3rem">
@@ -400,7 +400,7 @@
                     selectionMode="single" 
                     :metaKeySelection="true" 
                     dataKey="id" 
-                    @row-click="consultationSelect"
+                    @row-click="encounterSelect"
                     class="max-h-72 overflow-y-auto"
                     >
                       <Column headerStyle="width:3rem">
@@ -576,7 +576,7 @@ export default {
       this.selectedVitalSigns.signs_time = dayjs(data.signs_date + ' ' + data.signs_time)
       this.vsDialogOpen = true
     },
-    consultationSelect({data}) {
+    encounterSelect({data}) {
       this.$router.push({ name: 'patient-encounter', params: { encounterId: data.name } });
     },
     formatDate(date) {
