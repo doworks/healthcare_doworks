@@ -506,38 +506,49 @@
                           <v-col cols="12" md="6">
                             <a-form-item label="Procedure Template">
                               <a-select
-                                allowClear
-                                v-model:value="procedureForm.procedure_template"
-                                :options="$myresources.clinicalProcedureTemplate"
-                                :fieldNames="{label: 'name', value: 'name'}"
-                                style="width: 100%"
+                              v-model:value="procedureForm.procedure_template"
+                              :options="$myresources.clinicalProcedureTemplate"
+                              :fieldNames="{label: 'name', value: 'name'}"
+                              style="width: 100%"
+                              @change="value => {
+                                autoSave('Clinical Procedure', procedureForm.name, 'procedure_template', value)
+                              }"
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Practitioner">
                               <a-select
-                                allowClear
-                                v-model:value="procedureForm.practitioner"
-                                :options="$myresources.practitioners"
-                                :fieldNames="{label: 'practitioner_name', value: 'name'}"
-                                style="width: 100%"
+                              v-model:value="procedureForm.practitioner"
+                              :options="$resources.practitioners.data"
+                              :fieldNames="{label: 'practitioner_name', value: 'name'}"
+                              style="width: 100%"
+                              @change="(value, option) => {
+                                procedureForm.medical_department = option.department
+                                autoSave('Clinical Procedure', procedureForm.name, {practitioner: value, medical_department: option.department})
+                              }"
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Medical Department">
                               <a-select
-                                allowClear
-                                v-model:value="procedureForm.medical_department"
-                                :options="$myresources.departments"
-                                :fieldNames="{label: 'department', value: 'department'}"
-                                style="width: 100%"
+                              allowClear
+                              v-model:value="procedureForm.medical_department"
+                              :options="$myresources.departments"
+                              :fieldNames="{label: 'department', value: 'department'}"
+                              style="width: 100%"
+                              @change="value => {
+                                autoSave('Clinical Procedure', procedureForm.name, 'medical_department', value)
+                              }"
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Service Unit">
                               <a-select
-                                allowClear
-                                v-model:value="procedureForm.service_unit"
-                                :options="$myresources.serviceUnits"
-                                :fieldNames="{label: 'name', value: 'name'}"
-                                style="width: 100%"
+                              allowClear
+                              v-model:value="procedureForm.service_unit"
+                              :options="$myresources.serviceUnits"
+                              :fieldNames="{label: 'name', value: 'name'}"
+                              style="width: 100%"
+                              @change="value => {
+                                autoSave('Clinical Procedure', procedureForm.name, 'service_unit', value)
+                              }"
                               ></a-select>
                             </a-form-item>
                           </v-col>
@@ -545,15 +556,35 @@
                             <a-form-item label="Start Date">
                               <a-date-picker 
                                 v-model:value="procedureForm.start_date"
-                                format="DD-MM-YYYY" 
+                                format="DD/MM/YYYY" 
                                 style="width: 100%;"
+                                @change="(date, dateString) => {
+                                  const day = dateString.split('/')[0]
+                                  const month = dateString.split('/')[1]
+                                  const year = dateString.split('/')[2]
+                                  autoSave('Clinical Procedure', procedureForm.name, 'start_date', `${year}-${month}-${day}`)
+                                }"
                               />
                             </a-form-item>
                             <a-form-item label="Start Time">
-                              <a-time-picker v-model:value="procedureForm.start_time" format="h:mm a" style="width: 100%;"/>
+                              <a-time-picker 
+                              v-model:value="procedureForm.start_time" 
+                              format="h:mm a" 
+                              style="width: 100%;" 
+                              @change="(date, timeString) => {
+                                const [time, modifier] = timeString.split(' ');
+                                let [hours, minutes] = time.split(':');
+                                if (hours === '12')
+                                  hours = '00';
+                                if (modifier === 'pm')
+                                  hours = parseInt(hours, 10) + 12;
+                                autoSave('Clinical Procedure', procedureForm.name, 'start_time', `${hours}:${minutes}`)
+                              }"/>
                             </a-form-item>
                             <a-form-item label="Notes">
-                              <a-textarea :rows="4" v-model:value="procedureForm.notes"/>
+                              <a-textarea :rows="4" v-model:value="procedureForm.notes" @blur="event => {
+                                autoSave('Clinical Procedure', procedureForm.name, 'notes', event.target.value)
+                              }"/>
                             </a-form-item>
                           </v-col>
                         </v-row>
@@ -565,22 +596,27 @@
                   </template>
                 </StepperPanel>
                 <StepperPanel value="Pre Procedure" header="Pre Procedure" v-if="encounterForm.custom_encounter_state === 'Procedure'">
-                  <template #content="{ nextCallback }">
+                  <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
                         <v-row>
                           <v-col>
                             <a-form-item label="Sample">
                               <a-select
-                                allowClear
-                                v-model:value="procedureForm.sample"
-                                :options="$myresources.sampleCollections"
-                                :fieldNames="{label: 'name', value: 'name'}"
-                                style="width: 100%"
+                              allowClear
+                              v-model:value="procedureForm.sample"
+                              :options="$myresources.sampleCollections"
+                              :fieldNames="{label: 'name', value: 'name'}"
+                              style="width: 100%"
+                              @change="value => {
+                                autoSave('Clinical Procedure', procedureForm.name, 'sample', value)
+                              }"
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Pre Operative Diagnosis">
-                              <a-textarea :rows="4" v-model:value="procedureForm.custom_pre_operative_diagnosis"/>
+                              <a-textarea :rows="4" v-model:value="procedureForm.custom_pre_operative_diagnosis" @blur="event => {
+                                autoSave('Clinical Procedure', procedureForm.name, 'custom_pre_operative_diagnosis', event.target.value)
+                              }"/>
                             </a-form-item>
                             <v-btn 
                             variant="flat" 
@@ -601,13 +637,14 @@
                         </v-row>
                       </v-container>
                     </v-sheet>
-                    <div class="d-flex pt-4">
+                    <div class="d-flex py-4 gap-2">
+                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
                       <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
                 <StepperPanel value="Procedure" header="Procedure" v-if="encounterForm.custom_encounter_state === 'Procedure'">
-                  <template #content="{ nextCallback }">
+                  <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
                         <v-row>
@@ -624,13 +661,14 @@
                         </v-row>
                       </v-container>
                     </v-sheet>
-                    <div class="d-flex pt-4">
+                    <div class="d-flex py-4 gap-2">
+                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
                       <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
                 <StepperPanel value="Consumables" header="Consumables" v-if="encounterForm.custom_encounter_state === 'Procedure'">
-                  <template #content="{ nextCallback }">
+                  <template #content="{ prevCallback, nextCallback }">
                     <v-sheet>
                       <v-container>
                         <v-row>
@@ -722,24 +760,30 @@
                         </v-row>
                       </v-container>
                     </v-sheet>
-                    <div class="d-flex pt-4">
+                    <div class="d-flex py-4 gap-2">
+                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
                       <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
                 <StepperPanel value="Post Procedure" header="Post Procedure" v-if="encounterForm.custom_encounter_state === 'Procedure'">
-                  <template #content>
+                  <template #content="{ prevCallback }">
                     <v-sheet>
                       <v-container>
                         <v-row>
                           <v-col>
                             <a-form-item label="Post Operative Diagnosis">
-                              <a-textarea :rows="4" v-model:value="procedureForm.custom_post_operative_diagnosis"/>
+                              <a-textarea :rows="4" v-model:value="procedureForm.custom_post_operative_diagnosis" @blur="event => {
+                                autoSave('Clinical Procedure', procedureForm.name, 'custom_post_operative_diagnosis', event.target.value)
+                              }"/>
                             </a-form-item>
                           </v-col>
                         </v-row>
                       </v-container>
                     </v-sheet>
+                    <div class="d-flex py-4">
+                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
+                    </div>
                   </template>
                 </StepperPanel>
                 
@@ -753,18 +797,39 @@
                             <a-form-item label="Symptoms">
                               <a-select
                                 v-model:value="encounterForm.symptoms"
-                                label-in-value
-                                :options="$myresources.complaints"
-                                :fieldNames="{label: 'complaints', value: 'complaints'}"
+                                :options="$resources.complaints.data"
+                                labelInValue
                                 mode="multiple"
                                 style="width: 100%"
+                                @select="(value, option) => {
+                                  newChildRow({
+                                    parentDoctype: 'Patient Encounter',
+                                    fieldName: 'symptoms', 
+                                    row: {complaint: option.name}, 
+                                    isNew: true
+                                  })
+                                  this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                }"
+                                @deselect="(value, option) => {
+                                  deleteChildRow({
+                                    parentDoctype: 'Patient Encounter',
+                                    fieldName: 'symptoms', 
+                                    rows: [option.name], 
+                                    filterField: 'complaint'
+                                  })
+                                  this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                }"
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Symptoms Duration">
-                              <a-input v-model:value="encounterForm.period" />
+                              <a-input-number class="w-full" :min="0" v-model:value="encounterForm.custom_symptoms_duration" @blur="event => {
+                                autoSave('Patient Encounter', encounterForm.name, 'custom_symptoms_duration', parseInt(event.target.value))
+                              }"/>
                             </a-form-item>
                             <a-form-item label="Note">
-                              <a-textarea v-model:value="encounterForm.note" :rows="4" />
+                              <a-textarea v-model:value="encounterForm.custom_symptoms_notes" :rows="4" @blur="event => {
+                                autoSave('Patient Encounter', encounterForm.name, 'custom_symptoms_notes', event.target.value)
+                              }"/>
                             </a-form-item>
                           </v-col>
                         </v-row>
@@ -782,10 +847,14 @@
                         <v-row>
                           <v-col>
                             <a-form-item label="Physical Examination">
-                              <a-textarea v-model:value="encounterForm.physicalExamination" :rows="4" />
+                              <a-textarea v-model:value="encounterForm.custom_physical_examination" :rows="4" @blur="event => {
+                                autoSave('Patient Encounter', encounterForm.name, 'custom_physical_examination', event.target.value)
+                              }"/>
                             </a-form-item>
                             <a-form-item label="Other Examination">
-                              <a-textarea v-model:value="encounterForm.otherExamination" :rows="4" />
+                              <a-textarea v-model:value="encounterForm.custom_other_examination" :rows="4" @blur="event => {
+                                autoSave('Patient Encounter', encounterForm.name, 'custom_other_examination', event.target.value)
+                              }"/>
                             </a-form-item>
                           </v-col>
                         </v-row>
@@ -908,7 +977,9 @@
                       <v-container>
                         <v-row>
                           <v-col>
-                            <a-textarea v-model:value="encounterForm.illness_progression" :rows="4" />
+                            <a-textarea v-model:value="encounterForm.custom_illness_progression" :rows="4" @blur="event => {
+                              autoSave('Patient Encounter', encounterForm.name, 'custom_illness_progression', event.target.value)
+                            }"/>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -928,24 +999,60 @@
                               <a-select
                                 v-model:value="encounterForm.diagnosis"
                                 label-in-value
-                                :options="$myresources.diagnosis"
-                                :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
+                                :options="$resources.diagnosis.data"
                                 mode="multiple"
                                 style="width: 100%"
+                                @select="(value, option) => {
+                                  newChildRow({
+                                    parentDoctype: 'Patient Encounter',
+                                    fieldName: 'diagnosis', 
+                                    row: {diagnosis: option.name}, 
+                                    isNew: true
+                                  })
+                                  this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                }"
+                                @deselect="(value, option) => {
+                                  deleteChildRow({
+                                    parentDoctype: 'Patient Encounter',
+                                    fieldName: 'diagnosis', 
+                                    rows: [option.name], 
+                                    filterField: 'diagnosis'
+                                  })
+                                  this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                }"
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Differential Diagnosis">
                               <a-select
-                                v-model:value="encounterForm.differentialDiagnosis"
+                                v-model:value="encounterForm.custom_differential_diagnosis"
                                 label-in-value
-                                :options="$myresources.diagnosis"
-                                :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
+                                :options="$resources.diagnosis.data"
                                 mode="multiple"
                                 style="width: 100%"
+                                @select="(value, option) => {
+                                  newChildRow({
+                                    parentDoctype: 'Patient Encounter',
+                                    fieldName: 'custom_differential_diagnosis', 
+                                    row: {diagnosis: option.name}, 
+                                    isNew: true
+                                  })
+                                  this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                }"
+                                @deselect="(value, option) => {
+                                  deleteChildRow({
+                                    parentDoctype: 'Patient Encounter',
+                                    fieldName: 'custom_differential_diagnosis', 
+                                    rows: [option.name], 
+                                    filterField: 'diagnosis'
+                                  })
+                                  this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                }"
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Diagnosis Note">
-                              <a-textarea v-model:value="encounterForm.diagnosisNote" :rows="4" />
+                              <a-textarea v-model:value="encounterForm.custom_diagnosis_note" :rows="4" @blur="event => {
+                              autoSave('Patient Encounter', encounterForm.name, 'custom_diagnosis_note', event.target.value)
+                            }"/>
                             </a-form-item>
                           </v-col>
                         </v-row>
@@ -1323,8 +1430,8 @@
 
               </Stepper>
               <div class="d-flex py-4 gap-2">
-                <v-btn variant="flat" color="lime" @click="submitEncounter()">Save</v-btn>
-                <v-btn variant="flat" color="amber" @click="submitEncounter(true)">Submit</v-btn>
+                <!-- <v-btn variant="flat" color="lime" @click="submitEncounter()">Save</v-btn>
+                <v-btn variant="flat" color="amber" @click="submitEncounter(true)">Submit</v-btn> -->
               </div>
             </a-form>
           </template>
@@ -1509,7 +1616,7 @@ export default {
     practitioners() { return { 
       type: 'list', 
       doctype: 'Healthcare Practitioner', 
-      fields: ['name', 'practitioner_name'], 
+      fields: ['name', 'practitioner_name', 'department'], 
       auto: true,
       orderBy: 'practitioner_name'
     }},
@@ -1556,6 +1663,36 @@ export default {
       auto: true,
       orderBy: 'name'
     }},
+    complaints() { return { 
+      type: 'list', 
+      doctype: 'Complaint', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name',
+      // transform data before setting it
+      transform(data) {
+        for (let d of data) {
+          d.label = d.name
+          d.value = d.name
+        }
+        return data
+      },
+    }},
+    diagnosis() { return { 
+      type: 'list', 
+      doctype: 'Diagnosis', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name',
+      // transform data before setting it
+      transform(data) {
+        for (let d of data) {
+          d.label = d.name
+          d.value = d.name
+        }
+        return data
+      },
+    }},
   },
   data() {
     return {
@@ -1598,13 +1735,13 @@ export default {
         custom_encounter_start_time: dayjs(),
         procedure_date: dayjs(),
         symptoms: [],
-        period: 0,
-        symptomNote: '',
-        physicalExamination: '',
-        otherExamination: '',
+        custom_symptoms_duration: 0,
+        custom_symptoms_notes: '',
+        custom_physicalExamination: '',
+        custom_otherExamination: '',
         diagnosis: [],
-        differentialDiagnosis: [],
-        diagnosisNote: '',
+        custom_differential_diagnosis: [],
+        custom_diagnosis_note: '',
         appointment: '',
         appointment_type: '',
         custom_appointment_category: '',
@@ -1613,12 +1750,10 @@ export default {
         patient_name: '',
         patient_sex: '',
         patient_age: '',
-        original_practitioner: '',
-        original_practitioner_name: '',
         practitioner: '',
         practitioner_name: '',
         medical_department: '',
-        illness_progression: '',
+        custom_illness_progression: '',
 			}),
 
       procedureForm: reactive({
@@ -1627,7 +1762,7 @@ export default {
         custom_patient_consent_signature: '',
 
         custom_patient_encounter: '',
-        procedure_template: '',
+        procedure_template: 'Botox Injection',
         
         patient: '',
         patient_name: '',
@@ -1660,6 +1795,9 @@ export default {
         this.$toast.add({ severity: 'success', summary: 'Update', detail: 'Service Requests have been updated', life: 2000 });
     })
   },
+  mounted(){
+    
+  },
   methods: {
     affixChenge(affixed){
       this.isAffixed = affixed
@@ -1682,7 +1820,6 @@ export default {
           response.current_procedure.start_date = dayjs(response.current_procedure.start_date)
           this.procedureForm = {...this.procedureForm, ...response.current_procedure}
         }
-
         response.current_encounter.diagnosis = response.current_encounter.diagnosis.map(value => {
           value.label = value.diagnosis
           value.value = value.diagnosis
@@ -1741,7 +1878,7 @@ export default {
         let formClone = {...this.encounterForm}
         formClone.encounter_date = dayjs().format('YYYY-MM-DD')
         formClone.encounter_time = dayjs().format('HH:mm')
-        formClone.custom_encounter_start_time = dayjs().format('YYYY-MM-DD HH:mm')
+        formClone.custom_encounter_start_time = dayjs(this.encounterForm.custom_encounter_start_time).format('YYYY-MM-DD HH:mm')
         this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone, submit: submit})
         .then(response => {
           this.lodingOverlay = false;
@@ -1762,33 +1899,23 @@ export default {
         console.log('error', err);
       });
     },
-    autoSave() {
-      const { validate } = Form.useForm(this.encounterForm, this.rules);
-      validate().then(() => {
-        this.lodingOverlay = true;
-        let formClone = {...this.encounterForm}
-        formClone.encounter_date = dayjs().format('YYYY-MM-DD')
-        formClone.encounter_time = dayjs().format('HH:mm')
-        formClone.custom_encounter_start_time = dayjs().format('YYYY-MM-DD HH:mm')
-        formClone.modified = undefined
-        this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone})
-        .then(response => {
-          this.lodingOverlay = false;
-          this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
-        }).catch(error => {
-          console.error(error);
-          let message = error.message.split('\n');
-          message = message.find(line => line.includes('frappe.exceptions'));
-          if(message){
-            const firstSpaceIndex = message.indexOf(' ');
-            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-          }
-          else
-            this.showAlert('Sorry. There is an error!' , 10000)
-        });
-      })
-      .catch(err => {
-        console.log('error', err);
+    autoSave(doctype, name, fieldname, value) {
+      this.lodingOverlay = true;
+      
+      this.$call('frappe.client.set_value', {doctype, name, fieldname, value})
+      .then(response => {
+        this.lodingOverlay = false;
+        this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
+        else
+          this.showAlert('Sorry. There is an error!' , 10000)
       });
     },
     newChildRow({parentDoctype ,fieldName, rules, items, row, isNew}) {
@@ -1800,6 +1927,7 @@ export default {
         delete formClone.modified_by
         delete formClone.name
         if(isNew){
+          console.log(formClone)
           this.$call('healthcare_doworks.api.general_methods.add_child_entry', {
             parent_doctype: parentDoctype || 'Patient Encounter', 
             parent_doc_name: this.encounterForm.name, 
@@ -1845,13 +1973,13 @@ export default {
         console.log('error', err);
       });
     },
-    deleteChildRow({parentDoctype, fieldName, rows}) {
+    deleteChildRow({parentDoctype, fieldName, rows, filterField}) {
       rows.forEach(row => {
         this.$call('healthcare_doworks.api.general_methods.delete_child_entry', {
           parent_doctype: parentDoctype || 'Patient Encounter', 
           parent_doc_name: this.encounterForm.name, 
           child_table_fieldname: fieldName, 
-          filters: {name: row}
+          filters: {[filterField || 'name']: row}
         }).then(response => {
           this.lodingOverlay = false;
         }).catch(error => {
@@ -1881,7 +2009,7 @@ export default {
         return;
       }
       this.previousState = value;
-      this.autoSave()
+      this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', value)
     },
     requireConfirmation(event) {
       this.$confirm.require({
@@ -1898,11 +2026,20 @@ export default {
       let formClone = {...this.procedureForm}
       formClone.start_date = dayjs().format('YYYY-MM-DD')
       formClone.start_time = dayjs().format('HH:mm')
+      formClone.custom_patient_encounter = this.encounterForm.name
+      formClone.patient = this.encounterForm.patient
+      formClone.patient_sex = this.encounterForm.patient_sex
+      formClone.patient_age = this.encounterForm.patient_age
+      formClone.practitioner = this.encounterForm.practitioner
+      formClone.practitioner_name = this.encounterForm.practitioner_name
+      formClone.medical_department = this.encounterForm.medical_department
+      formClone.service_unit = this.records.appointment.service_unit
+      
       this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone})
       .then(response => {
         this.lodingOverlay = false;
+        this.procedureForm = response
         this.encounterForm.custom_encounter_state = 'Procedure'
-        this.procedureForm.name = response.name
         this.$toast.add({ severity: 'success', summary: 'Success', detail: 'A new Clinical Procedure has been created', life: 2000 });
       }).catch(error => {
         console.error(error);

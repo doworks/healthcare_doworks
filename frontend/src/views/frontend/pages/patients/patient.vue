@@ -387,7 +387,7 @@
                 </v-card>
               </v-col>
               <v-col cols="12" md="6">
-                <v-card id="clinical-procedure" variant="tonal" color="amber">
+                <v-card id="clinical-procedure" variant="tonal" color="purple">
                   <template v-slot:title>Procedures ({{ $resources.procedures.data.length }})</template>
                   <template v-slot:text>
                     <div :class="{'d-none': $resources.procedures.data.length > 0}">

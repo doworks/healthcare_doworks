@@ -30,7 +30,7 @@
         title="Patient" 
         value="patient" 
         to="/patient" 
-        :class="{ 'v-list-item--active': $route.path.startsWith('/patient/') || $route.path == '/patient/' }"
+        :class="{ 'v-list-item--active': $route.name == 'patient' || $route.name == 'patient-list' }"
         ></v-list-item>
         <v-list-item prepend-icon="fa fa-calendar-check" title="Appointments" value="appointments" to="/appointments"></v-list-item>
         <v-list-item 
@@ -38,7 +38,7 @@
         title="Patient Encounter" 
         value="patientEncounter" 
         to="/patient-encounter/"
-        :class="{ 'v-list-item--active': $route.path.startsWith('/patient-encounter/') }"
+        :class="{ 'v-list-item--active': $route.name == 'patient-encounter' || $route.name == 'patient-encounter-list' }"
         ></v-list-item>
       </v-list>
     </v-navigation-drawer>
@@ -70,7 +70,6 @@
       };
     },
     mounted() {
-
     },
     watch: {
       '$myresources.user': {

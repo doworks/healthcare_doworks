@@ -134,8 +134,14 @@ doc_events = {
 #               "on_cancel": "method",
 #               "on_trash": "method"
 #       }
+    'Patient':{
+        "on_update": "healthcare_doworks.api.events.patient_update"
+    },
     'Patient Appointment':{
         "on_update": "healthcare_doworks.api.methods.get_appointments"
+    },
+    'Patient Encounter':{
+        "on_update": "healthcare_doworks.api.events.patient_encounter_update"
     },
     'Service Request':{
         "on_update": "healthcare_doworks.api.methods.get_services"
