@@ -10,12 +10,29 @@ app_license = "mit"
 
 # required_apps = []
 
+def custom_on_login(login_manager):
+    user = login_manager.user
+
+    # Check if the user is in the 'Healthcare Frontend' group
+    user_group = frappe.db.get_value("User Group Member", {"user": user, "parent": "Healthcare Frontend"}, "parent")
+
+    if user_group:
+        # Set the cache for redirection
+        frappe.cache().hset("redirect_to", user, "/frontend")
+    else:
+        # Default redirection for app users
+        frappe.cache().hset("redirect_to", user, "/app")
+
+# Register the on_login event in hooks.py
+on_login = "healthcare_doworks.hooks.custom_on_login"
+
 # Includes in <head>
 # ------------------
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/healthcare_doworks/css/healthcare_doworks.css"
 # app_include_js = "/assets/healthcare_doworks/js/healthcare_doworks.js"
+app_include_js = "/assets/healthcare_doworks/js/app.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/healthcare_doworks/css/healthcare_doworks.css"
@@ -121,6 +138,7 @@ after_install = "healthcare_doworks.install.add_custom_fields"
 
 override_doctype_class = {
     "Patient Appointment": "healthcare_doworks.overrides.patient_appointment.CustomPatientAppointment",
+    "Test Patient Appointment": "healthcare_doworks.overrides.test_patient_appointment.CustomTestPatientAppointment",
     "Patient Encounter": "healthcare_doworks.overrides.patient_encounter.CustomPatientEncounter"
 }
 
@@ -138,10 +156,13 @@ doc_events = {
         "on_update": "healthcare_doworks.api.events.patient_update"
     },
     'Patient Appointment':{
+        "after_insert": "healthcare_doworks.api.events.patient_appointment_inserted",
         "on_update": "healthcare_doworks.api.methods.get_appointments"
     },
     'Patient Encounter':{
-        "on_update": "healthcare_doworks.api.events.patient_encounter_update"
+        "after_insert": "healthcare_doworks.api.events.patient_encounter_inserted",
+        "on_update": "healthcare_doworks.api.events.patient_encounter_update",
+        "on_submit": "healthcare_doworks.api.events.patient_encounter_submit"
     },
     'Service Request':{
         "on_update": "healthcare_doworks.api.methods.get_services"

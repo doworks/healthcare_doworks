@@ -1,22 +1,6 @@
 <template>
   <div>
 	<h1>Home Page</h1>
-	<!-- Fetch the resource on click -->
-	<button @click="$myresources.ping.fetch()">Ping</button>
+	<h5>Healthcare forntend app</h5>
   </div>
 </template>
-
-<script>
-export default {
-  myresources: {
-	ping() {
-	  return {
-		method: "frappe.ping", // Method to call on backend
-		onSuccess(d) {
-		  alert(d);
-		},
-	  };
-	},
-  },
-};
-</script>

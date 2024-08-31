@@ -13,115 +13,111 @@
       <div v-html="message"></div>
     </v-alert>
     <!-- Page Content -->
-    <div class="row">
-      <div class="col-md-12">
-        <div class="appointment-tab">
-          <!-- Clock And Other Filters -->
-          <div class="flex-wrap flex-column flex-xxl-row gap-3 nav nav-tabs nav-tabs-solid pb-2">
-            <div class="d-flex flex-wrap flex-column flex-lg-row gap-3 flex-auto order-2 order-xxl-1">
-              <div class="flex-auto" style="width: 15rem">
-                <a-select v-if="dateFilterType === 'span'"
-                v-model:value="selectedSpan"
-                style="width: 100%; align-items: center; max-height: 62px; text-align: center"
-                :options="spans"
-                size="large"
-                @change="(value) => {
-                  const dates = spanToDate(value)
-                  selectedDates = dates
-                  selectedRangeDates = [dates[0], dates[dates.length -1]]
-                }"
-                ></a-select>
-                <a-date-picker v-if="dateFilterType === 'single'"
-                v-model:value="selectedDates[0]"
-                format="D/M/YY"
-                style="width: 100%; align-items: center; max-height: 62px; text-align: center"
-                :allowClear="false"
-                size="large"
-                @change="(value) => {selectedDates = [value]; selectedRangeDates = [value, value]}"
-                />
-                <!-- <span class="d-flex justify-content-center fw-bolder text-dark me-3">{{ formattedDayOfWeek() }}</span> -->
-                <a-range-picker v-if="dateFilterType === 'range'" 
-                v-model:value="selectedRangeDates" 
-                format="D/M/YY" 
-                style="width: 100%; align-items: center; max-height: 62px; text-align: center" 
-                size="large"
-                :allowClear="false"
-                @change="(value) => {selectedDates = getDatesInBetween(value[0], value[1])}"
-                />
-                <v-btn-toggle class="mt-1" v-model="dateFilterType" color="blue" mandatory density="compact">
-                  <v-btn size="small" value="span">Timespans</v-btn>
-                  <v-btn size="small" value="single">Single</v-btn>
-                  <v-btn size="small" value="range">Range</v-btn>
-                </v-btn-toggle>
-                <!-- <a-radio-group class="mt-2" v-model:value="dateFilterType">
-                  <a-radio-button value="span">Timespan</a-radio-button>
-                  <a-radio-button value="single">Single</a-radio-button>
-                  <a-radio-button value="range">Range</a-radio-button>
-                </a-radio-group> -->
-              </div>
-              <div class="flex-auto" style="width: 15rem">
-                <a-select
-                  v-model:value="selectedDepartments"
-                  mode="multiple"
-                  style="width: 100%; align-items: center; max-height: 62px;"
-                  placeholder="Departments"
-                  max-tag-count="responsive"
-                  :options="$myresources.departments"
-                  :fieldNames="{label:'department', value: 'department'}"
-                  size="large"
-                >
-                </a-select>
-              </div>
-              <div class="flex-auto" style="width: 15rem">
-                <a-input v-model:value="searchValue" placeholder="Search" size="large">
-                  <template #prefix>
-                    <v-icon icon="mdi mdi-magnify" color="grey"></v-icon>
-                  </template>
-                </a-input>
-              </div>
-            </div>
-            <div class="ms-xxl-auto order-1 order-xxl-2" style="width: fit-content">
-              <Clock/>
-            </div>
+    <div class="appointment-tab">
+      <!-- Clock And Other Filters -->
+      <div class="flex-wrap flex-col flex-xxl-row gap-3 nav nav-tabs nav-tabs-solid pb-2">
+        <div class="flex flex-wrap flex-col flex-lg-row gap-3 flex-auto order-2 order-xxl-1">
+          <div class="flex flex-col" style="width: 15rem">
+            <a-select v-if="dateFilterType === 'span'"
+            v-model:value="selectedSpan"
+            style="width: 100%; align-items: center; max-height: 62px; text-align: center"
+            :options="spans"
+            size="large"
+            @change="(value) => {
+              const dates = spanToDate(value)
+              selectedDates = dates
+              selectedRangeDates = [dates[0], dates[dates.length -1]]
+            }"
+            ></a-select>
+            <a-date-picker v-if="dateFilterType === 'single'"
+            v-model:value="selectedDates[0]"
+            format="D/M/YY"
+            style="width: 100%; align-items: center; max-height: 62px; text-align: center"
+            :allowClear="false"
+            size="large"
+            @change="(value) => {selectedDates = [value]; selectedRangeDates = [value, value]}"
+            />
+            <!-- <span class="d-flex justify-content-center fw-bolder text-dark me-3">{{ formattedDayOfWeek() }}</span> -->
+            <a-range-picker v-if="dateFilterType === 'range'" 
+            v-model:value="selectedRangeDates" 
+            format="D/M/YY" 
+            style="width: 100%; align-items: center; max-height: 62px; text-align: center" 
+            size="large"
+            :allowClear="false"
+            @change="(value) => {selectedDates = getDatesInBetween(value[0], value[1])}"
+            />
+            <v-btn-toggle class="mt-1" v-model="dateFilterType" color="blue" mandatory density="compact">
+              <v-btn size="small" value="span">Timespans</v-btn>
+              <v-btn size="small" value="single">Single</v-btn>
+              <v-btn size="small" value="range">Range</v-btn>
+            </v-btn-toggle>
+            <!-- <a-radio-group class="mt-2" v-model:value="dateFilterType">
+              <a-radio-button value="span">Timespan</a-radio-button>
+              <a-radio-button value="single">Single</a-radio-button>
+              <a-radio-button value="range">Range</a-radio-button>
+            </a-radio-group> -->
           </div>
-          
-          <!-- Toolbar Actions -->
-          <v-toolbar color="blue-lighten-5">
-            <v-btn icon="mdi mdi-plus" @click="appointmentDialog('New Appointment', true)" rounded="0"></v-btn>
-          </v-toolbar>
-
-          <!-- Appointment Tab -->
-          <v-tabs v-model="tab" align-tabs="center" color="indigo" bg-color="white" show-arrows>
-            <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key">
-              {{ key }}
-              <v-badge color="indigo" :content="getBadgeNumber(key)" inline></v-badge>
-            </v-tab>
-          </v-tabs>
-          <div class="tab-content">
-            <v-window v-model="tab" disabled>
-              <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
-                <AppointmentTab 
-                  :searchValue="searchValue"
-                  :selectedDates="selectedDates"
-                  :selectedDepartments="selectedDepartments" 
-                  :appointments="value" 
-                  :tab="key.toLowerCase()"
-                  :loading="appointmentsLoading"
-                  ref="appointmentTabRef"
-                  @appointment-dialog="appointmentDialog"
-                  @appointment-note-dialog="appointmentNoteDialog"
-                  @vital-sign-dialog="vitalSignDialog"
-                  @service-unit-dialog="serviceUnitDialog"
-                  @payment-type-dialog="paymentTypeDialog"
-                  @transfer-practitioner-dialog="transferPractitionerDialog"
-                />
-              </v-window-item>
-            </v-window>
+          <div class="flex flex-col" style="width: 15rem">
+            <a-select
+              v-model:value="selectedDepartments"
+              mode="multiple"
+              style="width: 100%; align-items: center; max-height: 62px;"
+              placeholder="Departments"
+              max-tag-count="responsive"
+              :options="$myresources.departments"
+              :fieldNames="{label:'department', value: 'department'}"
+              size="large"
+            >
+            </a-select>
           </div>
-          <!-- /Appointment Tab -->
-          
+          <div class="flex flex-col" style="width: 15rem">
+            <a-input v-model:value="searchValue" placeholder="Search" size="large">
+              <template #prefix>
+                <v-icon icon="mdi mdi-magnify" color="grey"></v-icon>
+              </template>
+            </a-input>
+          </div>
+        </div>
+        <div class="ms-xxl-auto order-1 order-xxl-2 w-fit">
+          <Clock/>
         </div>
       </div>
+      
+      <!-- Toolbar Actions -->
+      <v-toolbar color="blue-lighten-5">
+        <v-btn icon="mdi mdi-plus" @click="appointmentDialog('New Appointment', true)" rounded="0"></v-btn>
+      </v-toolbar>
+
+      <!-- Appointment Tab -->
+      <v-tabs v-model="tab" align-tabs="center" color="indigo" bg-color="white" show-arrows>
+        <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key">
+          {{ key }}
+          <v-badge color="indigo" :content="getBadgeNumber(key)" inline></v-badge>
+        </v-tab>
+      </v-tabs>
+      <div class="tab-content">
+        <v-window v-model="tab" disabled>
+          <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
+            <AppointmentTab 
+            :searchValue="searchValue"
+            :selectedDates="selectedDates"
+            :selectedDepartments="selectedDepartments" 
+            :appointments="value" 
+            :tab="key.toLowerCase()"
+            :loading="appointmentsLoading"
+            ref="appointmentTabRef"
+            @appointment-dialog="appointmentDialog"
+            @appointment-note-dialog="appointmentNoteDialog"
+            @vital-sign-dialog="vitalSignDialog"
+            @service-unit-dialog="serviceUnitDialog"
+            @payment-type-dialog="paymentTypeDialog"
+            @transfer-practitioner-dialog="transferPractitionerDialog"
+            />
+          </v-window-item>
+        </v-window>
+      </div>
+      <!-- /Appointment Tab -->
+      
     </div>
     <!-- /Page Content -->
 
@@ -490,7 +486,7 @@ export default {
           if(value.appointment_type === 'Practitioner')
             duration = value.default_duration
         })
-        this.appointmentForm.name = 'new-patient-appointment';
+        this.appointmentForm.name = '';
 				this.appointmentForm.duration = duration;
 				this.appointmentForm.appointment_type = 'Practitioner';
 				this.appointmentForm.appointment_for = 'Practitioner';
@@ -525,6 +521,7 @@ export default {
       this.appointmentForm.doctype = 'Patient Appointment';
       this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
 			this.appointmentForm.type = formType
+      this.appointmentForm.custom_is_walked_in = false;
 			this.appointmentOpen = true
 		},
     appointmentNoteDialog(row) {

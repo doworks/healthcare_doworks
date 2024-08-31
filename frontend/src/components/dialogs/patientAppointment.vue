@@ -13,24 +13,24 @@
               <v-col cols="12" md="6">
                 <a-form-item label="Appointment Category">
                   <a-select
-                    v-model:value="appointmentForm.custom_appointment_category"
-                    :options="categoryOptions"
+                  v-model:value="appointmentForm.custom_appointment_category"
+                  :options="categoryOptions"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment Type" name="appointment_type">
                   <a-select
-                    v-model:value="appointmentForm.appointment_type"
-                    :options="$myresources.appointmentTypes"
-                    @change="(value, option) => {
-                      appointmentForm.appointment_for = option.allow_booking_for;
-                      appointmentForm.duration = option.default_duration;
-                      appointmentForm.practitioner = '';
-                      appointmentForm.practitioner_name = '';
-                      appointmentForm.department = '';
-                      appointmentForm.service_unit = '';
-                      appointmentForm.appointment_time = '';
-                    }"
-                    :fieldNames="{label: 'appointment_type', value: 'appointment_type'}"
+                  v-model:value="appointmentForm.appointment_type"
+                  :options="$myresources.appointmentTypes"
+                  @change="(value, option) => {
+                    appointmentForm.appointment_for = option.allow_booking_for;
+                    appointmentForm.duration = option.default_duration;
+                    appointmentForm.practitioner = '';
+                    appointmentForm.practitioner_name = '';
+                    appointmentForm.department = '';
+                    appointmentForm.service_unit = '';
+                    appointmentForm.appointment_time = '';
+                  }"
+                  :fieldNames="{label: 'appointment_type', value: 'appointment_type'}"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
@@ -48,14 +48,14 @@
                 @change="setPaymentDetails()"
                 >
                   <a-select
-                    v-model:value="appointmentForm.practitioner_name"
-                    :options="$myresources.practitioners"
-                    :fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
-                    show-search
-                    @change="(value, option) => {
-                      appointmentForm.practitioner = option.name
-                      $emit('show-slots')
-                    }"
+                  v-model:value="appointmentForm.practitioner_name"
+                  :options="$myresources.practitioners"
+                  :fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
+                  show-search
+                  @change="(value, option) => {
+                    appointmentForm.practitioner = option.name
+                    $emit('show-slots')
+                  }"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Department" 
@@ -64,33 +64,36 @@
                 @change="setPaymentDetails()"
                 >
                   <a-select
-                    v-model:value="appointmentForm.department"
-                    :options="$myresources.departments"
-                    :fieldNames="{label: 'department', value: 'department'}"
-                    show-search
+                  v-model:value="appointmentForm.department"
+                  :options="$myresources.departments"
+                  :fieldNames="{label: 'department', value: 'department'}"
+                  show-search
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Service Unit" 
                 name="service_unit" 
-                v-if="appointmentForm.appointment_for === 'Service Unit'" 
+                v-if="appointmentForm.appointment_for === 'Service Unit' || appointmentForm.custom_is_walked_in" 
                 @change="setPaymentDetails()"
                 >
                   <a-select
-                    v-model:value="appointmentForm.service_unit"
-                    :options="$myresources.serviceUnits"
-                    :fieldNames="{label: 'name', value: 'name'}"
-                    show-search
+                  v-model:value="appointmentForm.service_unit"
+                  :options="$myresources.serviceUnits"
+                  :fieldNames="{label: 'name', value: 'name'}"
+                  show-search
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Appointment Date" name="appointment_date">
+                <a-form-item label="Appointment Date" name="appointment_date" v-if="!appointmentForm.custom_is_walked_in">
                   <a-date-picker 
-                    v-model:value="appointmentForm.appointment_date"
-                    :disabled-date="disabledDate"
-                    @change="()=>{$emit('show-slots')}" 
-                    format="dddd DD MMM YYYY" 
-                    style="z-index: 3000"
+                  v-model:value="appointmentForm.appointment_date"
+                  :disabled-date="disabledDate"
+                  @change="()=>{$emit('show-slots')}" 
+                  format="dddd DD MMM YYYY" 
+                  style="z-index: 3000; width: 100%"
+                  :presets="datePresets"
+                  :showToday="false"
                   />
                 </a-form-item>
+                <a-checkbox class="mb-3" v-model:checked="appointmentForm.custom_is_walked_in" @change="walkedIn">Walked In?</a-checkbox>
                 <a-form-item label="Notes">
                   <a-textarea v-model:value="appointmentForm.notes" placeholder="Notes" :rows="4" />
                 </a-form-item>
@@ -127,15 +130,15 @@
                 </a-form-item>
               </v-col>
             </v-row>
-            <v-divider class="mt-2 mb-8"></v-divider>
+            <v-divider v-if="!appointmentForm.custom_is_walked_in" class="mt-2 mb-8"></v-divider>
             <v-row>
               <div 
               class="text-center mb-0" 
               ref="appointmentSlots" 
-              v-if="this.appointmentForm.appointment_date && (
-                (this.appointmentForm.appointment_for === 'Practitioner' && this.appointmentForm.practitioner) ||
-                (this.appointmentForm.appointment_for === 'Department' && this.appointmentForm.department) ||
-                (this.appointmentForm.appointment_for === 'Service Unit' && this.appointmentForm.service_unit)
+              v-if="appointmentForm.appointment_date && !appointmentForm.custom_is_walked_in && (
+                (appointmentForm.appointment_for === 'Practitioner' && appointmentForm.practitioner) ||
+                (appointmentForm.appointment_for === 'Department' && appointmentForm.department) ||
+                (appointmentForm.appointment_for === 'Service Unit' && appointmentForm.service_unit)
               )"
               >
                 <div v-for="(slotInfo, index) in slots.slot_details" :key="index">
@@ -184,7 +187,7 @@
                   <small v-if="slotInfo.service_unit_capacity">Each slot indicates the capacity currently available for booking</small>
                 </div>
               </div>
-              <div v-else>
+              <div v-else-if="!appointmentForm.custom_is_walked_in">
                 <b>Appointment date</b> and <b>Healthcare Practitioner</b> are Mandatory
               </div>
             </v-row>
@@ -215,6 +218,7 @@
 </template>
 
 <script >
+import { ref } from 'vue'
 import dayjs from 'dayjs';
 import { Form } from 'ant-design-vue';
 import { reactive } from 'vue';
@@ -237,7 +241,7 @@ export default {
     form: {
       default: {
         doctype: 'Patient Appointment',
-				name: 'new-patient-appointment',
+				name: '',
 				appointment_type: 'Practitioner',
 				appointment_for: 'Practitioner',
 				duration: '',
@@ -252,6 +256,7 @@ export default {
 				patient_sex: '',
         notes: '',
         status: 'Scheduled',
+        custom_is_walked_in: false,
 				appointment_date: undefined,
 				appointment_time: undefined,
       }
@@ -278,8 +283,12 @@ export default {
         patient: [{ required: true, message: 'Please choose a patient!' }],
         practitioner: [{ required: this.appointmentForm.appointment_for === 'Practitioner', message: 'Please choose a practitioner!' }],
         department: [{ required: this.appointmentForm.appointment_for === 'Department', message: 'Please choose a department!' }],
-        service_unit: [{ required: this.appointmentForm.appointment_for === 'Service Unit', message: 'Please choose a service unit!' }],
+        service_unit: [{ 
+          required: this.appointmentForm.appointment_for === 'Service Unit' || this.appointmentForm.custom_is_walked_in, 
+          message: 'Please choose a service unit!' 
+        }],
         appointment_date: [{ required: true, message: 'Please choose a date!' }],
+        appointment_time: [{ required: !this.appointmentForm.custom_is_walked_in, message: 'Please choose a time!' }],
       });
     },
   },
@@ -300,7 +309,15 @@ export default {
         {label: 'Follow-up', value: 'Follow-up'}, 
         {label: 'Procedure', value: 'Procedure'},
         {label: 'Session', value: 'Session'},
-      ]
+      ],
+      datePresets: ref([
+        { label: 'Today', value: dayjs() },
+        { label: 'Tommorow', value: dayjs().add(+1, 'd') },
+        { label: 'Next Week', value: dayjs().add(+7, 'd') },
+        { label: 'Next Month', value: dayjs().add(+1, 'month') },
+        { label: 'After 3 Months', value: dayjs().add(+3, 'month') },
+        { label: 'After 6 Months', value: dayjs().add(+6, 'month') },
+      ]),
 		};
 	},
 	methods: {
@@ -325,8 +342,13 @@ export default {
         this.lodingOverlay = true;
         let form = {...this.appointmentForm}
         form.appointment_date = dayjs(form.appointment_date).format('YYYY-MM-DD')
+        if(form.custom_is_walked_in){
+          form.appointment_time = dayjs().format('HH:mm')
+          form.status = 'Walked In'
+        }
         if(form.type === 'New Appointment'){
           delete form['name'];
+          console.log(form)
           this.$call('healthcare_doworks.api.methods.new_doc', {form})
           .then(response => {
             this.lodingOverlay = false;
@@ -399,6 +421,9 @@ export default {
       // Can not select days before today and today
       return current && current < dayjs().endOf('day').subtract(1, 'day');
     },
+    walkedIn() {
+      this.appointmentForm.appointment_date = dayjs()
+    }
 	},
 };
 </script>

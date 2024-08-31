@@ -1,278 +1,292 @@
 <template>
-	<div class="tab-pane" :id="tab + '-appointments'">
-		<div class="card">
-			<DataTable
-			v-model:filters="filters"
-			size="small"
-			sortField="appointment_time"
-			paginator
-			dataKey="id"
-			filterDisplay="row"
-			resizableColumns
-			:loading="loading"
-			:sortOrder="1"
-			:rows="10"
-			:rowsPerPageOptions="[10, 20, 50]"
-			:value="updatedAppointments"
-			selectionMode="single" 
-			:metaKeySelection="true" 
-			@row-contextmenu="handleRowContextMenu"
+	<div class="tab-pane" :class="tab + '-appointments'">
+		<DataTable
+		v-model:filters="filters"
+		size="small"
+		sortField="appointment_time"
+		paginator
+		dataKey="id"
+		filterDisplay="row"
+		resizableColumns
+		:loading="loading"
+		:sortOrder="1"
+		:rows="10"
+		:rowsPerPageOptions="[10, 20, 50]"
+		:value="updatedAppointments"
+		selectionMode="single" 
+		:metaKeySelection="true" 
+		@row-contextmenu="handleRowContextMenu"
+		>
+			<template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
+			<template #loading> Loading Appointments data. Please wait.</template>
+			<Column header="Patient" 
+			field="patient_cpr" 
+			:showFilterMenu="false" 
+			:showClearButton="false" 
+			style="width: 20%"
 			>
-				<template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
-				<template #loading> Loading Appointments data. Please wait.</template>
-				<Column header="Patient" 
-				field="patient_cpr" 
-				:showFilterMenu="false" 
-				:showClearButton="false" 
-				style="width: 20%"
-				>
-					<template #body="{ data }">
-						<!-- <router-link to="patient-profile"> -->
-							<div class="d-flex align-items-center gap-2">
-								<v-avatar>
-									<img
-										class="h-100 w-100"
-										:src="data.patient_details.image ? 
-											data.patient_details.image :
-											data.patient_details.gender === 'Male' ? maleImage : femaleImage"
-									/>
-									<!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
-								</v-avatar>
-								<div class="position-relative vstack">
-									{{ data.patient_name }}
-									<span class="fw-light text-teal ms-3" style="font-size: smaller">{{ data.patient_details.cpr }}</span>
-								</div><br/>
-							</div>
+				<template #body="{ data }">
+					<!-- <router-link to="patient-profile"> -->
+						<div class="flex align-items-center gap-2">
+							<v-avatar>
+								<img
+								class="h-100 w-100"
+								:src="data.patient_details.image ? 
+									data.patient_details.image :
+									data.patient_details.gender === 'Male' ? maleImage : femaleImage"
+								/>
+								<!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
+							</v-avatar>
+							<div class="position-relative vstack">
+								{{ data.patient_name }}
+								<span class="fw-light text-teal ms-3" style="font-size: smaller">{{ data.patient_details.cpr }}</span>
+							</div><br/>
+						</div>
 
-						<!-- </router-link> -->
-					</template>
-					<template #filter="{ filterModel, filterCallback }">
-						<a-input 
+					<!-- </router-link> -->
+				</template>
+				<template #filter="{ filterModel, filterCallback }">
+					<a-input 
+					v-model:value="filterModel.value"
+					@change="filterCallback()"
+					placeholder="Search by Patient" 
+					class="p-column-filter"
+					style="width: 100%; align-items: center;"
+					/>
+				</template>
+			</Column>
+			<Column header="Apt Time" 
+			field="appointment_time" 
+			:showFilterMenu="false" 
+			:showClearButton="false" 
+			filterField="appointment_time_moment" 
+			style="width: 10%"
+			>
+				<template #body="{ data }">
+					{{ data.appointment_time_moment }}
+				</template>
+				<template #filter="{ filterModel, filterCallback }">
+					<a-input 
+					v-model:value="filterModel.value"
+					@change="filterCallback()"
+					placeholder="Search by Time" 
+					class="p-column-filter"
+					style="width: 100%; align-items: center;"
+					/>
+				</template>
+			</Column>
+			<Column header="Arv Time" v-if="tab == 'arrived' || tab == 'ready'"
+			field="arriveTime" 
+			:showFilterMenu="false" 
+			:showClearButton="false" 
+			style="width: 10%"
+			>
+				<template #body="{ data }">
+					{{ data.timeSinceArrived }}
+				</template>
+			</Column>
+			<Column header="Status" 
+			field="status" 
+			:showFilterMenu="false" 
+			:showClearButton="false" 
+			style="width: 10%"
+			>
+				<template #body="{ data }">
+					<v-chip class="ma-2" label size="small" :color="getSeverity(data.status)">{{ data.status }}</v-chip>
+				</template>
+				<template #filter="{ filterModel, filterCallback }">
+					<a-select
 						v-model:value="filterModel.value"
-						@change="filterCallback()"
-						placeholder="Search by Patient" 
+						@change="(filterCallback())"
 						class="p-column-filter"
 						style="width: 100%; align-items: center;"
-						/>
-					</template>
-				</Column>
-				<Column header="Apt Time" 
-				field="appointment_time" 
-				:showFilterMenu="false" 
-				:showClearButton="false" 
-				filterField="appointment_time_moment" 
-				style="width: 10%"
-				>
-					<template #body="{ data }">
-						{{ data.appointment_time_moment }}
-					</template>
-					<template #filter="{ filterModel, filterCallback }">
-						<a-input 
-						v-model:value="filterModel.value"
-						@change="filterCallback()"
-						placeholder="Search by Time" 
-						class="p-column-filter"
-						style="width: 100%; align-items: center;"
-						/>
-					</template>
-				</Column>
-				<Column header="Arv Time" v-if="tab !== 'scheduled'"
-				field="arriveTime" 
-				:showFilterMenu="false" 
-				:showClearButton="false" 
-				style="width: 10%"
-				>
-					<template #body="{ data }">
-						{{ data.timeSinceArrived }}
-					</template>
-				</Column>
-				<Column header="Status" 
-				field="status" 
-				:showFilterMenu="false" 
-				:showClearButton="false" 
-				style="width: 10%"
-				>
-					<template #body="{ data }">
-						<v-chip class="ma-2" label size="small" :color="getSeverity(data.status)">{{ data.status }}</v-chip>
-					</template>
-					<template #filter="{ filterModel, filterCallback }">
-						<a-select
-							v-model:value="filterModel.value"
-							@change="(filterCallback())"
-							class="p-column-filter"
-							style="width: 100%; align-items: center;"
-							placeholder="Any"
-							:options="statuses"
-							allowClear
-						>
-							<template #option="{ value: val }">
-								<v-chip class="ma-2" label size="small" :color="getSeverity(val)">{{ val }}</v-chip>
-							</template>
-						</a-select>
-					</template>
-				</Column>
-				<Column header="Mobile" 
-				field="mobile" 
-				filterField="patient_details.mobile" 
-				:showFilterMenu="false" 
-				:showClearButton="false" 
-				style="width: 10%"
-				>
-					<template #body="{ data }">
-						{{ data.patient_details.mobile }}
-					</template>
-					<template #filter="{ filterModel, filterCallback }">
-						<a-input 
+						placeholder="Any"
+						:options="statuses"
+						allowClear
+					>
+						<template #option="{ value: val }">
+							<v-chip class="ma-2" label size="small" :color="getSeverity(val)">{{ val }}</v-chip>
+						</template>
+					</a-select>
+				</template>
+			</Column>
+			<Column header="Mobile" 
+			field="mobile" 
+			filterField="patient_details.mobile" 
+			:showFilterMenu="false" 
+			:showClearButton="false" 
+			style="width: 10%"
+			>
+				<template #body="{ data }">
+					{{ data.patient_details.mobile }}
+				</template>
+				<template #filter="{ filterModel, filterCallback }">
+					<a-input 
 						v-model:value="filterModel.value"
 						@change="filterCallback()"
 						placeholder="Search by Mobile" 
 						class="p-column-filter"
 						style="width: 100%; align-items: center;"
-						/>
-					</template>
-				</Column>
-				<Column header="Practitioner" 
-				field="practitioner_name" 
-				filterField="practitioner_name" 
-				:showFilterMenu="false" 
-				:showClearButton="false" 
-				style="width: 20%"
-				>
-					<template #body="{ data }">
-						<div class="d-flex align-items-center gap-2">
-							<v-avatar :color="!data.practitioner_image ? colorCache[data.practitioner_name] || '': ''">
+					/>
+				</template>
+			</Column>
+			<Column header="Practitioner" 
+			field="practitioner_name" 
+			filterField="practitioner_name" 
+			:showFilterMenu="false" 
+			:showClearButton="false" 
+			style="width: 20%"
+			>
+				<template #body="{ data }">
+					<div class="flex align-items-center gap-2">
+						<v-avatar :color="!data.practitioner_image ? colorCache[data.practitioner_name] || '': ''">
+							<img
+							v-if="data.practitioner_image"
+							class="h-100 w-100"
+							:src="data.practitioner_image"
+							/>
+							<span v-if="!data.practitioner_image" class="text-h6">{{ data.practitioner_name[0] }}</span>
+						</v-avatar>
+						<span>{{ data.practitioner_name }}</span>
+					</div>
+				</template>
+				<template #filter="{ filterModel, filterCallback }">
+					<a-select
+					v-model:value="filterModel.value"
+					@change="(filterCallback())"
+					mode="multiple"
+					class="p-column-filter"
+					style="width: 100%; align-items: center;"
+					placeholder="Any Practitioner"
+					max-tag-count="responsive"
+					:options="$myresources.practitioners"
+					:fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
+					>
+						<template #option="{ practitioner_name, image }">
+							<v-avatar size="25" :color="!image ? colorCache[practitioner_name] : ''">
 								<img
-								v-if="data.practitioner_image"
-								class="h-100 w-100"
-								:src="data.practitioner_image"
-								/>
-								<span v-if="!data.practitioner_image" class="text-h6">{{ data.practitioner_name[0] }}</span>
-							</v-avatar>
-							<span>{{ data.practitioner_name }}</span>
-						</div>
-					</template>
-					<template #filter="{ filterModel, filterCallback }">
-						<a-select
-						v-model:value="filterModel.value"
-						@change="(filterCallback())"
-						mode="multiple"
-						class="p-column-filter"
-						style="width: 100%; align-items: center;"
-						placeholder="Any Practitioner"
-						max-tag-count="responsive"
-						:options="$myresources.practitioners"
-						:fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
-						>
-							<template #option="{ practitioner_name, image }">
-								<v-avatar size="25" :color="!image ? colorCache[practitioner_name] : ''">
-									<img
 									v-if="image"
 									class="h-100 w-100"
 									:src="image"
+								/>
+								<span v-if="!image" style="font-size: small;">{{ practitioner_name[0] }}</span>
+							</v-avatar>
+							<span class="ms-2">{{ practitioner_name }}</span>
+						</template>
+						<template #tagRender="{ option, onClose }">
+							<v-chip size="small" closable @click:close="onClose">
+								<v-avatar size="20" :color="!option.image ? colorCache[option.practitioner_name] : ''">
+									<img
+										v-if="option.image"
+										class="h-100 w-100"
+										:src="option.image"
 									/>
-									<span v-if="!image" style="font-size: small;">{{ practitioner_name[0] }}</span>
+									<span v-if="!option.image" style="font-size: xx-small;">{{ option.practitioner_name[0] }}</span>
 								</v-avatar>
-								<span class="ms-2">{{ practitioner_name }}</span>
-							</template>
-							<template #tagRender="{ option, onClose }">
-								<v-chip size="small" closable @click:close="onClose">
-									<v-avatar size="20" :color="!option.image ? colorCache[option.practitioner_name] : ''">
-										<img
-											v-if="option.image"
-											class="h-100 w-100"
-											:src="option.image"
-										/>
-										<span v-if="!option.image" style="font-size: xx-small;">{{ option.practitioner_name[0] }}</span>
-									</v-avatar>
-									<span>{{ option.practitioner_name }}</span>
-								</v-chip>
-							</template>
-						</a-select>
-					</template>
-				</Column>
-				<Column field="department" hidden :showFilterMenu="false" :showClearButton="false">
-					<template #filter="{ filterModel, filterCallback }">
-						<a-select
+								<span>{{ option.practitioner_name }}</span>
+							</v-chip>
+						</template>
+					</a-select>
+				</template>
+			</Column>
+			<Column field="department" hidden :showFilterMenu="false" :showClearButton="false">
+				<template #filter="{ filterModel, filterCallback }">
+					<a-select
 						v-model:value="filterModel.value"
 						@change="(filterCallback())"
 						class="p-column-filter"
 						style="width: 100%; align-items: center;"
 						placeholder="Any"
 						allowClear
-						>
-							<template #option="{ value: val }">
-								<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
-							</template>
-						</a-select>
-					</template>
-				</Column>
-				<Column header="For" 
-				field="service_unit" 
-				:showFilterMenu="false" 
-				:showClearButton="false" 
-				style="width: 10%"
-				>
-					<template #body="{ data }">
-						<v-chip class="ma-2" label size="small">{{ data.service_unit }}</v-chip>
-					</template>
-					<template #filter="{ filterModel, filterCallback }">
-						<a-select
-							v-model:value="filterModel.value"
-							@change="(filterCallback())"
-							class="p-column-filter"
-							style="width: 100%; align-items: center;"
-							placeholder="Any"
-							:options="$myresources.serviceUnits"
-							:fieldNames="{label: 'name', value: 'name'}"
-							allowClear
-						>
-							<template #option="{ name: val }">
-								<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
-							</template>
-						</a-select>
-					</template>
-				</Column>
-				<Column style="width: 5%">
-					<template #body="{ data }">
-						<v-btn 
-						v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0]?.note)" 
+					>
+						<template #option="{ value: val }">
+							<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
+						</template>
+					</a-select>
+				</template>
+			</Column>
+			<Column header="For" 
+			field="service_unit" 
+			:showFilterMenu="false" 
+			:showClearButton="false" 
+			style="width: 10%"
+			>
+				<template #body="{ data }">
+					<v-chip class="ma-2" label size="small">{{ data.service_unit }}</v-chip>
+				</template>
+				<template #filter="{ filterModel, filterCallback }">
+					<a-select
+						v-model:value="filterModel.value"
+						@change="(filterCallback())"
+						class="p-column-filter"
+						style="width: 100%; align-items: center;"
+						placeholder="Any"
+						:options="$myresources.serviceUnits"
+						:fieldNames="{label: 'name', value: 'name'}"
+						allowClear
+					>
+						<template #option="{ name: val }">
+							<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
+						</template>
+					</a-select>
+				</template>
+			</Column>
+			<Column style="width: 5%">
+				<template #body="{ data }">
+					<v-btn 
+						v-if="data.notes || data.visit_notes" 
 						size="small" 
 						variant="text" 
 						icon
 						@click="toggleOP"
-						>
-							<v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
-								<img :src="bellImage"/>
-							</v-badge>
-						</v-btn>
-						<i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
-						<OverlayPanel ref="op">
-							<div class="d-flex flex-column gap-3 w-25rem">
-								<div v-if="data.notes">
-									<span class="fw-semibold d-block mb-2">Appointment Notes</span>
-									<a-textarea v-model:value="data.notes" disabled/>
-								</div>
-								<div v-if="data.visit_notes.length > 0 && data.visit_notes[0]?.note">
-									<span class="fw-semibold d-block mb-2">Visit Notes</span>
-									<ul class="list-none p-0 m-0 flex flex-column">
-										<li v-for="(note, index) in data.visit_notes" :key="index" class="d-flex align-items-center gap-2 mb-3">
-											<div>
-												<a-textarea v-model:value="note.note" disabled/>
-												<span>{{ note.time }}</span>
-											</div>
-											<div class="d-flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
-												<span>{{ note.provider }}</span>
-											</div>
-										</li>
-									</ul>
-								</div>
+					>
+						<v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
+							<img :src="bellImage" width="40px" class="me-1"/>
+						</v-badge>
+					</v-btn>
+					<i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
+					<OverlayPanel ref="op">
+						<div class="flex flex-column gap-3 w-25rem">
+							<div v-if="data.notes">
+								<span class="fw-semibold d-block mb-2">Appointment Notes</span>
+								<a-textarea v-model:value="data.notes" disabled/>
 							</div>
-						</OverlayPanel>
-					</template>
-				</Column>
-				<ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = null"/>
-			</DataTable>
-		</div>
+							<div v-if="data.visit_notes">
+								<!-- <span class="fw-semibold d-block mb-2">Visit Notes</span>
+								<ul class="list-none p-0 m-0 flex flex-column">
+									<li v-for="(note, index) in data.visit_notes" :key="index" class="flex align-items-center gap-2 mb-3">
+										<div>
+											<a-textarea v-model:value="note" disabled/>
+											<span>{{ note.time }}</span>
+										</div>
+										<div class="flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
+											<span>{{ note.provider }}</span>
+										</div>
+									</li>
+								</ul> -->
+								<DataTable 
+								:value="data.visit_notes" 
+								selectionMode="single" 
+								:metaKeySelection="true" 
+								dataKey="name" 
+								class="max-h-72 overflow-y-auto"
+								>
+									<template #header>
+										<div class="flex flex-wrap items-center justify-between gap-2">
+											<span class="text-xl font-bold">Visit Notes</span>
+										</div>
+									</template>
+									<Column field="time"></Column>
+									<Column field="provider"></Column>
+									<Column field="note"></Column>
+								</DataTable>
+							</div>
+						</div>
+					</OverlayPanel>
+				</template>
+			</Column>
+			<ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = null"/>
+		</DataTable>
 	</div>
 </template>
 
@@ -508,9 +522,3 @@ export default {
 	},
 };
 </script>
-
-<style>
-.ant-picker-dropdown,.ant-select-dropdown{
-	z-index: 3000;
-}
-</style>

@@ -1,6 +1,6 @@
 <template>
   <!-- Main Wrapper -->
-  <div class="main-wrapper" id="doctor-dashboard" style="margin-right: -10px;">
+  <div class="main-wrapper mr-3" id="doctor-dashboard" style="margin-right: -10px;">
     <v-alert
       v-if="alertVisible"
       position="absolute"
@@ -13,255 +13,212 @@
       <div v-html="message"></div>
     </v-alert>
     <!-- Page Content -->
-    <div class="row">
-      <div class="row">
-        <div class="col-md-12">
-          <div class="card dash-card">
-            <div class="card-body">
-              <div class="row">
-                <div class="col-md-12 col-lg-4">
-                  <div class="dash-widget dct-border-rht">
-                    <div class="circle-bar circle-bar1">
-                      <div class="circle-graph1">
-                        <v-progress-circular
-                          class="col"
-                          :model-value="getPercentage(appointments.length - updatedAppointments.length,appointments.length)"
-                          :size="100"
-                          :width="7"
-                          color="blue"
-                        >
-                          <img
-                            src="@/assets/img/icon-03.png"
-                            class="img-fluid"
-                            alt="Patient"
-                          />
-                        </v-progress-circular>
-                      </div>
-                    </div>
-                    <div class="dash-widget-info">
-                      <h6 >Today Appointments</h6>
-                      <div class="d-flex">
-                        <h4 class="text-info">{{appointments.length - updatedAppointments.length}}</h4>
-                        <h3>/{{appointments.length}}</h3>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-12 col-lg-4">
-                  <div class="dash-widget dct-border-rht">
-                    <div class="circle-bar circle-bar2">
-                      <div class="circle-graph2">
-                        <v-progress-circular
-                          class="col"
-                          :model-value="getPercentage(services.filter(value => value.status == 'Completed').length, services.length)"
-                          :size="100"
-                          :width="7"
-                          color="green"
-                        >
-                          <img
-                            src="@/assets/img/orders.png"
-                            class="img-fluid"
-                            alt="Patient"
-                            style="width: 45px; height: 45px;"
-                          />
-                        </v-progress-circular>
-                      </div>
-                    </div>
-                    <div class="dash-widget-info">
-                      <h6 >Orders Completed</h6>
-                      <div class="d-flex">
-                        <h4 class="text-green">{{services.filter(value => value.status == 'Completed').length}}</h4>
-                        <h3>/{{services.length}}</h3>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-12 col-lg-4">
-                  <div class="dash-widget">
-                    <div class="circle-bar circle-bar3">
-                      <div class="circle-graph3">
-                        <v-progress-circular
-                          class="col"
-                          :model-value="100"
-                          :size="100"
-                          :width="7"
-                          color="red"
-                        >
-                          <img
-                            src="@/assets/img/icon-04.png"
-                            class="img-fluid"
-                            alt="Patient"
-                            style="width: 42px; height: 42px;"
-                          />
-                        </v-progress-circular>
-                      </div>
-                    </div>
-                    <div class="dash-widget-info">
-                      <h6>Next Appointment</h6>
-                      <h3>{{ nextAppointmentTime }}</h3>
-                    </div>
-                  </div>
-                </div>
+    <div class="flex flex-wrap gap-4 pb-4">
+      <Card class="flex-1 border border-surface shadow-none">
+        <template #content>
+          <div class="flex justify-between gap-8">
+            <div class="flex flex-col gap-1">
+              <span class="text-surface-500 dark:text-surface-400 text-sm">Today Appointments</span>
+              <!-- <span class="font-bold text-lg">{{ val.value }}%</span>
+              <h6 >Today Appointments</h6> -->
+              <div class="d-flex">
+                <span class="text-info font-bold text-lg">{{appointments.length - updatedAppointments.length}}</span>
+                <span class="font-bold text-lg">/{{appointments.length}}</span>
               </div>
             </div>
+            <span class="w-8 h-8 rounded-full inline-flex justify-center items-center text-center bg-blue">
+              <i class="mdi mdi-calendar-account" />
+            </span>
           </div>
-        </div>
-      </div>
-      <!-- Appointment Tab -->
-      <div class="pe-9 mb-3">
-        <v-card variant="flat" rounded="lg">
-          <v-tabs v-model="tab" align-tabs="center" color="indigo" bg-color="white" show-arrows>
-            <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key">
-              {{ key }}
-              <v-badge color="indigo" :content="getBadgeNumber(key)" inline></v-badge>
-            </v-tab>
-          </v-tabs>
-          <v-window v-model="tab" disabled class="mx-3">
-            <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
-            <AppointmentTab 
-            :appointments="value" 
-            :tab="key.toLowerCase()"
+        </template>
+      </Card>
+      <Card class="flex-1 border border-surface shadow-none">
+        <template #content>
+          <div class="flex justify-between gap-8">
+            <div class="flex flex-col gap-1">
+              <span class="text-surface-500 dark:text-surface-400 text-sm">Orders Completed</span>
+              <!-- <span class="font-bold text-lg">{{ val.value }}%</span>
+              <h6 >Today Appointments</h6> -->
+              <div class="d-flex">
+                <span class="text-green font-bold text-lg">{{services.filter(value => value.status == 'Completed').length}}</span>
+                <span class="font-bold text-lg">/{{services.length}}</span>
+              </div>
+            </div>
+            <span class="w-8 h-8 rounded-full inline-flex justify-center items-center text-center bg-green">
+              <i class="mdi mdi-walk" />
+            </span>
+          </div>
+        </template>
+      </Card>
+      <Card class="flex-1 border border-surface shadow-none">
+        <template #content>
+          <div class="flex justify-between gap-8">
+            <div class="flex flex-col gap-1">
+              <span class="text-surface-500 dark:text-surface-400 text-sm">Next Appointment</span>
+              <!-- <span class="font-bold text-lg">{{ val.value }}%</span>
+              <h6 >Today Appointments</h6> -->
+              <div class="d-flex">
+                <span class="text-red font-bold text-lg">{{nextAppointmentTime}}</span>
+              </div>
+            </div>
+            <span class="w-8 h-8 rounded-full inline-flex justify-center items-center text-center bg-red">
+              <i class="mdi mdi-timer-sand" />
+            </span>
+          </div>
+        </template>
+      </Card>
+    </div>
+
+    <!-- Appointment Tab -->
+    <div class="mb-4">
+      <v-tabs v-model="tab" class="" align-tabs="center" color="indigo" bg-color="white" show-arrows>
+        <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key">
+          {{ key }}
+          <v-badge color="indigo" :content="getBadgeNumber(key)" inline></v-badge>
+        </v-tab>
+      </v-tabs>
+      <v-window v-model="tab" disabled>
+        <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
+        <AppointmentTab 
+        :appointments="value" 
+        :tab="key.toLowerCase()"
+        :loading="appointmentsLoading"
+        ref="appointmentTabRef"
+        @appointment-note-dialog="appointmentNoteDialog"
+        @vital-sign-dialog="vitalSignDialog"
+        @medical-history-dialog="medicalHistoryDialog"
+        />
+        </v-window-item>
+      </v-window>
+    </div>
+    <!-- /Appointment Tab -->
+    <!-- <div class="row row-cols-lg-2 cont mb-3">
+      <Card class="col-12 col-lg-6 left-col p-0" style="overflow: hidden;">
+        <template #title>Upcoming Appintments</template>
+        <template #content>
+          <div class="table-responsive">
+            <DataTable
+            size="small"
+            sortField="arriveTime"
+            dataKey="id"
             :loading="appointmentsLoading"
-            ref="appointmentTabRef"
-            @appointment-note-dialog="appointmentNoteDialog"
-            @vital-sign-dialog="vitalSignDialog"
-            @medical-history-dialog="medicalHistoryDialog"
-            />
-            </v-window-item>
-          </v-window>
-        </v-card>
-      </div>
-      <!-- /Appointment Tab -->
-      <!-- <div class="row row-cols-lg-2 cont mb-3">
-        <Card class="col-12 col-lg-6 left-col p-0" style="overflow: hidden;">
-          <template #title>Upcoming Appintments</template>
-          <template #content>
-            <div class="table-responsive">
-              <DataTable
-              size="small"
-              sortField="arriveTime"
-              dataKey="id"
-              :loading="appointmentsLoading"
-              :sortOrder="-1"
-              paginator
-              :rows="5"
-              :value="updatedAppointments"
-              selectionMode="single" 
-              :metaKeySelection="true"
-              @row-click="onPatientDetails"
-              >
-                <template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
-                <template #loading> Loading Appointments data. Please wait.</template>
-                <Column header="Patient" field="patient">
-                  <template #body="{ data }">
-                      <div class="d-flex align-items-center gap-2">
-                        <v-avatar>
-                          <img
-                            class="h-100 w-100"
-                            :src="data.patient_details.image ? 
-                              data.patient_details.image :
-                              data.patient_details.gender === 'Male' ? maleImage : femaleImage"
-                          />
-                        </v-avatar>
-                        <div style="padding: 10px 15px; vertical-align: middle; padding-right: 0;">
-                          <h6 style="font-size: 16px; font-weight: 500; margin-bottom: 0">{{ data.patient_name }}</h6>
-                          <span style="color: rgba(51, 52, 72, 0.5); font-size: 16px; font-weight: 500">{{ data.service_unit }}</span>
-                        </div><br/>
+            :sortOrder="-1"
+            paginator
+            :rows="5"
+            :value="updatedAppointments"
+            selectionMode="single" 
+            :metaKeySelection="true"
+            @row-click="onPatientDetails"
+            >
+              <template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
+              <template #loading> Loading Appointments data. Please wait.</template>
+              <Column header="Patient" field="patient">
+                <template #body="{ data }">
+                    <div class="d-flex align-items-center gap-2">
+                      <v-avatar>
+                        <img
+                          class="h-100 w-100"
+                          :src="data.patient_details.image ? 
+                            data.patient_details.image :
+                            data.patient_details.gender === 'Male' ? maleImage : femaleImage"
+                        />
+                      </v-avatar>
+                      <div style="padding: 10px 15px; vertical-align: middle; padding-right: 0;">
+                        <h6 style="font-size: 16px; font-weight: 500; margin-bottom: 0">{{ data.patient_name }}</h6>
+                        <span style="color: rgba(51, 52, 72, 0.5); font-size: 16px; font-weight: 500">{{ data.service_unit }}</span>
+                      </div><br/>
+                    </div>
+                </template>
+              </Column>
+              <Column header="Apt Time" sortable field="appointment_time">
+                <template #body="{ data }">
+                  <Tag :value="data.appointment_time_moment" severity="info" style="width: 95px" class="absolute"></Tag>
+                </template>
+              </Column>
+              <Column header="Arv Time" sortable field="arriveTime">
+                <template #body="{ data }">
+                  <Tag v-if="data.timeSinceArrived" :value="data.timeSinceArrived" severity="success" style="width: 95px" class="absolute"></Tag>
+                </template>
+              </Column>
+              <Column header="Status" field="status_log">
+                <template #body="{ data }">
+                  <v-chip class="ma-2" label size="small" :color="getSeverity(visitStatus(data))">{{ visitStatus(data) }}</v-chip>
+                </template>
+              </Column>
+              <Column style="width: 5%">
+                <template #body="{ data }">
+                  <v-btn 
+                    v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0]?.note)" 
+                    size="small" 
+                    variant="text" 
+                    icon
+                    @click="toggleOP"
+                  >
+                    <v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
+                      <img :src="bellImage"/>
+                    </v-badge>
+                  </v-btn>
+                  <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
+                  <OverlayPanel ref="op">
+                    <div class="d-flex flex-column gap-3 w-25rem">
+                      <div v-if="data.notes">
+                        <span class="fw-semibold d-block mb-2">Appointment Notes</span>
+                        <a-textarea v-model:value="data.notes" disabled/>
                       </div>
-                  </template>
-                </Column>
-                <Column header="Apt Time" sortable field="appointment_time">
-                  <template #body="{ data }">
-                    <Tag :value="data.appointment_time_moment" severity="info" style="width: 95px" class="absolute"></Tag>
-                  </template>
-                </Column>
-                <Column header="Arv Time" sortable field="arriveTime">
-                  <template #body="{ data }">
-                    <Tag v-if="data.timeSinceArrived" :value="data.timeSinceArrived" severity="success" style="width: 95px" class="absolute"></Tag>
-                  </template>
-                </Column>
-                <Column header="Status" field="status_log">
-                  <template #body="{ data }">
-                    <v-chip class="ma-2" label size="small" :color="getSeverity(visitStatus(data))">{{ visitStatus(data) }}</v-chip>
-                  </template>
-                </Column>
-                <Column style="width: 5%">
-                  <template #body="{ data }">
-                    <v-btn 
-                      v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0]?.note)" 
-                      size="small" 
-                      variant="text" 
-                      icon
-                      @click="toggleOP"
-                    >
-                      <v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
-                        <img :src="bellImage"/>
-                      </v-badge>
-                    </v-btn>
-                    <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
-                    <OverlayPanel ref="op">
-                      <div class="d-flex flex-column gap-3 w-25rem">
-                        <div v-if="data.notes">
-                          <span class="fw-semibold d-block mb-2">Appointment Notes</span>
-                          <a-textarea v-model:value="data.notes" disabled/>
-                        </div>
-                        <div v-if="data.visit_notes.length > 0 && data.visit_notes[0]?.note">
-                          <span class="fw-semibold d-block mb-2">Visit Notes</span>
-                          <ul class="list-none p-0 m-0 flex flex-column">
-                            <li v-for="(note, index) in data.visit_notes" :key="index" class="d-flex align-items-center gap-2 mb-3">
-                              <div>
-                                <a-textarea v-model:value="note.note" disabled/>
-                                <span>{{ note.time }}</span>
-                              </div>
-                              <div class="d-flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
-                                <span>{{ note.provider }}</span>
-                              </div>
-                            </li>
-                          </ul>
-                        </div>
+                      <div v-if="data.visit_notes.length > 0 && data.visit_notes[0]?.note">
+                        <span class="fw-semibold d-block mb-2">Visit Notes</span>
+                        <ul class="list-none p-0 m-0 flex flex-column">
+                          <li v-for="(note, index) in data.visit_notes" :key="index" class="d-flex align-items-center gap-2 mb-3">
+                            <div>
+                              <a-textarea v-model:value="note.note" disabled/>
+                              <span>{{ note.time }}</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
+                              <span>{{ note.provider }}</span>
+                            </div>
+                          </li>
+                        </ul>
                       </div>
-                    </OverlayPanel>
-                  </template>
-                </Column>
-              </DataTable>
-            </div>
-          </template>
-          <template #footer>
-            <div class="d-flex mt-1">
-              <a href="/appointments">See All</a>
-            </div>
-          </template>
-        </Card>
-        <div v-if="nextPatientDetails" class="col-12 col-lg-6 right-col p-0 details-card mt-4 mt-md-0" style="min-height: 550px; height: auto;" ref="containerRef">
-          <div  class="flip-card-inner" :class="{ 'isFlipped': isFlipped }">
-            <div class="flip-card-front">
-              <patientDetailsCard :patient="nextPatientDetails" @cardRendered="adjustContainerHeight"/>
-            </div>
-            <div class="flip-card-back">
-              <patientDetailsCard :patient="nextPatientDetails"/>
-            </div>
+                    </div>
+                  </OverlayPanel>
+                </template>
+              </Column>
+            </DataTable>
+          </div>
+        </template>
+        <template #footer>
+          <div class="d-flex mt-1">
+            <a href="/appointments">See All</a>
+          </div>
+        </template>
+      </Card>
+      <div v-if="nextPatientDetails" class="col-12 col-lg-6 right-col p-0 details-card mt-4 mt-md-0" style="min-height: 550px; height: auto;" ref="containerRef">
+        <div  class="flip-card-inner" :class="{ 'isFlipped': isFlipped }">
+          <div class="flip-card-front">
+            <patientDetailsCard :patient="nextPatientDetails" @cardRendered="adjustContainerHeight"/>
+          </div>
+          <div class="flip-card-back">
+            <patientDetailsCard :patient="nextPatientDetails"/>
           </div>
         </div>
-      </div> -->
-      <div class="row row-cols-lg-2 cont mb-3" style="overflow: hidden;">
-        <Card class="col-12 col-lg-6 left-col p-0" id="services" style="overflow: hidden;">
-          <template #title>
-            Orders ({{ services && services.length }})
-          </template>
-          <template #content>
-            <DataTable :value="services">
-              <template #empty><v-empty-state title="No Service Requests"></v-empty-state></template>
-              <Column field="template_dn" header="Service Name"></Column>
-              <Column field="order_date" header="Ordered On"></Column>
-              <Column field="status" header="Status"></Column>
-              <Column field="practitioner" header="Ordered By"></Column>
-            </DataTable>
-          </template>
-        </Card>
       </div>
-    </div>    
+    </div> -->
+    <div class="row row-cols-lg-2 cont mb-3" style="overflow: hidden;">
+      <Card class="col-12 col-lg-6 left-col p-0" id="services" style="overflow: hidden;">
+        <template #title>
+          Orders ({{ services && services.length }})
+        </template>
+        <template #content>
+          <DataTable :value="services">
+            <template #empty><v-empty-state title="No Service Requests"></v-empty-state></template>
+            <Column field="template_dn" header="Service Name"></Column>
+            <Column field="order_date" header="Ordered On"></Column>
+            <Column field="status" header="Status"></Column>
+            <Column field="practitioner" header="Ordered By"></Column>
+          </DataTable>
+        </template>
+      </Card>
+    </div>  
     <!-- /Page Content -->
     <vitalSignsListDialog 
     :isOpen="vitalSignsOpen" 

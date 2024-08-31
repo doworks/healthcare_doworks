@@ -94,14 +94,16 @@ export default {
     components: {
         VCol, VRow,
     },
-    data: {
-        maleImage:maleImage,
-		femaleImage:femaleImage,
-    },
     props: {
         patient: {
             default: null,
         },
+    },
+    data() {
+        return {
+            maleImage:maleImage,
+            femaleImage:femaleImage,
+        }
     },
     mounted() {
         window.addEventListener('resize', this.handleResize);
@@ -120,9 +122,9 @@ export default {
             this.$emit('cardRendered', this.$refs.cardRef.$el.querySelector('.p-card-body').offsetHeight);
         },
         goToEncounter() {
-			this.$call('healthcare_doworks.api.methods.patient_encounter_name', {appointment_id: this.selectedRow.appointment_id})
+			this.$call('healthcare_doworks.api.methods.patient_encounter_name', {appointment_id: this.patient.appointment_id})
 			.then(response => {
-				const appointmentId = this.selectedRow.appointment_id;
+				const appointmentId = this.patient.appointment_id;
 				this.$router.push({ name: 'patient-encounter', params: { encounterId: response } });
 			}).catch(error => {
 				console.error(error);

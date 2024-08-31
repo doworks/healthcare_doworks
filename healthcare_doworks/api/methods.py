@@ -2,7 +2,7 @@ import frappe
 from frappe import _
 import datetime
 from frappe.utils.file_manager import save_file
-from healthcare.healthcare.doctype.patient_appointment.patient_appointment import update_status
+# from healthcare.healthcare.doctype.patient_appointment.patient_appointment import update_status
 from frappe.utils.pdf import get_pdf
 import os
 import base64
@@ -79,6 +79,16 @@ def fetch_resources():
 		'clinicalProcedureTemplate': clinicalProcedureTemplate,
 		'sampleCollections': sampleCollections,
 	}
+@frappe.whitelist()
+def get_redirect_url():
+	user = frappe.session.user
+	redirect_to = frappe.cache().hget("redirect_to", user)
+
+	# Clear the cache after retrieving it
+	if redirect_to:
+		frappe.cache().hdel("redirect_to", user)
+
+	return {"redirect_to": redirect_to}
 
 @frappe.whitelist(allow_guest=True)
 def get_site_name():
@@ -98,13 +108,15 @@ def fetch_nurse_records():
 
 @frappe.whitelist()
 def reschedule_appointment(form):
-	update_status(form['name'], 'Cancelled')
+	appointment = frappe.get_doc('Patient Appointment', form['name'])
+	appointment.custom_visit_status = 'Cancelled'
+	appointment.status = 'Cancelled'
+	appointment.save()
 
 	form['name'] = ''
 	new_doc = frappe.get_doc(form)
+	new_doc.status = 'Rescheduled'
 	new_doc.insert()
-	update_status(new_doc.name, 'Rescheduled')
-	get_appointments()
 
 @frappe.whitelist()
 def transferToPractitioner(app, practitioner):
@@ -412,8 +424,6 @@ def edit_doc(form, submit=False):
 def new_doc(form, submit=False):
 	doc = frappe.get_doc(form)
 	doc.insert()
-	if(doc.doctype == 'Patient Appointment'):
-		update_status(doc.name, 'Scheduled')
 	if(submit):
 		doc.submit()
 	return doc
@@ -586,8 +596,6 @@ def get_appointments(*args):
 			ON vn.`appointment_id` = pa.`name`
 		LEFT JOIN StatusLogs tl
 			ON tl.`appointment_id` = pa.`name`
-		WHERE
-			pa.`status` IN ('Scheduled', 'Rescheduled', 'Walked In')
 		GROUP BY
 			pa.`name`
 		ORDER BY

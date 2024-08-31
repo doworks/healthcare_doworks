@@ -13,3 +13,8 @@ class CustomPatientEncounter(PatientEncounter):
 			self.make_service_request()
 			self.make_medication_request()
 			# self.status = "Ordered"
+
+	def on_update(self):
+		# if self.appointment:
+		# 	frappe.db.set_value("Patient Appointment", self.appointment, "status", "Closed")
+		pass

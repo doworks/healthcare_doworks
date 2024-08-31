@@ -15,7 +15,9 @@ const routes = [
   {
     path: "/",
     name: "Home",
-    component: Home,
+    beforeEnter: (to, from, next) => {
+      next('/doctor-dashboard');
+    },
   },
   {
     path: '/patient-encounter/',
