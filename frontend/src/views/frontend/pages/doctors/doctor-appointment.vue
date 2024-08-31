@@ -27,6 +27,7 @@
               const dates = spanToDate(value)
               selectedDates = dates
               selectedRangeDates = [dates[0], dates[dates.length -1]]
+              fetchRecords()
             }"
             ></a-select>
             <a-date-picker v-if="dateFilterType === 'single'"
@@ -35,7 +36,7 @@
             style="width: 100%; align-items: center; max-height: 62px; text-align: center"
             :allowClear="false"
             size="large"
-            @change="(value) => {selectedDates = [value]; selectedRangeDates = [value, value]}"
+            @change="(value) => {selectedDates = [value]; selectedRangeDates = [value, value]; fetchRecords()}"
             />
             <!-- <span class="d-flex justify-content-center fw-bolder text-dark me-3">{{ formattedDayOfWeek() }}</span> -->
             <a-range-picker v-if="dateFilterType === 'range'" 
@@ -44,7 +45,7 @@
             style="width: 100%; align-items: center; max-height: 62px; text-align: center" 
             size="large"
             :allowClear="false"
-            @change="(value) => {selectedDates = getDatesInBetween(value[0], value[1])}"
+            @change="(value) => {selectedDates = getDatesInBetween(value[0], value[1]); fetchRecords()}"
             />
             <v-btn-toggle class="mt-1" v-model="dateFilterType" color="blue" mandatory density="compact">
               <v-btn size="small" value="span">Timespans</v-btn>
@@ -134,7 +135,7 @@
     :isOpen="vitalSignsOpen" 
     @update:isOpen="vitalSignsOpen = $event" 
     @show-alert="showAlert" 
-    :appointment="{'name': selectedRow.appointment_id, 'patient': selectedRow.patient_details.id}"
+    :appointment="{'name': selectedRow.name, 'patient': selectedRow.patient_details.id}"
     />
     <v-dialog v-model="appointmentNoteOpen" width="auto">
       <v-card
@@ -324,7 +325,7 @@ export default {
       message: '',
       alertVisible: false,
       appointmentForm: {},
-      selectedRow: {appointment_id: '', patient_details: {id: ''}},
+      selectedRow: {name: '', patient_details: {id: ''}},
       dateFilterType: 'span',
       selectedSpan: 'today',
       selectedDates: ref([dayjs()]),
@@ -344,10 +345,26 @@ export default {
   },
   created() {
     this.fetchRecords();
-    this.$socket.on('patient_appointments', response => {
-      if(response){
-        this.appointments = this.adjustAppointments(response)
-        this.groupAppointmentsByStatus();
+    this.$socket.on('patient_appointments_updated', updatedAppointment => {
+      if (updatedAppointment) {
+        const appointmentDate = dayjs(updatedAppointment.appointment_date);
+
+        // Check if the updated appointment falls within the selected date range
+        const isInDateRange = this.selectedDates.some(date => date.isSame(appointmentDate, 'day'));
+
+        if (isInDateRange) {
+          const index = this.appointments.findIndex(app => app.name === updatedAppointment.name);
+
+          if (index !== -1) {
+            // Update the existing appointment
+            this.appointments.splice(index, 1, this.adjustAppointments([updatedAppointment])[0]);
+          } else {
+            // If not in the list, add it
+            this.appointments.push(this.adjustAppointments([updatedAppointment])[0]);
+          }
+
+          this.groupAppointmentsByStatus();  // Re-group appointments by status
+        }
       }
     })
   },
@@ -363,7 +380,12 @@ export default {
     },
     fetchRecords() {
       this.appointmentsLoading = true;
-      this.$call('healthcare_doworks.api.methods.fetch_patient_appointments')
+
+      const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
+
+      this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
+        filters: {appointment_date: ['in', dates]}
+      })
       .then(response => {
         console.log(response)
         this.appointments = this.adjustAppointments(response)
@@ -377,29 +399,18 @@ export default {
     },
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
-        try {
-          if(typeof d.patient_details === 'string'){
-            d.patient_details = JSON.parse(d.patient_details)    
-          }
-          if(typeof d.visit_notes === 'string'){
-            let notes = JSON.parse(d.visit_notes).map(note => {
-              note.time = dayjs(note.time).format('h:mm A DD/MM/YYYY')
-              return note
-            })
-            d.visit_notes = notes
-          }
-          if(typeof d.status_log === 'string'){
-            d.status_log = JSON.parse(d.status_log)
-            d.arriveTime = '-'
-            d.status_log.forEach(value => {
-              if(value.status == 'Arrived')
-              d.arriveTime = dayjs(value.time)
-            })
-          }
-          
-        } catch (error) {
-          console.error('Error parsing JSON:', error);
+        if(typeof d.visit_notes === 'string'){
+          let notes = d.visit_notes.map(note => {
+            note.time = dayjs(note.time).format('h:mm A DD/MM/YYYY')
+            return note
+          })
+          d.visit_notes = notes
         }
+        d.arriveTime = '-'
+        d.status_log.forEach(value => {
+          if(value.status == 'Arrived')
+            d.arriveTime = dayjs(value.time)
+        })
 
 				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
 				d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
@@ -473,7 +484,7 @@ export default {
     groupAppointmentsByStatus() {
       this.groupedAppointments = {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],}
       this.appointments.forEach(appointment => {
-        const status = appointment.visit_status;
+        const status = appointment.custom_visit_status;
         if (!this.groupedAppointments[status])
           this.groupedAppointments[status] = [];
         this.groupedAppointments[status].push(appointment);
@@ -502,12 +513,12 @@ export default {
         this.appointmentForm.notes = '';
 			}
 			else{
-        this.appointmentForm.name = row.appointment_id;
+        this.appointmentForm.name = row.name;
 				this.appointmentForm.duration = row.duration;
 				this.appointmentForm.appointment_type = row.appointment_type;
 				this.appointmentForm.appointment_for = row.appointment_for;
-				this.appointmentForm.custom_appointment_category = row.appointment_category;
-        this.appointmentForm.custom_payment_type = row.payment_type;
+				this.appointmentForm.custom_appointment_category = row.custom_appointment_category;
+        this.appointmentForm.custom_payment_type = row.custom_payment_type;
         this.appointmentForm.practitioner = row.practitioner;
 				this.appointmentForm.practitioner_name = row.practitioner_name;
 				this.appointmentForm.patient = row.patient_details.id;
@@ -525,7 +536,7 @@ export default {
 			this.appointmentOpen = true
 		},
     appointmentNoteDialog(row) {
-      this.appointmentForm.name = row.appointment_id;
+      this.appointmentForm.name = row.name;
 			this.appointmentNoteOpen = true;
 		},
     vitalSignDialog(row) {
@@ -533,19 +544,19 @@ export default {
 			this.vitalSignsOpen = true;
 		},
     transferPractitionerDialog(row) {
-      this.appointmentForm.name = row.appointment_id;
+      this.appointmentForm.name = row.name;
       this.appointmentForm.practitioner = row.practitioner;
       this.appointmentForm.practitioner_name = row.practitioner_name;
 			this.transferOpen = true
 		},
     serviceUnitDialog(row) {
-      this.appointmentForm.name = row.appointment_id;
+      this.appointmentForm.name = row.name;
       this.appointmentForm.service_unit = row.service_unit;
 			this.serviceUnitOpen = true
 		},
     paymentTypeDialog(row) {
-      this.appointmentForm.name = row.appointment_id;
-      this.appointmentForm.custom_payment_type = row.payment_type;
+      this.appointmentForm.name = row.name;
+      this.appointmentForm.custom_payment_type = row.custom_payment_type;
 			this.paymentTypeOpen = true
     },
     showSlots() {
@@ -675,6 +686,7 @@ export default {
     },
     onSubmitAppointmentNote() {
       this.lodingOverlay = true;
+      console.log(this.appointmentForm)
       this.$call('frappe.client.insert', 
         {doc: {
           doctype: 'Appointment Note Table', 

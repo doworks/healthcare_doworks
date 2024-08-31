@@ -234,7 +234,7 @@
 			<Column style="width: 5%">
 				<template #body="{ data }">
 					<v-btn 
-						v-if="data.notes || data.visit_notes" 
+						v-if="data.notes || data.visit_notes.length > 0" 
 						size="small" 
 						variant="text" 
 						icon
@@ -251,7 +251,7 @@
 								<span class="fw-semibold d-block mb-2">Appointment Notes</span>
 								<a-textarea v-model:value="data.notes" disabled/>
 							</div>
-							<div v-if="data.visit_notes">
+							<div v-if="data.visit_notes.length > 0">
 								<!-- <span class="fw-semibold d-block mb-2">Visit Notes</span>
 								<ul class="list-none p-0 m-0 flex flex-column">
 									<li v-for="(note, index) in data.visit_notes" :key="index" class="flex align-items-center gap-2 mb-3">

@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 import datetime
+from frappe.utils import nowdate
 from frappe.utils.file_manager import save_file
 # from healthcare.healthcare.doctype.patient_appointment.patient_appointment import update_status
 from frappe.utils.pdf import get_pdf
@@ -96,8 +97,8 @@ def get_site_name():
 
 # Appointments Page
 @frappe.whitelist()
-def fetch_patient_appointments():
-	return get_appointments()
+def fetch_patient_appointments(filters=None):
+	return get_appointments(filters=filters)
 
 @frappe.whitelist()
 def fetch_nurse_records():
@@ -487,123 +488,89 @@ def get_services(*args):
 	frappe.publish_realtime("services", services)
 	return services
 
-def get_appointments(*args):
-	appointments = frappe.db.sql("""
-		WITH LatestVitalSigns AS (
-			SELECT
-				vs.patient,
-				vs.height,
-				vs.weight,
-				vs.bmi,
-				vs.nutrition_note
-			FROM `tabVital Signs` vs
-			INNER JOIN (
-				SELECT 
-					patient,
-					MAX(signs_date) AS latest_signs_date
-				FROM `tabVital Signs`
-				WHERE height IS NOT NULL AND height != ''
-				AND weight IS NOT NULL AND weight != ''
-				AND bmi IS NOT NULL AND bmi != ''
-				AND nutrition_note IS NOT NULL AND nutrition_note != ''
-				GROUP BY patient
-			) latest_vs ON vs.patient = latest_vs.patient AND vs.signs_date = latest_vs.latest_signs_date
-		),
-		LastVisit AS (
-			SELECT
-				pe.`patient`,
-				pe.`encounter_date`
-			FROM `tabPatient Encounter` pe
-			WHERE pe.`encounter_date` = (
-				SELECT MAX(pe2.`encounter_date`)
-				FROM `tabPatient Encounter` pe2
-				WHERE pe2.`patient` = pe.`patient`
-			)
-		),
-		VisitNotes AS (
-			SELECT
-				vn.`parent` AS `appointment_id`,
-				JSON_ARRAYAGG(
-					JSON_OBJECT(
-						'provider', vn.`provider`,
-						'note', vn.`note`,
-						'time', vn.`time`
-					)
-				) AS `visit_notes`
-			FROM `tabAppointment Note Table` vn
-			GROUP BY vn.`parent`
-		),
-		StatusLogs AS (
-			SELECT
-				tl.`parent` AS `appointment_id`,
-				JSON_ARRAYAGG(
-					JSON_OBJECT(
-						'status', tl.`status`,
-						'time', tl.`time`
-					)
-				) AS `status_log`
-			FROM `tabAppointment Time Logs` tl
-			GROUP BY tl.`parent`
+def get_appointments(doc=None, method=None, filters=None):
+	if doc:  # Check if the appointment document exists
+		appointment = get_appointment_details(doc.as_dict())
+		frappe.publish_realtime(
+			event="patient_appointments_updated",
+			message=appointment,
+			after_commit=True
 		)
+		return
 
-		SELECT
-			pa.`name` AS `appointment_id`,
-			pa.`patient_name` AS `patient_name`,
-			pa.`status` AS `status`,
-			pa.`custom_visit_status` AS `visit_status`,
-			pa.`custom_appointment_category` AS `appointment_category`,
-			pa.`appointment_type` AS `appointment_type`,
-			pa.`appointment_for` AS `appointment_for`,
-			pa.`practitioner_name` AS `practitioner_name`,
-			pa.`practitioner` AS `practitioner`,
-			hp.image AS `practitioner_image`,
-			pa.`department` AS `department`,
-			pa.`service_unit` AS `service_unit`,
-			pa.`duration` AS `duration`,
-			pa.`notes` AS `notes`,
-			pa.`appointment_date` AS `appointment_date`,
-			pa.`appointment_time` AS `appointment_time`,
-			pa.`custom_appointment_category` AS `appointment_category`,
-			pa.`service_unit` AS `service_unit`,
-			pa.`custom_payment_type` AS `payment_type`,
-			JSON_OBJECT(
-				'id', `tabPatient`.`name`,
-				'image', `tabPatient`.`image`,
-				'mobile', `tabPatient`.`mobile`,
-				'gender', `tabPatient`.`sex`,
-				'age', pa.`patient_age`,
-				'cpr', `tabPatient`.`custom_cpr`,
-				'date_of_birth', `tabPatient`.`dob`,
-				'height', lvs.`height`,
-				'weight', lvs.`weight`,
-				'bmi', lvs.`bmi`,
-				'last_visit', lpe.`encounter_date`,
-				'nutrition_note', lvs.`nutrition_note`
-			) AS `patient_details`,
-			vn.`visit_notes`,
-			tl.`status_log`
-		FROM
-			`tabPatient Appointment` pa
-		LEFT JOIN `tabPatient`
-			ON `tabPatient`.`name` = pa.`patient`
-		LEFT JOIN `tabHealthcare Practitioner` hp
-			ON hp.`name` = pa.`practitioner`
-		LEFT JOIN LatestVitalSigns lvs
-			ON lvs.`patient` = `tabPatient`.`name`
-		LEFT JOIN LastVisit lpe
-			ON lpe.`patient` = `tabPatient`.`name`
-		LEFT JOIN VisitNotes vn
-			ON vn.`appointment_id` = pa.`name`
-		LEFT JOIN StatusLogs tl
-			ON tl.`appointment_id` = pa.`name`
-		GROUP BY
-			pa.`name`
-		ORDER BY
-			pa.`appointment_date` ASC,
-			pa.`appointment_time` ASC
-	""", as_dict=True)
-	frappe.publish_realtime("patient_appointments", appointments)
+	# Step 1: Get the list of today's appointments
+	appointments = frappe.get_list('Patient Appointment',
+		filters=filters,
+		fields=[
+			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
+			'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner',
+			'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
+			'custom_payment_type', 'patient_age', 'patient'
+		],
+		order_by='appointment_date asc, appointment_time asc'
+	)
+
+	# Step 2: Add additional details for each appointment
+	for appointment in appointments:
+		appointment = get_appointment_details(appointment)
+		
 	return appointments
+
+def get_appointment_details(appointment):
+	# Get patient details
+	patient_details = frappe.get_doc('Patient', appointment['patient'])
+	appointment['patient_details'] = {
+		'id': patient_details.name,
+		'image': patient_details.image,
+		'mobile': patient_details.mobile,
+		'gender': patient_details.sex,
+		'age': appointment['patient_age'],
+		'cpr': patient_details.custom_cpr,
+		'date_of_birth': patient_details.dob
+	}
+
+	# Get latest vital signs for the patient
+	vital_signs = frappe.get_list('Vital Signs', 
+		filters={
+			'patient': appointment['patient']
+		},
+		fields=['height', 'weight', 'bmi', 'nutrition_note'],
+		order_by='signs_date desc',
+		limit=1
+	)
+	if vital_signs:
+		appointment.update(vital_signs[0])
+
+	# Get the last visit date
+	last_visit = frappe.get_list('Patient Encounter', 
+		filters={
+			'patient': appointment['patient']
+		},
+		fields=['encounter_date'],
+		order_by='encounter_date desc',
+		limit=1
+	)
+	if last_visit:
+		appointment['last_visit'] = last_visit[0]['encounter_date']
+
+	# Get visit notes
+	visit_notes = frappe.get_list('Appointment Note Table',
+		filters={'parent': appointment['name']},
+		fields=['provider', 'note', 'time']
+	)
+	appointment['visit_notes'] = visit_notes
+
+	# Get status log
+	status_log = frappe.get_list('Appointment Time Logs',
+		filters={'parent': appointment['name']},
+		fields=['status', 'time']
+	)
+	appointment['status_log'] = status_log
+
+	# Get practitioner image
+	practitioner = frappe.get_doc('Healthcare Practitioner', appointment['practitioner'])
+	appointment['practitioner_image'] = practitioner.image if practitioner else None
+	return appointment
 
 def calculate_age(dob):
 	today = datetime.datetime.today()
