@@ -507,7 +507,7 @@
                             <a-form-item label="Procedure Template">
                               <a-select
                               v-model:value="procedureForm.procedure_template"
-                              :options="$myresources.clinicalProcedureTemplate"
+                              :options="$resources.clinicalProcedureTemplates.data"
                               :fieldNames="{label: 'name', value: 'name'}"
                               style="width: 100%"
                               @change="value => {
@@ -531,8 +531,8 @@
                               <a-select
                               allowClear
                               v-model:value="procedureForm.medical_department"
-                              :options="$myresources.departments"
-                              :fieldNames="{label: 'department', value: 'department'}"
+                              :options="$resources.departments.data"
+                              :fieldNames="{label: 'department', value: 'name'}"
                               style="width: 100%"
                               @change="value => {
                                 autoSave('Clinical Procedure', procedureForm.name, 'medical_department', value)
@@ -543,7 +543,7 @@
                               <a-select
                               allowClear
                               v-model:value="procedureForm.service_unit"
-                              :options="$myresources.serviceUnits"
+                              :options="$resources.serviceUnits.data"
                               :fieldNames="{label: 'name', value: 'name'}"
                               style="width: 100%"
                               @change="value => {
@@ -605,7 +605,7 @@
                               <a-select
                               allowClear
                               v-model:value="procedureForm.sample"
-                              :options="$myresources.sampleCollections"
+                              :options="$resources.sampleCollections.data"
                               :fieldNames="{label: 'name', value: 'name'}"
                               style="width: 100%"
                               @change="value => {
@@ -659,6 +659,48 @@
                             </div>
                           </v-col>
                         </v-row>
+                        <v-row v-if="procedureForm.custom_annotations">
+                          <v-col>
+                            <h3 class="mt-3">Annotations</h3>
+                            <Galleria 
+                            :value="procedureForm.custom_annotations" 
+                            :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
+                            :numVisible="5" 
+                            :circular="true" 
+                            containerStyle="max-width: 850px" 
+                            :showItemNavigators="true" 
+                            :showThumbnails="false"
+                            :fullScreen="true"
+                            v-model:visible="showProcedureAnnotations"
+                            v-model:activeIndex="activeIndex"
+                            >
+                              <template #item="slotProps">
+                                <img 
+                                :src="slotProps.item.image" 
+                                :alt="slotProps.item.name" 
+                                style="height: 100%;"
+                                />
+                              </template>
+                              <template #thumbnail="slotProps">
+                                <img :src="slotProps.item.image" :alt="slotProps.item.name" style="display: block" />
+                              </template>
+                            </Galleria>
+                            <v-slide-group
+                              class="pa-4"
+                              selected-class="bg-success"
+                              show-arrows
+                            >
+                              <v-slide-group-item v-for="(doc, index) of procedureForm.custom_annotations" :key="index">
+                                <img 
+                                :src="doc.image" 
+                                :alt="doc.name" 
+                                style="cursor: pointer; height: 200px" 
+                                @click="() => {activeIndex = index; showProcedureAnnotations = true}"
+                                />
+                              </v-slide-group-item>
+                            </v-slide-group>
+                          </v-col>
+                        </v-row>
                       </v-container>
                     </v-sheet>
                     <div class="d-flex py-4 gap-2">
@@ -686,6 +728,7 @@
                               if(items && row)
                                 newChildRow({
                                   parentDoctype: 'Clinical Procedure',
+                                  prarentDocname: procedureForm.name,
                                   fieldName: 'items', 
                                   rules: {
                                     item_code: [{ required: true, message: 'Please choose an item!' }],
@@ -943,24 +986,49 @@
                             </div>
                           </v-col>
                         </v-row>
-                        <v-row>
+                        <v-row v-if="encounterForm.custom_annotations.some(row => row.type == 'Investigation')">
                           <v-col>
                             <h3 class="mt-3">Annotations</h3>
-                            <!-- <div class="card">
-                              <Galleria 
-                              :value="records.current_encounter.custom_annotations.filter(a => a.type == 'Investigation')" 
-                              :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
-                              :numVisible="5" 
-                              containerStyle="max-width: 640px"
+                            <Galleria 
+                            :value="encounterForm.custom_annotations.filter(row => row.type == 'Investigation')" 
+                            :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
+                            :numVisible="5" 
+                            :circular="true" 
+                            containerStyle="max-width: 850px" 
+                            :showItemNavigators="true" 
+                            :showThumbnails="false"
+                            :fullScreen="true"
+                            v-model:visible="showInvestigationAnnotations"
+                            v-model:activeIndex="activeIndex"
+                            >
+                              <template #item="slotProps">
+                                <img 
+                                :src="slotProps.item.image" 
+                                :alt="slotProps.item.name" 
+                                style="height: 100%;"
+                                />
+                              </template>
+                              <template #thumbnail="slotProps">
+                                <img :src="slotProps.item.image" :alt="slotProps.item.name" style="display: block" />
+                              </template>
+                            </Galleria>
+                            <v-slide-group
+                              class="pa-4"
+                              selected-class="bg-success"
+                              show-arrows
+                            >
+                              <v-slide-group-item 
+                              v-for="(doc, index) of encounterForm.custom_annotations.filter(row => row.type == 'Investigation')" 
+                              :key="index"
                               >
-                                <template #item="slotProps">
-                                  <img :src="slotProps.item.itemImageSrc" :alt="slotProps.item.alt" style="width: 100%" />
-                                </template>
-                                <template #thumbnail="slotProps">
-                                  <img :src="slotProps.item.thumbnailImageSrc" :alt="slotProps.item.alt" />
-                                </template>
-                              </Galleria>
-                            </div> -->
+                                <img 
+                                :src="doc.image" 
+                                :alt="doc.name" 
+                                style="cursor: pointer; height: 200px" 
+                                @click="() => {activeIndex = index; showInvestigationAnnotations = true}"
+                                />
+                              </v-slide-group-item>
+                            </v-slide-group>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -1323,7 +1391,7 @@
                             @update="(items, row, isNew) => {
                               if(items && row)
                                 newChildRow({
-                                  fieldName: 'therapies', 
+                                  fieldName: 'custom_allergies_table', 
                                   rules: {therapy_type: [{ required: true, message: 'Please choose a therapy_type!' }]},
                                   items, row, isNew
                                 })
@@ -1393,6 +1461,51 @@
                                 procedureActive = true
                               }">Annotation</v-btn>
                             </div>
+                          </v-col>
+                        </v-row>
+                        <v-row v-if="encounterForm.custom_annotations.some(row => row.type == 'Treatment')">
+                          <v-col>
+                            <h3 class="mt-3">Annotations</h3>
+                            <Galleria 
+                            :value="encounterForm.custom_annotations.filter(row => row.type == 'Treatment')" 
+                            :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
+                            :numVisible="5" 
+                            :circular="true" 
+                            containerStyle="max-width: 850px" 
+                            :showItemNavigators="true" 
+                            :showThumbnails="false"
+                            :fullScreen="true"
+                            v-model:visible="showTreatmentAnnotations"
+                            v-model:activeIndex="activeIndex"
+                            >
+                              <template #item="slotProps">
+                                <img 
+                                :src="slotProps.item.image" 
+                                :alt="slotProps.item.name" 
+                                style="height: 100%;"
+                                />
+                              </template>
+                              <template #thumbnail="slotProps">
+                                <img :src="slotProps.item.image" :alt="slotProps.item.name" style="display: block" />
+                              </template>
+                            </Galleria>
+                            <v-slide-group
+                              class="pa-4"
+                              selected-class="bg-success"
+                              show-arrows
+                            >
+                              <v-slide-group-item 
+                              v-for="(doc, index) of encounterForm.custom_annotations.filter(row => row.type == 'Treatment')" 
+                              :key="index"
+                              >
+                                <img 
+                                :src="doc.image" 
+                                :alt="doc.name" 
+                                style="cursor: pointer; height: 200px" 
+                                @click="() => {activeIndex = index; showTreatmentAnnotations = true}"
+                                />
+                              </v-slide-group-item>
+                            </v-slide-group>
                           </v-col>
                         </v-row>
                       </v-container>
@@ -1693,10 +1806,28 @@ export default {
         return data
       },
     }},
+    sampleCollections() { return { 
+      type: 'list', 
+      doctype: 'Sample Collection', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name'
+    }},
+    serviceUnits() { return { 
+			type: 'list', 
+			doctype: 'Healthcare Service Unit', 
+			fields:['name'], 
+			auto: true, 
+			orderBy: 'name'
+		}},
   },
   data() {
     return {
       consentFormDialog: false,
+      showProcedureAnnotations: false,
+      showInvestigationAnnotations: false,
+      showTreatmentAnnotations: false,
+      activeIndex: 0,
       consentFormHtml: '',
       currentFormStep: 0,
       currentVS: {
@@ -1918,7 +2049,7 @@ export default {
           this.showAlert('Sorry. There is an error!' , 10000)
       });
     },
-    newChildRow({parentDoctype ,fieldName, rules, items, row, isNew}) {
+    newChildRow({parentDoctype ,prarentDocname, fieldName, rules, items, row, isNew}) {
       const { validate } = Form.useForm(row, rules);
       validate().then(() => {
         this.lodingOverlay = true;
@@ -1927,10 +2058,9 @@ export default {
         delete formClone.modified_by
         delete formClone.name
         if(isNew){
-          console.log(formClone)
           this.$call('healthcare_doworks.api.general_methods.add_child_entry', {
             parent_doctype: parentDoctype || 'Patient Encounter', 
-            parent_doc_name: this.encounterForm.name, 
+            parent_doc_name: prarentDocname || this.encounterForm.name, 
             child_table_fieldname: fieldName, 
             child_data: formClone
           }).then(response => {
@@ -1950,7 +2080,7 @@ export default {
         else{
           this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {
             parent_doctype: parentDoctype || 'Patient Encounter', 
-            parent_doc_name: this.encounterForm.name, 
+            parent_doc_name: prarentDocname || this.encounterForm.name, 
             child_table_fieldname: fieldName, 
             filters: {name: row.name}, 
             update_data: formClone
@@ -1973,11 +2103,11 @@ export default {
         console.log('error', err);
       });
     },
-    deleteChildRow({parentDoctype, fieldName, rows, filterField}) {
+    deleteChildRow({parentDoctype, prarentDocname, fieldName, rows, filterField}) {
       rows.forEach(row => {
         this.$call('healthcare_doworks.api.general_methods.delete_child_entry', {
           parent_doctype: parentDoctype || 'Patient Encounter', 
-          parent_doc_name: this.encounterForm.name, 
+          parent_doc_name: prarentDocname || this.encounterForm.name, 
           child_table_fieldname: fieldName, 
           filters: {[filterField || 'name']: row}
         }).then(response => {
@@ -2038,6 +2168,8 @@ export default {
       this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone})
       .then(response => {
         this.lodingOverlay = false;
+        response.start_time = dayjs(response.start_date + ' ' + response.start_time)
+        response.start_date = dayjs(response.start_date)
         this.procedureForm = response
         this.encounterForm.custom_encounter_state = 'Procedure'
         this.$toast.add({ severity: 'success', summary: 'Success', detail: 'A new Clinical Procedure has been created', life: 2000 });

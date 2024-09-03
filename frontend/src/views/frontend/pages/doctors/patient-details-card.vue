@@ -4,17 +4,17 @@
         <template #content>
             <div class="box-body">
                 <div class="table-image appoint-doctor d-flex" v-if="patient">
-                <img 
-                width="28" 
-                height="28" 
-                class="rounded-circle avatar-xl align-self-center" 
-                alt=""
-                :src="patient.patient_details.image ? patient.patient_details.image :patient.patient_details.gender === 'Male' ? maleImage : femaleImage" 
-                />
-                <div style="padding: 10px 15px; align-self: center;">
-                    <h2 style="font-size: 18px; font-weight: 500; margin-bottom: 0">{{ patient.patient_name }}</h2>
-                    <span style="color: rgba(51, 52, 72, 0.5); font-size: 18px; font-weight: 500">{{ patient.service_unit }}</span>
-                </div>
+                    <v-avatar>
+                        <img
+                        class="w-20 h-20 rounded-circle"
+                        :src="patient.patient_details.image ? patient.patient_details.image :patient.patient_details.gender === 'Male' ? maleImage :femaleImage"
+                        />
+                        <!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
+                    </v-avatar>
+                    <div style="padding: 10px 15px; align-self: center;">
+                        <h2 style="font-size: 18px; font-weight: 500; margin-bottom: 0">{{ patient.patient_name }}</h2>
+                        <span style="color: rgba(51, 52, 72, 0.5); font-size: 18px; font-weight: 500">{{ patient.service_unit }}</span>
+                    </div>
                 </div>
                 <div class="row">						
                     <div class="col-12">

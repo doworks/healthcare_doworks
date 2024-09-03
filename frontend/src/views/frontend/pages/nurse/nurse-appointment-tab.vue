@@ -8,7 +8,6 @@
 		dataKey="id"
 		filterDisplay="row"
 		resizableColumns
-		:loading="loading"
 		:sortOrder="1"
 		:rows="10"
 		:rowsPerPageOptions="[10, 20, 50]"
@@ -16,6 +15,7 @@
 		selectionMode="single" 
 		:metaKeySelection="true" 
 		@row-contextmenu="handleRowContextMenu"
+		lazy
 		>
 			<template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
 			<template #loading> Loading Appointments data. Please wait.</template>
@@ -26,7 +26,7 @@
 			style="width: 20%"
 			>
 				<template #body="{ data }">
-					<!-- <router-link to="patient-profile"> -->
+					<router-link :to="{ name: 'patient', params: { patientId: data.patient_details.id } }">
 						<div class="flex align-items-center gap-2">
 							<v-avatar>
 								<img
@@ -42,8 +42,7 @@
 								<span class="fw-light text-teal ms-3" style="font-size: smaller">{{ data.patient_details.cpr }}</span>
 							</div><br/>
 						</div>
-
-					<!-- </router-link> -->
+					</router-link>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-input 
@@ -159,8 +158,8 @@
 					style="width: 100%; align-items: center;"
 					placeholder="Any Practitioner"
 					max-tag-count="responsive"
-					:options="$myresources.practitioners"
-					:fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
+					:options="$resources.practitioners.data"
+					:fieldNames="{label: 'practitioner_name', value: 'name'}"
 					>
 						<template #option="{ practitioner_name, image }">
 							<v-avatar size="25" :color="!image ? colorCache[practitioner_name] : ''">
@@ -221,7 +220,7 @@
 						class="p-column-filter"
 						style="width: 100%; align-items: center;"
 						placeholder="Any"
-						:options="$myresources.serviceUnits"
+						:options="$resources.serviceUnits.data"
 						:fieldNames="{label: 'name', value: 'name'}"
 						allowClear
 					>
@@ -233,60 +232,65 @@
 			</Column>
 			<Column style="width: 5%">
 				<template #body="{ data }">
-					<v-btn 
-						v-if="data.notes || data.visit_notes" 
-						size="small" 
-						variant="text" 
-						icon
-						@click="toggleOP"
-					>
-						<v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
-							<img :src="bellImage" width="40px" class="me-1"/>
-						</v-badge>
-					</v-btn>
-					<i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
-					<OverlayPanel ref="op">
-						<div class="flex flex-column gap-3 w-25rem">
-							<div v-if="data.notes">
-								<span class="fw-semibold d-block mb-2">Appointment Notes</span>
-								<a-textarea v-model:value="data.notes" disabled/>
-							</div>
-							<div v-if="data.visit_notes">
-								<!-- <span class="fw-semibold d-block mb-2">Visit Notes</span>
-								<ul class="list-none p-0 m-0 flex flex-column">
-									<li v-for="(note, index) in data.visit_notes" :key="index" class="flex align-items-center gap-2 mb-3">
-										<div>
-											<a-textarea v-model:value="note" disabled/>
-											<span>{{ note.time }}</span>
-										</div>
-										<div class="flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
-											<span>{{ note.provider }}</span>
-										</div>
-									</li>
-								</ul> -->
-								<DataTable 
-								:value="data.visit_notes" 
-								selectionMode="single" 
-								:metaKeySelection="true" 
-								dataKey="name" 
-								class="max-h-72 overflow-y-auto"
-								>
-									<template #header>
-										<div class="flex flex-wrap items-center justify-between gap-2">
-											<span class="text-xl font-bold">Visit Notes</span>
-										</div>
-									</template>
-									<Column field="time"></Column>
-									<Column field="provider"></Column>
-									<Column field="note"></Column>
-								</DataTable>
-							</div>
-						</div>
-					</OverlayPanel>
+					<div>
+						<v-btn 
+							v-if="data.notes || data.visit_notes.length > 0" 
+							size="small" 
+							variant="text" 
+							icon
+							@click="e => {
+								selectedRow = data
+								toggleOP(e)
+							}"
+						>
+							<v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
+								<img :src="bellImage" width="40px" class="me-1"/>
+							</v-badge>
+						</v-btn>
+						<i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
+					</div>
 				</template>
 			</Column>
-			<ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = null"/>
 		</DataTable>
+		<ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = null"/>
+		<OverlayPanel ref="op">
+			<div class="flex flex-column gap-3 w-25rem">
+				<div v-if="selectedRow.notes">
+					<span class="fw-semibold d-block mb-2">Appointment Notes</span>
+					<a-textarea v-model:value="selectedRow.notes" disabled/>
+				</div>
+				<div v-if="selectedRow.visit_notes">
+					<!-- <span class="fw-semibold d-block mb-2">Visit Notes</span>
+					<ul class="list-none p-0 m-0 flex flex-column">
+						<li v-for="(note, index) in selectedRow.visit_notes" :key="index" class="flex align-items-center gap-2 mb-3">
+							<div>
+								<a-textarea v-model:value="note" disabled/>
+								<span>{{ note.time }}</span>
+							</div>
+							<div class="flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
+								<span>{{ note.provider }}</span>
+							</div>
+						</li>
+					</ul> -->
+					<DataTable 
+					:value="selectedRow.visit_notes" 
+					selectionMode="single" 
+					:metaKeySelection="true" 
+					dataKey="name" 
+					class="max-h-72 overflow-y-auto"
+					>
+						<template #header>
+							<div class="flex flex-wrap items-center justify-between gap-2">
+								<span class="text-xl font-bold">Visit Notes</span>
+							</div>
+						</template>
+						<Column header="time" field="time"></Column>
+						<Column header="provider" field="provider"></Column>
+						<Column header="note" field="note"></Column>
+					</DataTable>
+				</div>
+			</div>
+		</OverlayPanel>
 	</div>
 </template>
 
@@ -310,28 +314,37 @@ export default {
 		VAvatar, VChip, VListItem, VEmptyState,
 	},
 	props: {
-		appointments: {
-			default: []
-		},
-		tab:{
-			type: String,
-			default: 'scheduled'
-		},
-		searchValue: {
-			type: String,
-			default: ''
-		},
-		selectedDate: {
-			default: dayjs().format('YYYY-MM-DD')
-		},
-		selectedDepartments: {
-			default: []
-		},
-		loading: {
-			type: Boolean,
-			defaul: true
-		}
+		appointments: {default: []},
+		tab:{type: String, default: 'scheduled'},
+		searchValue: {type: String, default: ''},
+		selectedDate: {default: dayjs().format('YYYY-MM-DD')},
+		selectedDepartments: {default: []},
+		loading: {type: Boolean, defaul: true}
 	},
+	resources: {
+		practitioners() { return { 
+			type: 'list', 
+			doctype: 'Healthcare Practitioner', 
+			fields: ['practitioner_name', 'image', 'department', 'name'], 
+			filter: {status: 'Active'},
+			auto: true, 
+			orderBy: 'practitioner_name',
+			transform(data) {
+				for (let d of data) {
+					if(!this.colorCache[d.practitioner_name])
+						this.colorCache[d.practitioner_name] = this.getColorFromName(d.practitioner_name)
+				}
+				return data
+			},
+		}},
+		serviceUnits() { return { 
+			type: 'list', 
+			doctype: 'Healthcare Service Unit', 
+			fields:['name'], 
+			auto: true, 
+			orderBy: 'name'
+		}},
+  	},
 	computed: {
 		updatedAppointments() {
 			return this.appointments.map(appointment => {
@@ -360,7 +373,7 @@ export default {
 			filters: {
 				global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 				patient_name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
-				cpr: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+				'patient_details.cpr': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				department: { value: null, matchMode: FilterMatchMode.IN },
 				patient_cpr: { value: null, matchMode: FilterMatchMode.CONTAINS },
 				practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN },
@@ -417,7 +430,7 @@ export default {
 					label: 'Patient Encounter',
 					icon: 'mdi mdi-bandage',
 					command: () => {
-						const appointmentId = this.selectedRow.appointment_id;
+						const appointmentId = this.selectedRow.name;
 						this.$router.push({ name: 'patient-encounter', params: { appointmentId } });
 					}
 				},
@@ -437,24 +450,23 @@ export default {
 		};
 	},
 	watch: {
-		'$myresources.practitioners': {
+		searchValue: {
 			handler(newValue) {
 				if(newValue)
-					newValue.forEach(value => {
-						if(!this.colorCache[value.practitioner_name])
-							this.colorCache[value.practitioner_name] = this.getColorFromName(value.practitioner_name)
-					})
-			},
-			immediate: true,
+					this.filters['global'].value = this.searchValue
+			}
 		},
-		searchValue() {
-			this.filters['global'].value = this.searchValue
+		selectedDepartments: {
+			handler(newValue) {
+				if(newValue)
+					this.filters['department'].value = this.selectedDepartments
+			}
 		},
-		selectedDepartments() {
-			this.filters['department'].value = this.selectedDepartments
-		},
-		selectedDate() {
-			this.filters['appointment_date'].value = dayjs(this.selectedDate).format('YYYY-MM-DD')
+		selectedDate: {
+			handler(newValue) {
+				if(newValue)
+					this.filters['appointment_date'].value = dayjs(this.selectedDate).format('YYYY-MM-DD')
+			}
 		},
 	},
 	methods: {
@@ -486,9 +498,11 @@ export default {
 			return colors[index];
 		},
 		hashStringToNumber(str) {
+			if(!str)
+				str = 'demo'
 			let hash = 0;
 			for (let i = 0; i < str.length; i++) {
-			hash = str.charCodeAt(i) + ((hash << 5) - hash);
+				hash = str.charCodeAt(i) + ((hash << 5) - hash);
 			}
 			return Math.abs(hash);
 		},
@@ -503,7 +517,7 @@ export default {
 		},
 		updateStatus(item) {
 			this.$call('healthcare_doworks.api.methods.change_status',
-				{docname: this.selectedRow.appointment_id, status: item.label}
+				{docname: this.selectedRow.name, status: item.label}
 			)
 		},
 		getNotesCount(data) {

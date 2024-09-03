@@ -20,7 +20,7 @@
                 <a-form-item label="Appointment Type" name="appointment_type">
                   <a-select
                   v-model:value="appointmentForm.appointment_type"
-                  :options="$myresources.appointmentTypes"
+                  :options="$resources.appointmentTypes.data"
                   @change="(value, option) => {
                     appointmentForm.appointment_for = option.allow_booking_for;
                     appointmentForm.duration = option.default_duration;
@@ -30,7 +30,7 @@
                     appointmentForm.service_unit = '';
                     appointmentForm.appointment_time = '';
                   }"
-                  :fieldNames="{label: 'appointment_type', value: 'appointment_type'}"
+                  :fieldNames="{label: 'appointment_type', value: 'name'}"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
@@ -49,8 +49,8 @@
                 >
                   <a-select
                   v-model:value="appointmentForm.practitioner_name"
-                  :options="$myresources.practitioners"
-                  :fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
+                  :options="$resources.practitioners.data"
+                  :fieldNames="{label: 'practitioner_name', value: 'name'}"
                   show-search
                   @change="(value, option) => {
                     appointmentForm.practitioner = option.name
@@ -65,8 +65,8 @@
                 >
                   <a-select
                   v-model:value="appointmentForm.department"
-                  :options="$myresources.departments"
-                  :fieldNames="{label: 'department', value: 'department'}"
+                  :options="$resources.departmentsdata"
+                  :fieldNames="{label: 'department', value: 'name'}"
                   show-search
                   ></a-select>
                 </a-form-item>
@@ -77,7 +77,7 @@
                 >
                   <a-select
                   v-model:value="appointmentForm.service_unit"
-                  :options="$myresources.serviceUnits"
+                  :options="$resources.serviceUnits.data"
                   :fieldNames="{label: 'name', value: 'name'}"
                   show-search
                   ></a-select>
@@ -106,8 +106,8 @@
                 <a-form-item label="Patient" name="patient">
                   <a-select
                   v-model:value="appointmentForm.patient_name"
-                  :options="$myresources.patients"
-                  :fieldNames="{label: 'patient_name', value: 'patient_name'}"
+                  :options="$resources.patients.data"
+                  :fieldNames="{label: 'patient_name', value: 'name'}"
                   @change="(value, option) => {
                     appointmentForm.patient = option.name;
                     appointmentForm.patient_sex = option.sex;
@@ -265,6 +265,39 @@ export default {
       default: {}
     },
 	},
+  resources: {
+    departments() { return { type: 'list', doctype: 'Medical Department', fields: ['name', 'department'], auto: true, orderBy: 'department'}},
+    appointmentTypes() { return { 
+      type: 'list', 
+      doctype: 'Appointment Type', 
+      fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
+      auto: true, 
+      orderBy: 'appointment_type'
+    }},
+    practitioners() { return { 
+      type: 'list', 
+      doctype: 'Healthcare Practitioner', 
+      fields: ['practitioner_name', 'image', 'department', 'name'], 
+      filter: {status: 'Active'},
+      auto: true, 
+      orderBy: 'practitioner_name'
+    }},
+    serviceUnits() { return { 
+      type: 'list', 
+      doctype: 'Healthcare Service Unit', 
+      fields:['name'], 
+      filters:{'allow_appointments': 1}, 
+      auto: true, 
+      orderBy: 'name'
+    }},
+    patients() { return { 
+      type: 'list', 
+      doctype: 'Patient', 
+      fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
+      auto: true, 
+      orderBy: 'patient_name'
+    }},
+  },
   computed: {
     dialogVisible: {
       get() {
@@ -348,7 +381,6 @@ export default {
         }
         if(form.type === 'New Appointment'){
           delete form['name'];
-          console.log(form)
           this.$call('healthcare_doworks.api.methods.new_doc', {form})
           .then(response => {
             this.lodingOverlay = false;
@@ -389,9 +421,7 @@ export default {
       toggle();
     },
     setPaymentDetails() {
-      console.log('hello')
       this.$call('healthcare.healthcare.utils.get_appointment_billing_item_and_rate', {doc: this.appointmentForm}).then(data => {
-        console.log(data)
         if (data.message) {
           this.appointmentForm.paid_amount = data.message.practitioner_charge
           this.appointmentForm.billing_item = data.message.service_item

@@ -35,33 +35,33 @@
         </v-btn>
       </div>
       <div class="filters flex flex-wrap flex-col pb-2">
-        <a-input v-model:value="searchFilter" placeholder="Search" size="large" style="width: 450px;">
+        <a-input v-model:value="filters['global'].value" placeholder="Search" size="large" style="width: 450px;">
           <template #prefix>
             <v-icon icon="mdi mdi-magnify" color="grey"></v-icon>
           </template>
         </a-input>
       </div>
-      <ListView
-      :columns="columns"
-      :rows="patients"
-      :options="{
-        onRowClick: openRow,
-        selectable: true,
-        showTooltip: true,
-        resizeColumn: true,
-        emptyState: {
-          title: 'No patients found',
-          description: 'Create a new patient to get started',
-          button: {
-            label: 'New Patient',
-            variant: 'solid',
-            onClick: openNew,
-          },
-        },
-      }"
-      @update:selections="(selections) => {selectedRows = Array.from(selections)}"
-      row-key="name"
-      />
+      <DataTable 
+      :value="patients" 
+      paginator 
+      :rows="20" 
+      removableSort 
+      :rowsPerPageOptions="[20, 100, 500, 2500]"
+      v-model:filters="filters"
+      :globalFilterFields="['custom_cpr', 'patient_name', 'mobile', 'email']"
+      selectionMode="single"
+      @row-click="openRow"
+      v-model:selection="selectedRows"
+      dataKey="name"
+      >
+        <template #empty> No Patients found </template>
+        <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
+        <Column header="Full Name" field="patient_name" sortable></Column>
+        <Column header="CPR" field="custom_cpr" sortable></Column>
+        <Column header="Age" field="age" sortable></Column>
+        <Column header="Mobile" field="mobile" sortable></Column>
+        <Column header="Email" field="email" sortable></Column>
+      </DataTable>
     </div>
     <v-overlay
       :model-value="loadingOverlay"
@@ -78,6 +78,7 @@
   
 <script >
 import { ListView } from 'frappe-ui'
+import { FilterMatchMode } from 'primevue/api';
 
 import {VIcon} from 'vuetify/components/VIcon';
 import {VToolbar, VToolbarItems} from 'vuetify/components/VToolbar';
@@ -91,14 +92,9 @@ export default {
     return {
       selectedRows: null,
       patients: [],
-      columns: [
-        {label: 'Full Name', key: 'patient_name'},
-        {label: 'CPR', key: 'custom_cpr'},
-        {label: 'Gender', key: 'sex'},
-        {label: 'Age', key: 'age'},
-        {label: 'Mobile', key: 'mobile'},
-        {label: 'Email', key: 'email'},
-      ],
+      filters: {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      },
       searchFilter: '',
       alertVisible: false,
     };
@@ -141,11 +137,10 @@ export default {
       });
     },
     openNew() {
-      this.row = {};
-      this.rowDialog = true;
+      this.$router.push({ name: 'patient', params: { patientId: 'new-patient' } });
     },
-    openRow(row) {
-      this.$router.push({ name: 'patient', params: { patientId: row.name } });
+    openRow({data}) {
+      this.$router.push({ name: 'patient', params: { patientId: data.name } });
     },
     calculateAge(birthdate) {
       const today = new Date();

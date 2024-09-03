@@ -14,37 +14,6 @@ import re
 def fetch_resources():
 	user = frappe.get_doc('User', frappe.session.user)
 	user_practitioner = frappe.db.get_value('Healthcare Practitioner', {'user_id': user.name}, ['name', 'practitioner_name', 'image', 'department'])
-	practitioners = frappe.db.get_list('Healthcare Practitioner', fields=['practitioner_name', 'image', 'department', 'name', 'user'])
-	patients = frappe.db.get_list('Patient', 
-		fields=['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'])
-	appointmentTypes = frappe.db.get_list('Appointment Type', fields=['name', 'appointment_type', 'allow_booking_for', 'default_duration'])
-	departments = frappe.db.get_list('Medical Department', fields=['department'])
-	serviceUnits = frappe.db.get_list('Healthcare Service Unit', fields=['name'], filters={'allow_appointments': 1})
-	serviceUnitTypes = frappe.db.get_list('Healthcare Service Unit Type', fields=['name'])
-	diagnosis = frappe.db.get_list('Diagnosis', fields=['diagnosis'])
-	for d in diagnosis:
-		d.label = d.diagnosis
-		d.value = d.diagnosis
-	complaints = frappe.db.get_list('Complaint', fields=['complaints'])
-	for c in complaints:
-		c.label = c.complaints
-		c.value = c.complaints
-	medications = frappe.db.get_list('Medication', fields=['name'])
-	items = frappe.db.get_list('Item', fields=['name', 'item_name'])
-	dosageForms = frappe.db.get_list('Dosage Form', fields=['dosage_form'])
-	prescriptionDosages = frappe.db.get_list('Prescription Dosage', fields=['dosage'])
-	prescriptionPeriods = frappe.db.get_list('Prescription Duration', fields=['name'])
-	labTestTemplates = frappe.db.get_list('Lab Test Template', fields=['name', 'department'])
-	codeValues = frappe.db.get_list('Code Value', fields=['name', 'display', 'code_system'])
-	docTypes = frappe.db.get_list('Code Value', fields=['name'])
-	roles = frappe.db.get_list('Role', fields=['name'], filters={'restrict_to_domain': 'Healthcare'})
-	patientCareTypes = frappe.db.get_list('Patient Care Type', fields=['name'])
-	therapyTypes = frappe.db.get_list('Therapy Type', fields=['name'])
-	clinicalProcedureTemplates = frappe.db.get_list('Clinical Procedure Template', fields=['name'])
-	observationTemplate = frappe.db.get_list('Observation Template', fields=['name'])
-	healthcareActivity = frappe.db.get_list('Healthcare Activity', fields=['name'])
-	clinicalProcedureTemplate = frappe.db.get_list('Clinical Procedure Template', fields=['name'])
-	sampleCollections = frappe.db.get_list('Sample Collection', fields=['name'])
 	return {
 		'user': {'name': user.full_name, 
 		   'user': user.name, 
@@ -55,50 +24,37 @@ def fetch_resources():
 		   'practitioner_department': user_practitioner[3] if user_practitioner is not None else None, 
 		   'roles': user.roles
 		},
-		'practitioners': practitioners,
-		'patients': patients,
-		'appointmentTypes': appointmentTypes,
-		'departments': departments,
-		'serviceUnits': serviceUnits,
-		'diagnosis': diagnosis,
-		'complaints': complaints,
-		'medications': medications,
-		'items': items,
-		'dosageForms': dosageForms,
-		'prescriptionDosages': prescriptionDosages,
-		'prescriptionDurations': prescriptionPeriods,
-		'labTestTemplates': labTestTemplates,
-		'codeValues': codeValues,
-		'docTypes': docTypes,
-		'roles': roles,
-		'patientCareTypes': patientCareTypes,
-		'serviceUnitTypes': serviceUnitTypes,
-		'therapyTypes': therapyTypes,
-		'clinicalProcedureTemplates': clinicalProcedureTemplates,
-		'observationTemplate': observationTemplate,
-		'healthcareActivity': healthcareActivity,
-		'clinicalProcedureTemplate': clinicalProcedureTemplate,
-		'sampleCollections': sampleCollections,
+		'siteName': frappe.local.site
 	}
-@frappe.whitelist()
-def get_redirect_url():
-	user = frappe.session.user
-	redirect_to = frappe.cache().hget("redirect_to", user)
-
-	# Clear the cache after retrieving it
-	if redirect_to:
-		frappe.cache().hdel("redirect_to", user)
-
-	return {"redirect_to": redirect_to}
-
-@frappe.whitelist(allow_guest=True)
-def get_site_name():
-	return frappe.local.site
 
 # Appointments Page
 @frappe.whitelist()
-def fetch_patient_appointments(filters=None):
-	return get_appointments(filters=filters)
+def fetch_patient_appointments(filters=None, start=0, limit=50, total_records=False):
+	total_count = frappe.db.count('Patient Appointment', filters) if total_records else 0
+	while True:
+		appointments = frappe.get_list(
+			'Patient Appointment',
+			filters=filters,
+			fields=[
+				'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
+				'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner',
+				'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
+				'custom_payment_type', 'patient_age', 'patient'
+			],
+			order_by='appointment_date asc, appointment_time asc',
+			start=start,
+			page_length=limit
+		)
+
+		for appointment in appointments:
+			appointment = get_appointment_details(appointment)
+
+		frappe.publish_realtime("patient_appointments_chunk", {"data": appointments, "total": total_count})
+
+		if len(appointments) < limit:
+			break
+
+		start += limit
 
 @frappe.whitelist()
 def fetch_nurse_records():
@@ -470,7 +426,7 @@ def get_updated_encounter(doc, method):
 	frappe.publish_realtime("patient_encounter", doc)
 	return doc
 
-def get_services(*args):
+def get_services(doc=None, method=None):
 	services = frappe.db.get_list('Service Request',
 		fields=[
 			'status', 'order_date', 'order_time', 'practitioner', 'practitioner_email', 'medical_department', 'referred_to_practitioner', 
@@ -488,7 +444,7 @@ def get_services(*args):
 	frappe.publish_realtime("services", services)
 	return services
 
-def get_appointments(doc=None, method=None, filters=None):
+def get_appointments(doc=None, method=None):
 	if doc:  # Check if the appointment document exists
 		appointment = get_appointment_details(doc.as_dict())
 		frappe.publish_realtime(
@@ -496,25 +452,6 @@ def get_appointments(doc=None, method=None, filters=None):
 			message=appointment,
 			after_commit=True
 		)
-		return
-
-	# Step 1: Get the list of today's appointments
-	appointments = frappe.get_list('Patient Appointment',
-		filters=filters,
-		fields=[
-			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
-			'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner',
-			'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
-			'custom_payment_type', 'patient_age', 'patient'
-		],
-		order_by='appointment_date asc, appointment_time asc'
-	)
-
-	# Step 2: Add additional details for each appointment
-	for appointment in appointments:
-		appointment = get_appointment_details(appointment)
-		
-	return appointments
 
 def get_appointment_details(appointment):
 	# Get patient details
@@ -591,3 +528,13 @@ def calculate_age(dob):
 		age_months += 12
 
 	return f"{age_years} Year(s) {age_months} Month(s) {age_days} Day(s)"
+
+def check_app_permission():
+	# if frappe.session.user == "Administrator":
+	# 	return True
+
+	# roles = frappe.get_roles()
+	# if any(role in ["System Manager", "Sales User", "Sales Manager", "Sales Master Manager"] for role in roles):
+	# 	return True
+
+	return True

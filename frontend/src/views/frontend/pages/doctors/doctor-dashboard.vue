@@ -65,7 +65,6 @@
             size="small"
             sortField="arriveTime"
             dataKey="id"
-            :loading="appointmentsLoading"
             :sortOrder="-1"
             paginator
             :rows="5"
@@ -82,10 +81,8 @@
                     <div class="d-flex align-items-center gap-2">
                       <v-avatar>
                         <img
-                          class="h-100 w-100"
-                          :src="data.patient_details.image ? 
-                            data.patient_details.image :
-                            data.patient_details.gender === 'Male' ? maleImage : femaleImage"
+                        class="h-100 w-100"
+                        :src="data.patient_details.image ? data.patient_details.image :data.patient_details.gender === 'Male' ? maleImage :femaleImage"
                         />
                         <!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
                       </v-avatar>
@@ -115,47 +112,52 @@
               </Column>
               <Column style="width: 5%">
                 <template #body="{ data }">
-                  <v-btn 
-                    v-if="data.notes || data.visit_notes" 
-                    size="small" 
-                    variant="text" 
-                    icon
-                    @click="toggleOP"
-                  >
-                    <v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
-                      <img :src="bellImage" width="40px" class="me-1"/>
-                    </v-badge>
-                  </v-btn>
-                  <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
-                  <OverlayPanel ref="op">
-                    <div class="flex flex-column gap-3 w-25rem">
-                      <div v-if="data.notes">
-                        <span class="fw-semibold d-block mb-2">Appointment Notes</span>
-                        <a-textarea v-model:value="data.notes" disabled/>
-                      </div>
-                      <div v-if="data.visit_notes">
-                        <DataTable 
-                        :value="data.visit_notes" 
-                        selectionMode="single" 
-                        :metaKeySelection="true" 
-                        dataKey="name" 
-                        class="max-h-72 overflow-y-auto"
-                        >
-                          <template #header>
-                            <div class="flex flex-wrap items-center justify-between gap-2">
-                              <span class="text-xl font-bold">Visit Notes</span>
-                            </div>
-                          </template>
-                          <Column field="time"></Column>
-                          <Column field="provider"></Column>
-                          <Column field="note"></Column>
-                        </DataTable>
-                      </div>
-                    </div>
-                  </OverlayPanel>
+                  <div>
+                    <v-btn 
+                      v-if="data.notes || data.visit_notes.length > 0" 
+                      size="small" 
+                      variant="text" 
+                      icon
+                      @click="e => {
+                        selectedRow = data
+                        toggleOP(e)
+                      }"
+                    >
+                      <v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
+                        <img :src="bellImage" width="40px" class="me-1"/>
+                      </v-badge>
+                    </v-btn>
+                    <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
+                  </div>
                 </template>
               </Column>
             </DataTable>
+            <OverlayPanel ref="op">
+              <div class="flex flex-column gap-3 w-25rem">
+                <div v-if="selectedRow.notes">
+                  <span class="fw-semibold d-block mb-2">Appointment Notes</span>
+                  <a-textarea v-model:value="selectedRow.notes" disabled/>
+                </div>
+                <div v-if="selectedRow.visit_notes">
+                  <DataTable 
+                  :value="selectedRow.visit_notes" 
+                  selectionMode="single" 
+                  :metaKeySelection="true" 
+                  dataKey="name" 
+                  class="max-h-72 overflow-y-auto"
+                  >
+                    <template #header>
+                      <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="text-xl font-bold">Visit Notes</span>
+                      </div>
+                    </template>
+                    <Column header="time" field="time"></Column>
+                    <Column header="provider" field="provider"></Column>
+                    <Column header="note" field="note"></Column>
+                  </DataTable>
+                </div>
+              </div>
+            </OverlayPanel>
           </div>
         </template>
         <template #footer>
@@ -213,6 +215,7 @@
 </template>
 <script>
 import dayjs from 'dayjs';
+import { ref } from 'vue'
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
@@ -238,24 +241,53 @@ export default {
 			maleImage:maleImage,
 			femaleImage:femaleImage,
       walkedInPatients:0,
-      appointments: [],
+      appointments: ref([]),
       currentTime: dayjs(),
       nextPatientDetails: null,
       isFlipped: false,
       appointmentsLoading: false,
+      totalRecords: 0,
     };
   },
   created() {
-    this.fetchRecords();
-    this.$socket.on('patient_appointments', response => {
-      if(response){
-        this.appointments = this.adjustAppointments(response)
+    this.$socket.on('patient_appointments_chunk', (chunk) => {
+      this.appointments = [...this.appointments, ...this.adjustAppointments(chunk.data)];
+      if(chunk.total)
+        this.totalRecords = chunk.total;
+      console.log(this.appointments)
+      if (this.appointments.length >= this.totalRecords) {
+        this.appointmentsLoading = false;
+      }
+    });
+    this.$socket.on('patient_appointments_updated', updatedAppointment => {
+      if (updatedAppointment) {
+        const appointmentDate = dayjs(updatedAppointment.appointment_date);
+
+        // Check if the updated appointment falls within the selected date range
+        const isInDateRange = this.selectedDates.some(date => date.isSame(appointmentDate, 'day'));
+
+        if (isInDateRange) {
+          const index = this.appointments.findIndex(app => app.name === updatedAppointment.name);
+
+          if (index !== -1) {
+            // Update the existing appointment
+            this.appointments.splice(index, 1, this.adjustAppointments([updatedAppointment])[0]);
+          } else {
+            // If not in the list, add it
+            this.appointments.push(this.adjustAppointments([updatedAppointment])[0]);
+          }
+        }
       }
     })
+    
+    this.$socket.on('connect', () => {
+      this.fetchRecords();  // Call fetchRecords only after the socket is connected
+    });
   },
   computed: {
     updatedAppointments() {
-      return this.appointments.filter(value => value.visit_status !== 'Completed' && value.visit_status !== 'No Show').map(appointment => {
+      return this.appointments.filter(val => val.visit_status !== 'Completed' && val.visit_status !== 'No Show' && val.visit_status !== 'Cancelled')
+      .map(appointment => {
         const arrivalTime = dayjs(appointment.arriveTime);
         const diffInSeconds = this.currentTime.diff(arrivalTime, 'second');
         const hours = Math.floor(diffInSeconds / 3600);
@@ -296,22 +328,18 @@ export default {
       return num1 / num2 * 100
     },
     visitStatus(data) {
-      if(data.status_log){
+      if(data.status_log?.length > 0){
         return data.status_log.reduce((latest, current) => {return new Date(current.time) > new Date(latest.time) ? current : latest}).status;
       }
       return 'Scheduled'
     },
     fetchRecords() {
+      this.appointments = []
       this.appointmentsLoading = true;
-      this.$call('healthcare_doworks.api.methods.fetch_patient_appointments')
-      .then(response => {
-        this.appointments = this.adjustAppointments(response)
-        this.appointmentsLoading = false;
+      this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
+        filters: {appointment_date: ['in', [dayjs().format('YYYY-MM-DD')]]},
+        total_records: true  // Only get the total count once
       })
-      .catch(error => {
-        this.appointmentsLoading = false;
-        console.error('Error fetching records:', error);
-      });
     },
     adjustAppointments(data) {
 			return [...(data || [])].filter(value => {

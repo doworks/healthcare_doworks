@@ -12,16 +12,20 @@
     >
       <div v-html="message"></div>
     </v-alert>
+    <Toast position="bottom-right"/>
     <!-- Page Content -->
     <div class="card p-4 m-4" style="height: calc(100% - 50px);">
-      <v-tabs
-      v-model="tab"
-      color="deep-purple-accent-4"
-      >
-        <v-tab value="details">Details</v-tab>
-        <v-tab value="medicalHestory">Medical History</v-tab>
-        <v-tab value="records">Medical Records</v-tab>
-      </v-tabs>
+      <div class="flex">
+        <v-tabs
+        v-model="tab"
+        color="deep-purple-accent-4"
+        >
+          <v-tab value="details">Details</v-tab>
+          <v-tab v-if="!isNew" value="medicalHestory">Medical History</v-tab>
+          <v-tab v-if="!isNew" value="records">Medical Records</v-tab>
+        </v-tabs>
+        <v-btn v-if="isNew" class="ml-auto" color="purple" variant="outlined" @click="saveNew">save</v-btn>
+      </div>
 
       <v-window v-model="tab">
         <v-window-item value="details">
@@ -30,60 +34,97 @@
               <v-row>
                 <v-col cols="12" md="6">
                   <a-form-item label="First Name" name="first_name" >
-                    <a-input v-model:value="form.first_name" @change="updateFullName"/>
+                    <a-input v-model:value="form.first_name" @change="updateFullName" @blur="event => {
+                      autoSave('Patient', form.name, {first_name: event.target.value, patient_name: form.patient_name})
+                    }"/>
                   </a-form-item>
                   <a-form-item label="Middle Name (optional)" name="middle_name">
-                    <a-input v-model:value="form.middle_name" @change="updateFullName"/>
+                    <a-input v-model:value="form.middle_name" @change="updateFullName" @blur="event => {
+                      autoSave('Patient', form.name, {middle_name: event.target.value, patient_name: form.patient_name})
+                    }"/>
                   </a-form-item>
                   <a-form-item label="Last Name" name="last_name" >
-                    <a-input v-model:value="form.last_name" @change="updateFullName"/>
+                    <a-input v-model:value="form.last_name" @change="updateFullName" @blur="event => {
+                      autoSave('Patient', form.name, {last_name: event.target.value, patient_name: form.patient_name})
+                    }"/>
                   </a-form-item>
                   <a-form-item label="Full Name" name="patient_name" >
                     <a-input v-model:value="form.patient_name" disabled/>
                   </a-form-item>
                   <a-form-item label="CPR" name="custom_cpr" >
-                    <a-input v-model:value="form.custom_cpr"/>
+                    <a-input v-model:value="form.custom_cpr" @blur="event => {autoSave('Patient', form.name, 'custom_cpr', event.target.value)}"/>
                   </a-form-item>
                   <a-form-item label="Gender" name="sex">
-                    <a-select v-model:value="form.sex" :options="$resources.genders.data" :fieldNames="{label: 'gender', value: 'gender'}"></a-select>
+                    <a-select 
+                    v-model:value="form.sex" 
+                    :options="$resources.genders.data" 
+                    :fieldNames="{label: 'gender', value: 'gender'}"
+                    @change="value => {autoSave('Patient', form.name, 'sex', value)}"
+                    allowClear
+                    ></a-select>
                   </a-form-item>
                   <a-form-item label="Blood Group" name="blood_group">
-                    <a-select v-model:value="form.blood_group" :options="bloodGroupOptions"></a-select>
+                    <a-select 
+                    v-model:value="form.blood_group" 
+                    :options="bloodGroupOptions"
+                    @change="value => {autoSave('Patient', form.name, 'blood_group', value)}"
+                    ></a-select>
                   </a-form-item>
                   <a-form-item label="Date of birth" name="dob">
-                    <a-date-picker v-model:value="form.dob" format="DD/MM/YYYY" class="w-full" @change="(date) => {form.age = get_age(date)}"/>
+                    <a-date-picker 
+                    v-model:value="form.dob" 
+                    format="DD/MM/YYYY" 
+                    class="w-full" 
+                    @change="(date, dateString) => {
+                      form.age = get_age(date)
+                      const day = dateString.split('/')[0]
+                      const month = dateString.split('/')[1]
+                      const year = dateString.split('/')[2]
+                      autoSave('Patient', form.name, 'dob', `${year}-${month}-${day}`)
+                    }"
+                    />
                   </a-form-item>
                   <h6>Age: {{ form.age }}</h6>
                 </v-col>
                 <v-col cols="12" md="6">
                   <a-form-item label="Status" name="Status" >
-                    <a-input v-model:value="form.status" disabled/>
+                    <a-input v-model:value="form.status" defaultValue="Active" disabled/>
                   </a-form-item>
                   <a-form-item label="Identification Number (UID)" name="uid">
-                    <a-input v-model:value="form.uid"/>
+                    <a-input v-model:value="form.uid" @blur="event => {autoSave('Patient', form.name, 'uid', event.target.value)}"/>
                   </a-form-item>
                   <a-form-item label="Inpatient Record" name="inpatient_record" >
                     <a-select 
                     v-model:value="form.inpatient_record" 
                     :options="$resources.inpatientRecords.data" 
                     :fieldNames="{label: 'name', value: 'name'}"
+                    @change="value => {autoSave('Patient', form.name, 'inpatient_record', value)}"
+                    allowClear
                     >
                   </a-select>
                   </a-form-item>
                   <a-form-item label="Inpatient Status" name="inpatient_status">
-                    <a-select v-model:value="form.inpatient_status" :options="inpatientStatusOptions"></a-select>
+                    <a-select 
+                    v-model:value="form.inpatient_status" 
+                    :options="inpatientStatusOptions"
+                    @change="value => {autoSave('Patient', form.name, 'inpatient_status', value)}"
+                    ></a-select>
                   </a-form-item>
                   <a-form-item label="Report Preference" name="report_preference">
-                    <a-select v-model:value="form.report_preference" :options="reportPreferenceOptions"></a-select>
+                    <a-select 
+                    v-model:value="form.report_preference" 
+                    :options="reportPreferenceOptions"
+                    @change="value => {autoSave('Patient', form.name, 'report_preference', value)}"
+                    ></a-select>
                   </a-form-item>
                   <a-form-item label="Mobile" name="mobile">
-                    <a-input v-model:value="form.mobile"/>
+                    <a-input v-model:value="form.mobile" @blur="event => {autoSave('Patient', form.name, 'mobile', event.target.value)}"/>
                   </a-form-item>
                   <a-form-item label="Phone" name="phone">
-                    <a-input v-model:value="form.phone"/>
+                    <a-input v-model:value="form.phone" @blur="event => {autoSave('Patient', form.name, 'phone', event.target.value)}"/>
                   </a-form-item>
                   <a-form-item label="Email" name="email">
-                    <a-input v-model:value="form.email"/>
+                    <a-input v-model:value="form.email" @blur="event => {autoSave('Patient', form.name, 'email', event.target.value)}"/>
                   </a-form-item>
                 </v-col>
               </v-row>
@@ -114,7 +155,15 @@
                   {label: 'Note', key: 'note', width: '270px'},
                 ]"
                 :rows="form.custom_allergies_table"
-                @update="(items) => {allergies = items}"
+                @update="(items, row, isNew) => {
+                  if(items && row)
+                    newChildRow({
+                      fieldName: 'custom_allergies_table', 
+                      rules: {},
+                      items, row, isNew
+                    })
+                }"
+                @delete="rows => {deleteChildRow({fieldName: 'custom_allergies_table', rows})}"
                 title="Allergies"
                 >
                   <template v-slot:dialog="{ row }">
@@ -125,7 +174,7 @@
                         :options="allergiesOptions"
                         ></a-select>
                       </a-form-item>
-                      <a-form-item label="Type">
+                      <a-form-item label="Severity">
                         <a-select
                         v-model:value="row.severity"
                         :options="severityOptions"
@@ -145,7 +194,15 @@
                   {label: 'Note', key: 'note', width: '320px'},
                 ]"
                 :rows="form.custom_infected_diseases"
-                @update="(items) => {infectedDiseases = items}"
+                @update="(items, row, isNew) => {
+                  if(items && row)
+                    newChildRow({
+                      fieldName: 'custom_infected_diseases', 
+                      rules: {},
+                      items, row, isNew
+                    })
+                }"
+                @delete="rows => {deleteChildRow({fieldName: 'custom_infected_diseases', rows})}"
                 title="Infected Diseases"
                 >
                   <template v-slot:dialog="{ row }">
@@ -171,7 +228,15 @@
                   {label: 'Note', key: 'notes', width: '150px'},
                 ]"
                 :rows="form.custom_surgical_history_table"
-                @update="(items) => {surgicalHistory = items}"
+                @update="(items, row, isNew) => {
+                  if(items && row)
+                    newChildRow({
+                      fieldName: 'custom_surgical_history_table', 
+                      rules: {},
+                      items, row, isNew
+                    })
+                }"
+                @delete="rows => {deleteChildRow({fieldName: 'custom_surgical_history_table', rows})}"
                 title="Surgical History"
                 >
                   <template v-slot:dialog="{ row }">
@@ -191,7 +256,7 @@
                         <a-input v-model:value="row.practitioner"/>
                       </a-form-item>
                       <a-form-item label="Note">
-                        <a-textarea v-model:value="row.note" :rows="4" />
+                        <a-textarea v-model:value="row.notes" :rows="4" />
                       </a-form-item>
                     </a-form>
                   </template>
@@ -200,13 +265,21 @@
               <v-col cols="12" lg="6">
                 <h5>Medications</h5>
                 <EditableTable :columns="[
-                  {label: 'Name', key: 'name1'},
-                  {label: 'Reason', key: 'reason'},
-                  {label: 'From Date', key: 'from_date'},
-                  {label: 'Status', key: 'status', }
+                    {label: 'Name', key: 'name1'},
+                    {label: 'Reason', key: 'reason'},
+                    {label: 'From Date', key: 'from_date'},
+                    {label: 'Status', key: 'status', }
                 ]"
                 :rows="form.custom_medications"
-                @update="(items) => {medications = items}"
+                @update="(items, row, isNew) => {
+                  if(items && row)
+                    newChildRow({
+                      fieldName: 'custom_medications', 
+                      rules: {},
+                      items, row, isNew
+                    })
+                }"
+                @delete="rows => {deleteChildRow({fieldName: 'custom_medications', rows})}"
                 title="Medications"
                 >
                   <template v-slot:dialog="{ row }">
@@ -244,7 +317,15 @@
                   {label: 'Note', key: 'note', width: '270px'},
                 ]"
                 :rows="form.custom_habits__social"
-                @update="(items) => {habits = items}"
+                @update="(items, row, isNew) => {
+                  if(items && row)
+                    newChildRow({
+                      fieldName: 'custom_habits__social', 
+                      rules: {},
+                      items, row, isNew
+                    })
+                }"
+                @delete="rows => {deleteChildRow({fieldName: 'custom_habits__social', rows})}"
                 title="Habits / Social"
                 >
                   <template v-slot:dialog="{ row }">
@@ -271,16 +352,30 @@
                   {label: 'Note', key: 'note', width: '270px'},
                 ]"
                 :rows="form.custom_risk_factors_table"
-                @update="(items) => {riskFactors = items}"
+                @update="(items, row, isNew) => {
+                  if(items && row)
+                    newChildRow({
+                      fieldName: 'custom_risk_factors_table', 
+                      rules: {},
+                      items, row, isNew
+                    })
+                }"
+                @delete="rows => {deleteChildRow({fieldName: 'custom_risk_factors_table', rows})}"
                 title="Risk Factors"
                 >
                   <template v-slot:dialog="{ row }">
                     <a-form layout="vertical">
                       <a-form-item label="Type">
-                        <a-input v-model:value="row.type"/>
+                        <a-select
+                        v-model:value="row.type"
+                        :options="riskFactorsOptions"
+                        ></a-select>
                       </a-form-item>
                       <a-form-item label="Severity">
-                        <a-input v-model:value="row.severity"/>
+                        <a-select
+                        v-model:value="row.severity"
+                        :options="severityOptions"
+                        ></a-select>
                       </a-form-item>
                       <a-form-item label="Note">
                         <a-textarea v-model:value="row.note" :rows="4" />
@@ -296,17 +391,25 @@
               <v-row>
                 <v-col cols="12" lg="6">
                   <a-form-item label="Chronic Diseases">
-                    <a-textarea v-model:value="form.custom_chronic_diseases" :rows="4" />
+                    <a-textarea 
+                    v-model:value="form.custom_chronic_diseases" 
+                    :rows="4" 
+                    @blur="event => {autoSave('Patient', form.name, 'custom_chronic_diseases', event.target.value)}"
+                    />
                   </a-form-item>
                 </v-col>
                 <v-col cols="12" lg="6">
                   <a-form-item label="Genetic Diseases">
-                    <a-textarea v-model:value="form.custom_genetic_conditions" :rows="4" />
+                    <a-textarea 
+                    v-model:value="form.custom_genetic_conditions" 
+                    :rows="4" 
+                    @blur="event => {autoSave('Patient', form.name, 'custom_genetic_conditions', event.target.value)}"
+                    />
                   </a-form-item>
                 </v-col>
               </v-row>
             </a-form>
-        </v-container>
+          </v-container>
         </v-window-item>
         <v-window-item value="records">
           <v-container fluid>
@@ -482,14 +585,9 @@ export default {
     return {
       alertVisible: false,
       loadingOverlay: false,
+      isNew: false,
       tab: null,
-      form: ref({}),
-      allergies: [],
-      infectedDiseases: [],
-      surgicalHistory: [],
-      medications: [],
-      habits: [],
-      riskFactors: [],
+      form: ref({doctype: 'Patient'}),
       profileRangeFilter: null,
       vsDialogOpen: false,
       selectedVitalSigns: {},
@@ -518,13 +616,19 @@ export default {
     };
   },
   created() {
-    this.fetchRecords();
-    this.$socket.on('patients', response => {
-      if(response){
-        response.age = this.calculateAge(response.dob)
-        this.patients = response
-      }
-    })
+    if(this.$route.params.patientId == 'new-patient'){
+      this.isNew = true
+    }
+    else{
+      this.isNew = false
+      this.fetchRecords();
+      this.$socket.on('patients', response => {
+        if(response){
+          response.age = this.calculateAge(response.dob)
+          this.patients = response
+        }
+      })
+    }
   },
   mounted() {
   },
@@ -543,7 +647,6 @@ export default {
         response.doc.age = this.get_age(response.doc.dob)
         response.doc.dob = dayjs(response.doc.dob)
         this.form = response.doc
-        console.log(this.form)
         this.loadingOverlay = false;
       })
       .catch(error => {
@@ -555,13 +658,6 @@ export default {
       this.form.patient_name = (this.form.first_name ? this.form.first_name : '' ) + 
       (this.form.middle_name ? ' ' + this.form.middle_name : '') + 
       (this.form.last_name ? ' ' + this.form.last_name : '')
-    },
-    openNew() {
-      this.row = {};
-      this.rowDialog = true;
-    },
-    openRow(row) {
-      this.$router.push({ name: 'patient', params: { patientId: row.name } });
     },
     get_age(birth) {
       let ageMS = Date.parse(Date()) - Date.parse(birth);
@@ -597,6 +693,123 @@ export default {
       if(row.weight)
         vitals += 'weight, '
       return vitals.slice(0, -2)
+    },
+    saveNew() {
+      let formClone = {...this.form}
+      formClone.dob = dayjs(this.form.dob).format('YYYY-MM-DD')
+      this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone})
+      .then(response => {
+        this.isNew = false
+        this.$router.push({ name: 'patient', params: { patientId: response.name } });
+        fetchRecords()
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
+        else
+          this.showAlert('Sorry. There is an error!' , 10000)
+      });
+    },
+    autoSave(doctype, name, fieldname, value) {
+      if(this.isNew) return;
+
+      this.$call('frappe.client.set_value', {doctype, name, fieldname, value})
+      .then(response => {
+        this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
+        else
+          this.showAlert('Sorry. There is an error!' , 10000)
+      });
+    },
+    newChildRow({parentDoctype ,fieldName, rules, items, row, isNew}) {
+      const { validate } = Form.useForm(row, rules);
+      validate().then(() => {
+        this.lodingOverlay = true;
+        let formClone = {...row}
+        delete formClone.modified
+        delete formClone.modified_by
+        delete formClone.name
+        if(isNew){
+          this.$call('healthcare_doworks.api.general_methods.add_child_entry', {
+            parent_doctype: parentDoctype || 'Patient', 
+            parent_doc_name: this.form.name, 
+            child_table_fieldname: fieldName, 
+            child_data: formClone
+          }).then(response => {
+            this.lodingOverlay = false;
+          }).catch(error => {
+            console.error(error);
+            let message = error.message.split('\n');
+            message = message.find(line => line.includes('frappe.exceptions'));
+            if(message){
+              const firstSpaceIndex = message.indexOf(' ');
+              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+            }
+            else
+              this.showAlert('Sorry. There is an error!' , 10000)
+          });
+        }
+        else{
+          this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {
+            parent_doctype: parentDoctype || 'Patient', 
+            parent_doc_name: this.form.name, 
+            child_table_fieldname: fieldName, 
+            filters: {name: row.name}, 
+            update_data: formClone
+          }).then(response => {
+            this.lodingOverlay = false;
+          }).catch(error => {
+            console.error(error);
+            let message = error.message.split('\n');
+            message = message.find(line => line.includes('frappe.exceptions'));
+            if(message){
+              const firstSpaceIndex = message.indexOf(' ');
+              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+            }
+            else
+              this.showAlert('Sorry. There is an error!' , 10000)
+          });
+        }
+      })
+      .catch(err => {
+        console.log('error', err);
+      });
+    },
+    deleteChildRow({parentDoctype, fieldName, rows, filterField}) {
+      rows.forEach(row => {
+        this.$call('healthcare_doworks.api.general_methods.delete_child_entry', {
+          parent_doctype: parentDoctype || 'Patient', 
+          parent_doc_name: this.form.name, 
+          child_table_fieldname: fieldName, 
+          filters: {[filterField || 'name']: row}
+        }).then(response => {
+          this.lodingOverlay = false;
+        }).catch(error => {
+          console.error(error);
+          let message = error.message.split('\n');
+          message = message.find(line => line.includes('frappe.exceptions'));
+          if(message){
+            const firstSpaceIndex = message.indexOf(' ');
+            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+          }
+          else
+            this.showAlert('Sorry. There is an error!' , 10000)
+        })
+        .catch(err => {
+          console.log('error', err);
+        });
+      })
     },
   },
   name: 'Patients List',

@@ -97,7 +97,6 @@ export default {
         detail: {
           callback: async (data) => {
             const base64Image = await this.convertBlobToBase64(data.blob);
-            console.log(base64Image)
             this.$call('healthcare_doworks.api.methods.upload_annotation', {
               doctype: this.doctype, 
               docname: this.docname, 

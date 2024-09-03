@@ -27,7 +27,7 @@
                     <a-select
                     v-model:value="form.status"
                     :fieldNames="{label: 'display', value: 'name'}"
-                    :options="$myresources.codeValues.filter(item => item.code_system === 'Request Status')"
+                    :options="$resources.codeValues.data.filter(item => item.code_system === 'Request Status')"
                     style="width: 100%"
                     ></a-select>
                   </a-form-item>
@@ -47,7 +47,7 @@
                   <a-form-item label="Ordered by Practitioner" name="practitioner">
                     <a-select
                     v-model:value="form.practitioner"
-                    :options="$myresources.practitioners"
+                    :options="$resources.practitioners.data"
                     :fieldNames="{label: 'practitioner_name', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -61,7 +61,7 @@
                   <a-form-item label="Referred to Practitioner" name="referred_to_practitioner">
                     <a-select
                     v-model:value="form.referred_to_practitioner"
-                    :options="$myresources.practitioners"
+                    :options="$resources.practitioners.data"
                     :fieldNames="{label: 'practitioner_name', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -69,13 +69,7 @@
                 </v-col>
                 <v-col cols="12" md="6">
                   <a-form-item label="Source Doc" name="source_doc">
-                    <a-select
-                    v-model:value="form.source_doc"
-                    :options="$myresources.doctypes"
-                    :fieldNames="{label: 'display', value: 'name'}"
-                    disabled
-                    style="width: 100%"
-                    ></a-select>
+                    <a-input v-model:value="form.source_doc" disabled/>
                   </a-form-item>
                   <a-form-item label="Source Doc" name="order_group">
                     <a-input v-model:value="form.order_group" disabled/>
@@ -92,7 +86,7 @@
                   <a-form-item label="Staff Role" name="staff_role" extra="The role responsible for performing the service">
                     <a-select
                     v-model:value="form.staff_role"
-                    :options="$myresources.roles"
+                    :options="$resources.roles.data"
                     :fieldNames="{label: 'name', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -100,7 +94,7 @@
                   <a-form-item label="Patient Care Type" name="patient_care_type">
                     <a-select
                     v-model:value="form.patient_care_type"
-                    :options="$myresources.patientCareTypes"
+                    :options="$resources.patientCareTypes.data"
                     :fieldNames="{label: 'name', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -110,7 +104,7 @@
                   <a-form-item label="Intent" name="intent" extra=" ">
                     <a-select
                     v-model:value="form.intent"
-                    :options="$myresources.codeValues.filter(item => item.code_system === 'Intent')"
+                    :options="$resources.codeValues.data.filter(item => item.code_system === 'Intent')"
                     :fieldNames="{label: 'display', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -118,7 +112,7 @@
                   <a-form-item label="Priority" name="priority">
                     <a-select
                     v-model:value="form.priority"
-                    :options="$myresources.codeValues.filter(item => item.code_system === 'Priority')"
+                    :options="$resources.codeValues.data.filter(item => item.code_system === 'Priority')"
                     :fieldNames="{label: 'display', value: 'name'}"
                     style="width: 100%"
                     ></a-select>
@@ -148,7 +142,7 @@
                   <a-form-item label="Healthcare Service Unit Type" name="healthcare_service_unit_type">
                     <a-select
                     v-model:value="form.healthcare_service_unit_type"
-                    :options="$myresources.serviceUnitTypes"
+                    :options="$resources.serviceUnitTypes.data"
                     :fieldNames="{label: 'name', value: 'name'}"
                     style="width: 100%"
                     @change="setTemplateOptions"
@@ -245,6 +239,34 @@
       patient: {
         default: {}
       }
+    },
+    resources: {
+      codeValues() { return { type: 'list', doctype: 'Code Value', fields: ['name', 'display', 'code_system'], auto: true, orderBy: 'display'}},
+      // doctypes() { return { type: 'list', doctype: 'Doctype', fields: ['name'], auto: true, orderBy: 'name'}},
+      roles() { return { type: 'list', doctype: 'Role', fields: ['name'], filters:{'restrict_to_domain': 'Healthcare'}, auto: true, orderBy: 'name'}},
+      patientCareTypes() { return { type: 'list', doctype: 'Patient Care Type', fields: ['name'], auto: true, orderBy: 'name'}},
+      serviceUnitTypes() { return { type: 'list', doctype: 'Healthcare Service Unit Type', fields: ['name'], auto: true, orderBy: 'name'}},
+
+      therapyTypes() { return { type: 'list', doctype: 'Therapy Type', fields: ['name'], auto: true, orderBy: 'name'}},
+      labTestTemplates() { return { type: 'list', doctype: 'Lab Test Template', fields: ['name', 'department'], auto: true, orderBy: 'name'}},
+      clinicalProcedureTemplates() { return { type: 'list', doctype: 'Clinical Procedure Template', fields: ['name'], auto: true, orderBy: 'name'}},
+      observationTemplate() { return { type: 'list', doctype: 'Observation Template', fields: ['name'], auto: true, orderBy: 'name'}},
+      healthcareActivity() { return { type: 'list', doctype: 'Healthcare Activity', fields: ['name'], auto: true, orderBy: 'name'}},
+      appointmentTypes() { return { 
+        type: 'list', 
+        doctype: 'Appointment Type', 
+        fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
+        auto: true, 
+        orderBy: 'appointment_type'
+      }},
+      practitioners() { return { 
+        type: 'list', 
+        doctype: 'Healthcare Practitioner', 
+        fields: ['practitioner_name', 'image', 'department', 'name'], 
+        filter: {status: 'Active'},
+        auto: true, 
+        orderBy: 'practitioner_name'
+      }},
     },
     computed: {
       dialogVisible: {
@@ -385,17 +407,17 @@
       },
       setTemplateOptions(value) {
         if(value === 'Therapy Type')
-          this.template_dn_options = this.$myresources.therapyTypes
+          this.template_dn_options = this.$resources.therapyTypes.data
         else if(value === 'Lab Test Template')
-          this.template_dn_options = this.$myresources.labTestTemplates
+          this.template_dn_options = this.$resources.labTestTemplates.data
         else if(value === 'Clinical Procedure Template')
-          this.template_dn_options = this.$myresources.clinicalProcedureTemplates
+          this.template_dn_options = this.$resources.clinicalProcedureTemplates.data
         else if(value === 'Appointment Type')
-          this.template_dn_options = this.$myresources.appointmentTypes
+          this.template_dn_options = this.$resources.appointmentTypes.data
         else if(value === 'Observation Template')
-          this.template_dn_options = this.$myresources.observationTemplate
+          this.template_dn_options = this.$resources.observationTemplate.data
         else if(value === 'Healthcare Activity')
-          this.template_dn_options = this.$myresources.healthcareActivity
+          this.template_dn_options = this.$resources.healthcareActivity.data
         else
           this.template_dn_options = []
       },

@@ -23,8 +23,24 @@
       <v-divider></v-divider>
 
       <v-list nav>
-        <v-list-item v-if="isHealthcareAdministrator" prepend-icon="fa fa-display" title="Doctor Dashboard" value="doctorDashboard" nav to="/doctor-dashboard"></v-list-item>
-        <v-list-item v-if="isNurse" prepend-icon="fa fa-display" title="Nurse Dashboard" value="nurseDashboard" nav to="/nurse-dashboard"></v-list-item>
+        <v-list-item 
+        v-if="isHealthcareAdministrator" 
+        prepend-icon="fa fa-display" 
+        title="Doctor Dashboard" 
+        value="doctorDashboard" 
+        nav 
+        to="/doctor-dashboard"
+        :class="{ 'v-list-item--active': $route.name == 'doctor-dashboard' }"
+        ></v-list-item>
+        <v-list-item 
+        v-if="isNurse" 
+        prepend-icon="fa fa-display" 
+        title="Nurse Dashboard" 
+        value="nurseDashboard" 
+        nav 
+        to="/nurse-dashboard"
+        :class="{ 'v-list-item--active': $route.name == 'nurse-dashboard' }"
+        ></v-list-item>
         <v-list-item 
         prepend-icon="fa fa-user" 
         title="Patient" 
@@ -32,7 +48,13 @@
         to="/patient" 
         :class="{ 'v-list-item--active': $route.name == 'patient' || $route.name == 'patient-list' }"
         ></v-list-item>
-        <v-list-item prepend-icon="fa fa-calendar-check" title="Appointments" value="appointments" to="/appointments"></v-list-item>
+        <v-list-item 
+        prepend-icon="fa fa-calendar-check" 
+        title="Appointments" 
+        value="appointments" 
+        to="/appointments"
+        :class="{ 'v-list-item--active': $route.name == 'appointments' }"
+        ></v-list-item>
         <v-list-item 
         prepend-icon="fa fa-user-injured" 
         title="Patient Encounter" 

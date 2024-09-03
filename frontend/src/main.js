@@ -41,15 +41,11 @@ import { fa } from 'vuetify/iconsets/fa'
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 
 //pages
-import Footer from '@/views/frontend/layouts/footer.vue'
-import IndexFooter from '@/views/frontend/pages/home/footer.vue'
 
 //Patient Pages
-import PatientFooter from '@/views/frontend/pages/patients/patientfooter.vue'
-import patientappointment from '@/views/frontend/pages/patients/dashboard/patientappointment.vue'
 
+import patientappointment from '@/views/frontend/pages/patients/dashboard/patientappointment.vue'
 import DoctorSidebar from '@/views/frontend/layouts/doctorsidebar.vue'
-import Dappointment from '@/views/frontend/pages/doctors/patient-profile/dappointment.vue'
 
 //Dialogs
 import PatientAppointmentDialog from '@/components/dialogs/patientAppointment.vue'
@@ -62,8 +58,6 @@ import PatientEncounterDialog from '@/components/dialogs/patientEncounter.vue'
 import ProcedureDialog from '@/components/dialogs/procedure.vue'
 import ServiceRequestDialog from '@/components/dialogs/serviceRequest.vue'
 import PatientMedicalHistoryDialog from '@/components/dialogs/patientMedicalHistory.vue'
-
-import VueKonva from 'vue-konva';
 						  // My App End //
 
 
@@ -71,14 +65,20 @@ const app = createApp(App);
 const auth = reactive(new Auth());
 
 // My App (Again)
-// app.component('ListView', ListView)
-
-app.component('footerindex',Footer)
-app.component('indexfooter',IndexFooter)
-app.component('patientfooter',PatientFooter)
 app.component('patientappointment',patientappointment)
 app.component('doctorsidebar',DoctorSidebar)
-app.component('dappointment',Dappointment)
+
+// Dialogs
+// app.component('PatientAppointmentDialog', () => import('@/components/dialogs/patientAppointment.vue'));
+// app.component('vitalSignsListDialog', () => import('@/components/dialogs/vitalSigns-list.vue'));
+// app.component('VitalSignsDialog', () => import('@/components/dialogs/vitalSigns.vue'));
+// app.component('medicationRequestDialog', () => import('@/components/dialogs/medicationRequest.vue'));
+// app.component('LabTestDialog', () => import('@/components/dialogs/labTest.vue'));
+// app.component('addAttachmentDialog', () => import('@/components/dialogs/addAttachment.vue'));
+// app.component('patientEncounterDialog', () => import('@/components/dialogs/patientEncounter.vue'));
+// app.component('ProcedureDialog', () => import('@/components/dialogs/procedure.vue'));
+// app.component('ServiceRequestDialog', () => import('@/components/dialogs/serviceRequest.vue'));
+// app.component('PatientMedicalHistoryDialog', () => import('@/components/dialogs/patientMedicalHistory.vue'));
 app.component('patientAppointmentDialog',PatientAppointmentDialog)
 app.component('vitalSignsListDialog',VitalSignsListDialog)
 app.component('vitalSignsDialog',VitalSignsDialog)
@@ -131,85 +131,46 @@ app.use(PrimeVue, {
     }
 }).use(ConfirmationService).use(ToastService);
 app.use(vuetify);
-app.use(VueKonva);
 // End Of My App (Again)
 
 // Plugins
 app.use(router);
 setConfig('resourceFetcher', frappeRequest)
-app.use(FrappeUI).use(resourcesPlugin)
+app.use(FrappeUI)
 
 // Configure route gaurds
 router.beforeEach(async (to, from, next) => {
-	if (to.matched.some((record) => !record.meta.isLoginPage)) {
-		// this route requires auth, check if logged in
-		// if not, redirect to login page.
-		if (!auth.isLoggedIn) {
-			window.location.href = '/login';
-		} else {
-			next();
-		}
-	} else {
-		if (auth.isLoggedIn) {
-			next({ name: 'Home' });
-		} else {
-			next();
-		}
-	}
+    try {
+        if (!auth.isLoggedIn && !to.meta.isLoginPage) {
+            window.location.href = '/login';
+            return;
+        } else if (auth.isLoggedIn && to.meta.isLoginPage) {
+            return next({ name: 'Home' });
+        }
+        next();
+    } catch (error) {
+        console.error('Error in route guard:', error);
+        next('/error'); // or handle error appropriately
+    }
 });
 
 // Handle Global Resources
-let resources = reactive({
-	user: {},
-	practitioners: [],
-	patients: [],
-	appointmentTypes: [],
-	departments: [],
-	serviceUnits: [],
-	complaints: [],
-	diagnosis: [],
-	medications: [],
-	items: [],
-	dosageForms: [],
-	prescriptionDosages: [],
-	prescriptionDurations: [],
-	labTestTemplates: [],
-	codeValues: [],
-	docTypes: [],
-	roles: [],
-	patientCareTypes: [],
-	serviceUnitTypes: [],
-	therapyTypes: [],
-	clinicalProcedureTemplates: [],
-	observationTemplate: [],
-	healthcareActivity: [],
-	clinicalProcedureTemplate: [],
-	sampleCollections: [],
-});
+let resources = reactive({user: {}, siteName: ''});
 
+// Global Properties,
+// components can inject this
+app.provide("$auth", auth);
+app.provide("$call", call);
 call('healthcare_doworks.api.methods.fetch_resources').then(response => {
 	if(response){
 		for (let key in resources) {
 			resources[key] = response[key]
 		}
+		app.provide("$socket", initSocket(response.siteName));
+		app.mount("#app");
 	}
 }).catch(error => {
 	console.error('Error fetching records:', error);
 });
 
 app.config.globalProperties.$myresources = resources;
-
-// Global Properties,
-// components can inject this
-call('healthcare_doworks.api.methods.get_site_name').then(response => {
-	if(response){
-		const mysocket = initSocket(response)
-		app.provide("$socket", mysocket);
-		app.provide("$auth", auth);
-		app.provide("$call", call);
-		app.mount("#app");
-	}
-}).catch(error => {
-	console.error('Error fetching site name: ', error);
-});
-

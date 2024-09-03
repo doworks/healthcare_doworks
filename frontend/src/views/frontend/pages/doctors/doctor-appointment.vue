@@ -65,8 +65,8 @@
               style="width: 100%; align-items: center; max-height: 62px;"
               placeholder="Departments"
               max-tag-count="responsive"
-              :options="$myresources.departments"
-              :fieldNames="{label:'department', value: 'department'}"
+              :options="$resources.departments.data"
+              :fieldNames="{label:'department', value: 'name'}"
               size="large"
             >
             </a-select>
@@ -96,6 +96,9 @@
           <v-badge color="indigo" :content="getBadgeNumber(key)" inline></v-badge>
         </v-tab>
       </v-tabs>
+      <div v-if="appointmentsLoading">
+        <v-progress-linear :value="(appointments.length / totalRecords) * 100" height="4"></v-progress-linear>
+      </div>
       <div class="tab-content">
         <v-window v-model="tab" disabled>
           <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
@@ -105,7 +108,6 @@
             :selectedDepartments="selectedDepartments" 
             :appointments="value" 
             :tab="key.toLowerCase()"
-            :loading="appointmentsLoading"
             ref="appointmentTabRef"
             @appointment-dialog="appointmentDialog"
             @appointment-note-dialog="appointmentNoteDialog"
@@ -181,7 +183,7 @@
         <v-card-text>
           <a-select
             v-model:value="appointmentForm.service_unit"
-            :options="$myresources.serviceUnits"
+            :options="$resources.serviceUnits.data"
             :fieldNames="{label: 'name', value: 'name'}"
             show-search
             style="min-width: 400px; max-width: 600px;"
@@ -216,7 +218,7 @@
         <v-card-text>
           <a-select
             v-model:value="appointmentForm.practitioner_name"
-            :options="$myresources.practitioners"
+            :options="$resources.practitioners.data"
             :fieldNames="{label: 'practitioner_name', value: 'name'}"
             show-search
             style="min-width: 400px; max-width: 600px;"
@@ -297,13 +299,47 @@ import Clock from '@/components/clock/Clock.vue';
 import { VIcon } from 'vuetify/components/VIcon';
 import { VToolbar, VToolbarItems } from 'vuetify/components/VToolbar';
 import { VBtnToggle } from 'vuetify/components/VBtnToggle';
+import { VProgressLinear } from 'vuetify/components/VProgressLinear';
 
 import AppointmentTab from './doctor-appointment-tab.vue'
 
 export default {
   inject: ['$socket', '$call'],
   components: {
-    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle,
+    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear,
+  },
+  resources: {
+    departments() { return { type: 'list', doctype: 'Medical Department', fields: ['name', 'department'], auto: true, orderBy: 'department'}},
+    appointmentTypes() { return { 
+      type: 'list', 
+      doctype: 'Appointment Type', 
+      fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
+      auto: true, 
+      orderBy: 'appointment_type'
+    }},
+    practitioners() { return { 
+      type: 'list', 
+      doctype: 'Healthcare Practitioner', 
+      fields: ['practitioner_name', 'image', 'department', 'name'], 
+      filter: {status: 'Active'},
+      auto: true, 
+      orderBy: 'practitioner_name'
+    }},
+    serviceUnits() { return { 
+      type: 'list', 
+      doctype: 'Healthcare Service Unit', 
+      fields:['name'], 
+      filters:{'allow_appointments': 1}, 
+      auto: true, 
+      orderBy: 'name'
+    }},
+    patients() { return { 
+      type: 'list', 
+      doctype: 'Patient', 
+      fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
+      auto: true, 
+      orderBy: 'patient_name'
+    }},
   },
   data() {
     return {
@@ -312,7 +348,7 @@ export default {
       groupedAppointments: {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],},
       searchValue: '',
       selectedDepartments: undefined,
-      appointmentsLoading: false,
+      appointmentsLoading: true,
       appointmentOpen: false,
       appointmentNoteOpen: false,
       vitalSignsOpen: false,
@@ -341,10 +377,21 @@ export default {
         {label: 'This Month', value: 'this month'},
         {label: 'Next Month',  value: 'next month'},
       ],
+      totalRecords: 0,
     };
   },
   created() {
-    this.fetchRecords();
+    this.$socket.on('patient_appointments_chunk', (chunk) => {
+      this.appointments = this.adjustAppointments([...this.appointments, ...chunk.data]);
+      if(chunk.total)
+        this.totalRecords = chunk.total;
+      this.groupAppointmentsByStatus();
+      this.updateProgress();
+      if (this.appointments.length >= this.totalRecords) {
+        this.appointmentsLoading = false;
+      }
+    });
+
     this.$socket.on('patient_appointments_updated', updatedAppointment => {
       if (updatedAppointment) {
         const appointmentDate = dayjs(updatedAppointment.appointment_date);
@@ -367,7 +414,12 @@ export default {
         }
       }
     })
+
+    this.$socket.on('connect', () => {
+      this.fetchRecords();  // Call fetchRecords only after the socket is connected
+    });
   },
+
   mounted() {
   },
   methods: {
@@ -379,23 +431,13 @@ export default {
       }, duration);
     },
     fetchRecords() {
+      this.appointments = []
+      const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'));
       this.appointmentsLoading = true;
-
-      const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
-
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
-        filters: {appointment_date: ['in', dates]}
+        filters: {appointment_date: ['in', dates]},
+        total_records: true  // Only get the total count once
       })
-      .then(response => {
-        console.log(response)
-        this.appointments = this.adjustAppointments(response)
-        this.groupAppointmentsByStatus();
-        this.appointmentsLoading = false;
-      })
-      .catch(error => {
-        this.appointmentsLoading = false;
-        console.error('Error fetching records:', error);
-      });
     },
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
@@ -493,7 +535,7 @@ export default {
     appointmentDialog(formType, isNew, row) {
       if(isNew){
         let duration = 0
-        this.$myresources.appointmentTypes.forEach(value => {
+        this.$resources.appointmentTypes.data.forEach(value => {
           if(value.appointment_type === 'Practitioner')
             duration = value.default_duration
         })
@@ -743,6 +785,14 @@ export default {
           this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
         }
       });
+    },
+    onPage(event) {
+      const page = event.page + 1;  // PrimeVue pages start from 0, adjust accordingly
+      const limit = event.rows;
+      this.fetchRecords(page, limit);
+    },
+    updateProgress() {
+      this.progressValue = (this.appointments.length / this.totalRecords) * 100;
     },
     // formattedDayOfWeek() {
     //   if (!this.selectedDates) return '';

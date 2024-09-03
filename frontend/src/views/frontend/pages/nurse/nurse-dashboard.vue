@@ -77,12 +77,14 @@
           <v-badge color="indigo" :content="getBadgeNumber(key)" inline></v-badge>
         </v-tab>
       </v-tabs>
+      <div v-if="appointmentsLoading">
+        <v-progress-linear :value="(appointments.length / totalRecords) * 100" height="4"></v-progress-linear>
+      </div>
       <v-window v-model="tab" disabled>
         <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
         <AppointmentTab 
         :appointments="value" 
         :tab="key.toLowerCase()"
-        :loading="appointmentsLoading"
         ref="appointmentTabRef"
         @appointment-note-dialog="appointmentNoteDialog"
         @vital-sign-dialog="vitalSignDialog"
@@ -91,118 +93,6 @@
         </v-window-item>
       </v-window>
     </div>
-    <!-- /Appointment Tab -->
-    <!-- <div class="row row-cols-lg-2 cont mb-3">
-      <Card class="col-12 col-lg-6 left-col p-0" style="overflow: hidden;">
-        <template #title>Upcoming Appintments</template>
-        <template #content>
-          <div class="table-responsive">
-            <DataTable
-            size="small"
-            sortField="arriveTime"
-            dataKey="id"
-            :loading="appointmentsLoading"
-            :sortOrder="-1"
-            paginator
-            :rows="5"
-            :value="updatedAppointments"
-            selectionMode="single" 
-            :metaKeySelection="true"
-            @row-click="onPatientDetails"
-            >
-              <template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
-              <template #loading> Loading Appointments data. Please wait.</template>
-              <Column header="Patient" field="patient">
-                <template #body="{ data }">
-                    <div class="d-flex align-items-center gap-2">
-                      <v-avatar>
-                        <img
-                          class="h-100 w-100"
-                          :src="data.patient_details.image ? 
-                            data.patient_details.image :
-                            data.patient_details.gender === 'Male' ? maleImage : femaleImage"
-                        />
-                      </v-avatar>
-                      <div style="padding: 10px 15px; vertical-align: middle; padding-right: 0;">
-                        <h6 style="font-size: 16px; font-weight: 500; margin-bottom: 0">{{ data.patient_name }}</h6>
-                        <span style="color: rgba(51, 52, 72, 0.5); font-size: 16px; font-weight: 500">{{ data.service_unit }}</span>
-                      </div><br/>
-                    </div>
-                </template>
-              </Column>
-              <Column header="Apt Time" sortable field="appointment_time">
-                <template #body="{ data }">
-                  <Tag :value="data.appointment_time_moment" severity="info" style="width: 95px" class="absolute"></Tag>
-                </template>
-              </Column>
-              <Column header="Arv Time" sortable field="arriveTime">
-                <template #body="{ data }">
-                  <Tag v-if="data.timeSinceArrived" :value="data.timeSinceArrived" severity="success" style="width: 95px" class="absolute"></Tag>
-                </template>
-              </Column>
-              <Column header="Status" field="status_log">
-                <template #body="{ data }">
-                  <v-chip class="ma-2" label size="small" :color="getSeverity(visitStatus(data))">{{ visitStatus(data) }}</v-chip>
-                </template>
-              </Column>
-              <Column style="width: 5%">
-                <template #body="{ data }">
-                  <v-btn 
-                    v-if="data.notes || (data.visit_notes.length > 0 && data.visit_notes[0]?.note)" 
-                    size="small" 
-                    variant="text" 
-                    icon
-                    @click="toggleOP"
-                  >
-                    <v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
-                      <img :src="bellImage"/>
-                    </v-badge>
-                  </v-btn>
-                  <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
-                  <OverlayPanel ref="op">
-                    <div class="d-flex flex-column gap-3 w-25rem">
-                      <div v-if="data.notes">
-                        <span class="fw-semibold d-block mb-2">Appointment Notes</span>
-                        <a-textarea v-model:value="data.notes" disabled/>
-                      </div>
-                      <div v-if="data.visit_notes.length > 0 && data.visit_notes[0]?.note">
-                        <span class="fw-semibold d-block mb-2">Visit Notes</span>
-                        <ul class="list-none p-0 m-0 flex flex-column">
-                          <li v-for="(note, index) in data.visit_notes" :key="index" class="d-flex align-items-center gap-2 mb-3">
-                            <div>
-                              <a-textarea v-model:value="note.note" disabled/>
-                              <span>{{ note.time }}</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
-                              <span>{{ note.provider }}</span>
-                            </div>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </OverlayPanel>
-                </template>
-              </Column>
-            </DataTable>
-          </div>
-        </template>
-        <template #footer>
-          <div class="d-flex mt-1">
-            <a href="/appointments">See All</a>
-          </div>
-        </template>
-      </Card>
-      <div v-if="nextPatientDetails" class="col-12 col-lg-6 right-col p-0 details-card mt-4 mt-md-0" style="min-height: 550px; height: auto;" ref="containerRef">
-        <div  class="flip-card-inner" :class="{ 'isFlipped': isFlipped }">
-          <div class="flip-card-front">
-            <patientDetailsCard :patient="nextPatientDetails" @cardRendered="adjustContainerHeight"/>
-          </div>
-          <div class="flip-card-back">
-            <patientDetailsCard :patient="nextPatientDetails"/>
-          </div>
-        </div>
-      </div>
-    </div> -->
     <div class="row row-cols-lg-2 cont mb-3" style="overflow: hidden;">
       <Card class="col-12 col-lg-6 left-col p-0" id="services" style="overflow: hidden;">
         <template #title>
@@ -213,7 +103,11 @@
             <template #empty><v-empty-state title="No Service Requests"></v-empty-state></template>
             <Column field="template_dn" header="Service Name"></Column>
             <Column field="order_date" header="Ordered On"></Column>
-            <Column field="status" header="Status"></Column>
+            <Column field="status" header="Status">
+              <template #body="{ data }">
+                {{ data.status.split('-')[0] }}
+              </template>
+            </Column>
             <Column field="practitioner" header="Ordered By"></Column>
           </DataTable>
         </template>
@@ -281,6 +175,7 @@ import { VAvatar } from 'vuetify/components/VAvatar';
 import { VChip } from 'vuetify/components/VChip';
 import { VListItem } from 'vuetify/components/VList';
 import { VEmptyState } from 'vuetify/labs/VEmptyState';
+import { VProgressLinear } from 'vuetify/components/VProgressLinear';
 
 import bellImage from '@/assets/img/animations/alarm.gif';
 import maleImage from '@/assets/img/male.png';
@@ -289,7 +184,25 @@ import femaleImage from '@/assets/img/female.png';
 export default {
   inject: ['$call', '$socket'],
   components: {
-    AppointmentTab, patientDetailsCard, VAvatar, VChip, VListItem, VEmptyState,
+    AppointmentTab, patientDetailsCard, VAvatar, VChip, VListItem, VEmptyState, VProgressLinear,
+  },
+  resources: {
+    services() { return { 
+      type: 'list', 
+      doctype: 'Service Request', 
+      fields: [
+				'status', 'order_date', 'order_time', 'practitioner', 'practitioner_email', 'medical_department', 'referred_to_practitioner', 
+				'source_doc', 'order_group', 'sequence', 'staff_role', 'patient_care_type', 'intent', 'priority', 'quantity', 'dosage_form', 
+				'as_needed', 'dosage', 'occurrence_date', 'occurrence_time', 'healthcare_service_unit_type', 'order_description', 
+				'patient_instructions', 'template_dt', 'template_dn', 'sample_collection_required', 'qty_invoiced', 'billing_status'
+			], 
+      filters: {staff_role: 'Nursing User'},
+      auto: true, 
+      transform(data) {
+        this.services = data
+        return data
+      },
+    }},
   },
   data() {
     return {
@@ -303,7 +216,7 @@ export default {
       currentTime: dayjs(),
       nextPatientDetails: null,
       isFlipped: false,
-      appointmentsLoading: false,
+      appointmentsLoading: true,
       vitalSignsOpen: false,
       medicalHistoryActive: false,
       appointmentNoteOpen: false,
@@ -320,14 +233,40 @@ export default {
         custom_chronic_diseases: [],
         custom_genetic_conditions: [],
       },
+      totalRecords: 0,
     };
   },
   created() {
-    this.fetchRecords();
-    this.$socket.on('patient_appointments', response => {
-      if(response){
-        this.appointments = this.adjustAppointments(response)
-        this.groupAppointmentsByStatus();
+    this.$socket.on('patient_appointments_chunk', (chunk) => {
+      this.appointments = [...this.appointments, ...this.adjustAppointments(chunk.data)];
+      if(chunk.total)
+        this.totalRecords = chunk.total;
+      this.groupAppointmentsByStatus();
+      this.updateProgress();
+      if (this.appointments.length >= this.totalRecords) {
+        this.appointmentsLoading = false;
+      }
+    });
+    this.$socket.on('patient_appointments_updated', updatedAppointment => {
+      if (updatedAppointment) {
+        const appointmentDate = dayjs(updatedAppointment.appointment_date);
+
+        // Check if the updated appointment falls within the selected date range
+        const isInDateRange = this.selectedDates.some(date => date.isSame(appointmentDate, 'day'));
+
+        if (isInDateRange) {
+          const index = this.appointments.findIndex(app => app.name === updatedAppointment.name);
+
+          if (index !== -1) {
+            // Update the existing appointment
+            this.appointments.splice(index, 1, this.adjustAppointments([updatedAppointment])[0]);
+          } else {
+            // If not in the list, add it
+            this.appointments.push(this.adjustAppointments([updatedAppointment])[0]);
+          }
+
+          this.groupAppointmentsByStatus();  // Re-group appointments by status
+        }
       }
     })
     this.$socket.on('service_request', response => {
@@ -335,6 +274,10 @@ export default {
         this.services = this.adjustAppointments(response)
       }
     })
+    
+    this.$socket.on('connect', () => {
+      this.fetchRecords();  // Call fetchRecords only after the socket is connected
+    });
   },
   computed: {
     updatedAppointments() {
@@ -380,25 +323,13 @@ export default {
         this.alertVisible = false;
       }, duration);
     },
-    visitStatus(data) {
-      if(data.status_log.length > 0 && data.status_log[data.status_log.length -1].status){
-        return data.status_log.reduce((latest, current) => {return new Date(current.time) > new Date(latest.time) ? current : latest}).status;
-      }
-      return 'Scheduled'
-    },
     fetchRecords() {
+      this.appointments = []
       this.appointmentsLoading = true;
-      this.$call('healthcare_doworks.api.methods.fetch_nurse_records')
-      .then(response => {
-        this.appointments = this.adjustAppointments(response.appointments)
-        this.services = response.services
-        this.groupAppointmentsByStatus();
-        this.appointmentsLoading = false;
+      this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
+        filters: {appointment_date: ['in', [dayjs().format('YYYY-MM-DD')]]},
+        total_records: true  // Only get the total count once
       })
-      .catch(error => {
-        this.appointmentsLoading = false;
-        console.error('Error fetching records:', error);
-      });
     },
     groupAppointmentsByStatus() {
       this.groupedAppointments = {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],}
@@ -506,6 +437,9 @@ export default {
     },
     nextAppointmentTimeDiff() {
       dayjs()
+    },
+    updateProgress() {
+      this.progressValue = (this.appointments.length / this.totalRecords) * 100;
     },
   },
   name: "doctor-dashboard",

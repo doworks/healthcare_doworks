@@ -14,7 +14,7 @@
                 <a-form-item label="Test Template" name="template">
                   <a-select
                     v-model:value="form.template"
-                    :options="$myresources.labTestTemplates"
+                    :options="$resources.labTestTemplates.data"
                     @change="(value, option) => {form.department = option.department}"
                     :fieldNames="{label: 'name', value: 'name'}"
                   ></a-select>
@@ -151,6 +151,15 @@ export default {
         department: '',
       }
     }
+  },
+  resources: {
+    labTestTemplates() { return { 
+      type: 'list', 
+      doctype: 'Lab Test Template', 
+      fields: ['name', 'department'], 
+      auto: true,
+      orderBy: 'name'
+    }},
   },
   computed: {
     dialogVisible: {

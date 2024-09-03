@@ -9,22 +9,15 @@ app_email = "sayed10998@gmail.com"
 app_license = "mit"
 
 # required_apps = []
-
-def custom_on_login(login_manager):
-    user = login_manager.user
-
-    # Check if the user is in the 'Healthcare Frontend' group
-    user_group = frappe.db.get_value("User Group Member", {"user": user, "parent": "Healthcare Frontend"}, "parent")
-
-    if user_group:
-        # Set the cache for redirection
-        frappe.cache().hset("redirect_to", user, "/frontend")
-    else:
-        # Default redirection for app users
-        frappe.cache().hset("redirect_to", user, "/app")
-
-# Register the on_login event in hooks.py
-on_login = "healthcare_doworks.hooks.custom_on_login"
+add_to_apps_screen = [
+	{
+		"name": "frontend",
+		"logo": "/assets/healthcare/healthcare.png",
+		"title": "Healthcare",
+		"route": "/frontend",
+        "has_permission": "healthcare_doworks.api.methods.check_app_permission",
+    }
+]
 
 # Includes in <head>
 # ------------------
@@ -32,7 +25,6 @@ on_login = "healthcare_doworks.hooks.custom_on_login"
 # include js, css files in header of desk.html
 # app_include_css = "/assets/healthcare_doworks/css/healthcare_doworks.css"
 # app_include_js = "/assets/healthcare_doworks/js/healthcare_doworks.js"
-app_include_js = "/assets/healthcare_doworks/js/app.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/healthcare_doworks/css/healthcare_doworks.css"

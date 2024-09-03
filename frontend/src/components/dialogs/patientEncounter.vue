@@ -55,8 +55,8 @@
                                 <a-form-item label="Symptoms" name="symptoms">
                                     <a-select
                                     v-model:value="form.symptomsArray"
-                                    :options="$myresources.complaints"
-                                    :fieldNames="{label: 'complaints', value: 'complaints'}"
+                                    :options="$resources.complaints.data"
+                                    :fieldNames="{label: 'name', value: 'name'}"
                                     mode="multiple"
                                     style="width: 100%"
                                     disabled
@@ -67,8 +67,8 @@
                                 <a-form-item label="Diagnosis" name="diagnosis">
                                     <a-select
                                     v-model:value="form.diagnosisArray"
-                                    :options="$myresources.diagnosis"
-                                    :fieldNames="{label: 'diagnosis', value: 'diagnosis'}"
+                                    :options="$resources.diagnosis.data"
+                                    :fieldNames="{label: 'name', value: 'name'}"
                                     mode="multiple"
                                     style="width: 100%"
                                     disabled
@@ -212,15 +212,13 @@ export default {
 		VContainer, VCol, VRow, VInfiniteScroll, VItemGroup, VItem,
 	},
 	props: {
-		isOpen: {
-            type: Boolean,
-            required: true,
-            default: false,
-        },
-        form: {
-            default: {},
-        },
+		isOpen: {type: Boolean, required: true, default: false},
+        form: {default: {}},
 	},
+    resources: {
+        complaints() { return { type: 'list', doctype: 'Complaint', fields: ['name'], auto: true, orderBy: 'name'}},
+        diagnosis() { return { type: 'list', doctype: 'Diagnosis', fields: ['name'], auto: true, orderBy: 'name'}},
+    },
     computed: {
         dialogVisible: {
             get() {
