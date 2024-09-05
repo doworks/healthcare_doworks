@@ -141,14 +141,14 @@
 			style="width: 20%"
 			>
 				<template #body="{ data }">
-					<div class="flex align-items-center gap-2">
+					<div class="flex align-items-center gap-2" v-if="data.practitioner_name">
 						<v-avatar :color="!data.practitioner_image ? colorCache[data.practitioner_name] || '': ''">
 							<img
 							v-if="data.practitioner_image"
 							class="h-100 w-100"
 							:src="data.practitioner_image"
 							/>
-							<span v-if="!data.practitioner_image" class="text-h6">{{ data.practitioner_name[0] }}</span>
+							<span v-if="!data.practitioner_image && data.practitioner_name" class="text-h6">{{ data.practitioner_name[0] }}</span>
 						</v-avatar>
 						<span>{{ data.practitioner_name }}</span>
 					</div>
@@ -172,7 +172,7 @@
 									class="h-100 w-100"
 									:src="image"
 								/>
-								<span v-if="!image" style="font-size: small;">{{ practitioner_name[0] }}</span>
+								<span v-if="!image && practitioner_name" style="font-size: small;">{{ practitioner_name[0] }}</span>
 							</v-avatar>
 							<span class="ms-2">{{ practitioner_name }}</span>
 						</template>
@@ -184,7 +184,7 @@
 										class="h-100 w-100"
 										:src="option.image"
 									/>
-									<span v-if="!option.image" style="font-size: xx-small;">{{ option.practitioner_name[0] }}</span>
+									<span v-if="!option.image && option.practitioner_name" style="font-size: xx-small;">{{ option.practitioner_name[0] }}</span>
 								</v-avatar>
 								<span>{{ option.practitioner_name }}</span>
 							</v-chip>
@@ -324,6 +324,7 @@
 							</template>
 						</Column>
 						<Column header="Time" field="creation"></Column>
+						<Column header="From" field="owner"></Column>
 						<Column header="To" field="full_name"></Column>
 						<Column header="Note" field="note"></Column>
 					</DataTable>
@@ -370,7 +371,7 @@ export default {
 			filter: {status: 'Active'},
 			auto: true, 
 			orderBy: 'practitioner_name',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'practitioners',
 			transform(data) {
 				for (let d of data) {
@@ -386,7 +387,7 @@ export default {
 			fields:['name'], 
 			auto: true, 
 			orderBy: 'name',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'serviceUnits'
 		}},
   	},

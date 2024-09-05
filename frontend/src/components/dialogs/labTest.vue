@@ -159,7 +159,7 @@ export default {
       fields: ['name', 'department'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'labTestTemplates'
     }},
   },

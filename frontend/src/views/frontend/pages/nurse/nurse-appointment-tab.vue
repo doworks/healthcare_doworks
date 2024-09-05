@@ -343,7 +343,7 @@ export default {
 			filter: {status: 'Active'},
 			auto: true, 
 			orderBy: 'practitioner_name',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'practitioners',
 			transform(data) {
 				for (let d of data) {
@@ -359,7 +359,7 @@ export default {
 			fields:['name'], 
 			auto: true, 
 			orderBy: 'name',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'serviceUnits'
 		}},
   	},

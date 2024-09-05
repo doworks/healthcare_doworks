@@ -493,7 +493,7 @@ def get_appointment_details(appointment):
 	# Get visit notes
 	visit_notes = frappe.get_all('Appointment Note Table',
 		filters={'parent': appointment['name']},
-		fields=['to', 'full_name', 'note', 'creation', 'read']
+		fields=['to', 'full_name', 'note', 'creation', 'read', 'owner']
 	)
 	appointment['visit_notes'] = visit_notes
 

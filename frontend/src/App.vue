@@ -34,7 +34,7 @@ export default {
 			fields: ['name', 'department'], 
 			auto: true, 
 			orderBy: 'department',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'departments'
 		}},
 		practitioners() { return { 
@@ -44,7 +44,7 @@ export default {
 			filter: {status: 'Active'},
 			auto: true, 
 			orderBy: 'practitioner_name',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'practitioners',
 		}},
 		serviceUnits() { return { 
@@ -54,7 +54,7 @@ export default {
 			filters:{'allow_appointments': 1}, 
 			auto: true, 
 			orderBy: 'name',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'serviceUnits',
 		}},
 		patients() { return { 
@@ -63,7 +63,7 @@ export default {
 			fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
 			auto: true, 
 			orderBy: 'patient_name',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'patients',
 		}},
 		medications() { return { 
@@ -72,7 +72,7 @@ export default {
 			fields: ['name'], 
 			auto: true, 
 			orderBy: 'name', 
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'medications',
 		}},
         items() { return { 
@@ -81,7 +81,7 @@ export default {
 			fields: ['name', 'item_name'], 
 			auto: true, 
 			orderBy: 'item_name', 
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'items',
 		}},
 		complaints() { return { 
@@ -90,7 +90,7 @@ export default {
 			fields: ['name'], 
 			auto: true,
 			orderBy: 'name',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'complaints',
 			// transform data before setting it
 			transform(data) {
@@ -107,7 +107,7 @@ export default {
 			fields: ['name'], 
 			auto: true,
 			orderBy: 'name',
-			pageLength: undefined,
+			pageLength: null,
 			cache: 'diagnosis',
 			// transform data before setting it
 			transform(data) {

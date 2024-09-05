@@ -247,10 +247,10 @@
         fields: ['name', 'display', 'code_system'], 
         auto: true, 
         orderBy: 'display',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'codeValues'
       }},
-      // doctypes() { return { type: 'list', doctype: 'Doctype', fields: ['name'], auto: true, orderBy: 'name', pageLength: undefined,}},
+      // doctypes() { return { type: 'list', doctype: 'Doctype', fields: ['name'], auto: true, orderBy: 'name', pageLength: null,}},
       roles() { return { 
         type: 'list', 
         doctype: 'Role', 
@@ -258,7 +258,7 @@
         filters:{'restrict_to_domain': 'Healthcare'}, 
         auto: true, 
         orderBy: 'name',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'roles'
       }},
       patientCareTypes() { return { 
@@ -267,7 +267,7 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'patientCareTypes'
       }},
       serviceUnitTypes() { return { 
@@ -276,7 +276,7 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'serviceUnitTypes'
       }},
 
@@ -286,7 +286,7 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'therapyTypes'
       }},
       labTestTemplates() { return { 
@@ -295,7 +295,7 @@
         fields: ['name', 'department'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'labTestTemplates'
       }},
       clinicalProcedureTemplates() { return { 
@@ -304,7 +304,7 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'clinicalProcedureTemplates'
       }},
       observationTemplate() { return { 
@@ -313,7 +313,7 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'observationTemplate'
       }},
       healthcareActivity() { return { 
@@ -322,7 +322,7 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'healthcareActivity'
       }},
       appointmentTypes() { return { 
@@ -331,7 +331,7 @@
         fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
         auto: true, 
         orderBy: 'appointment_type',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'appointmentTypes'
       }},
       practitioners() { return { 
@@ -341,7 +341,7 @@
         filter: {status: 'Active'},
         auto: true, 
         orderBy: 'practitioner_name',
-        pageLength: undefined,
+        pageLength: null,
         cache: 'practitioners'
       }},
     },

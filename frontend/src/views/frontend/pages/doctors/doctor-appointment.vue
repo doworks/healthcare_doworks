@@ -324,7 +324,7 @@ export default {
       fields: ['name', 'full_name'], 
       auto: true, 
       orderBy: 'full_name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'users'
     }},
     departments() { return { 
@@ -333,7 +333,7 @@ export default {
       fields: ['name', 'department'], 
       auto: true, 
       orderBy: 'department',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'departments'
     }},
     appointmentTypes() { return { 
@@ -342,7 +342,7 @@ export default {
       fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
       auto: true, 
       orderBy: 'appointment_type',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'appointmentTypes'
     }},
     practitioners() { return { 
@@ -352,7 +352,7 @@ export default {
       filter: {status: 'Active'},
       auto: true, 
       orderBy: 'practitioner_name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'practitioners'
     }},
     serviceUnits() { return { 
@@ -362,7 +362,7 @@ export default {
       filters:{'allow_appointments': 1}, 
       auto: true, 
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'serviceUnits'
     }},
     patients() { return { 
@@ -371,7 +371,7 @@ export default {
       fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
       auto: true, 
       orderBy: 'patient_name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'patients'
     }},
   },

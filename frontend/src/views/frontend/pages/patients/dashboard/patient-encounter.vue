@@ -1676,7 +1676,7 @@ export default {
       fields: ['*'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'medications'
     }},
     items() { return { 
@@ -1685,7 +1685,7 @@ export default {
       fields: ['name', 'item_code', 'item_name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'items'
     }},
     dosageForms() { return { 
@@ -1694,7 +1694,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'dosageForms'
     }},
     dosages() { return { 
@@ -1703,7 +1703,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'dosages'
     }},
     prescriptionDurations() { return { 
@@ -1712,7 +1712,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'prescriptionDurations'
     }},
     codeValues() { return { 
@@ -1721,7 +1721,7 @@ export default {
       fields: ['name', 'code_system'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'codeValues'
     }},
     clinicalProcedureTemplates() { return { 
@@ -1730,7 +1730,7 @@ export default {
       fields: ['name', 'template', 'medical_department'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'clinicalProcedureTemplates'
     }},
     departments() { return { 
@@ -1739,7 +1739,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'departments'
     }},
     practitioners() { return { 
@@ -1748,7 +1748,7 @@ export default {
       fields: ['name', 'practitioner_name', 'department'], 
       auto: true,
       orderBy: 'practitioner_name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'practitioners'
     }},
     patientCareTypes() { return { 
@@ -1757,7 +1757,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'patientCareTypes'
     }},
     therapyTypes() { return { 
@@ -1766,7 +1766,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'therapyTypes'
     }},
     labTests() { return { 
@@ -1776,7 +1776,7 @@ export default {
       filters: {is_billable: 1},
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'labTests'
     }},
     observationTemplate() { return { 
@@ -1785,7 +1785,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'observationTemplate'
     }},
     uoms() { return { 
@@ -1794,7 +1794,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'uoms'
     }},
     batches() { return { 
@@ -1803,7 +1803,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'batches'
     }},
     complaints() { return { 
@@ -1812,7 +1812,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'complaints',
       // transform data before setting it
       transform(data) {
@@ -1829,7 +1829,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'diagnosis',
       // transform data before setting it
       transform(data) {
@@ -1846,7 +1846,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'sampleCollections'
     }},
     serviceUnits() { return { 
@@ -1855,7 +1855,7 @@ export default {
 			fields:['name'], 
 			auto: true, 
 			orderBy: 'name',
-      pageLength: undefined,
+      pageLength: null,
       cache: 'serviceUnits'
 		}},
   },

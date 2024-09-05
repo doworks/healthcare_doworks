@@ -159,7 +159,7 @@ export default {
 			fields: ['name'], 
 			auto: true, 
 			orderBy: 'name', 
-			pageLength: undefined,
+			pageLength: null,
             cache: 'medications'
 		}},
         items() { return { 
@@ -168,7 +168,7 @@ export default {
 			fields: ['name', 'item_name'], 
 			auto: true, 
 			orderBy: 'item_name', 
-			pageLength: undefined,
+			pageLength: null,
             cache: 'items'
 		}},
         dosageForms() { return { 
@@ -177,7 +177,7 @@ export default {
             fields: ['name', 'dosage_form'], 
             auto: true, 
             orderBy: 'dosage_form', 
-            pageLength: undefined,
+            pageLength: null,
             cache: 'dosageForms'
         }},
         prescriptionDosages() { return { 
@@ -186,7 +186,7 @@ export default {
             fields: ['name', 'dosage'], 
             auto: true, 
             orderBy: 'dosage', 
-            pageLength: undefined,
+            pageLength: null,
             cache: 'prescriptionDosages'
         }},
         prescriptionDurations() { return { 
@@ -195,7 +195,7 @@ export default {
             fields: ['name'], 
             auto: true, 
             orderBy: 'name', 
-            pageLength: undefined,
+            pageLength: null,
             cache: 'prescriptionDurations'
         }},
     },

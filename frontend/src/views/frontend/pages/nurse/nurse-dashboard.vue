@@ -198,7 +198,7 @@ export default {
 			], 
       filters: {staff_role: 'Nursing User'},
       auto: true, 
-      pageLength: undefined,
+      pageLength: null,
       transform(data) {
         this.services = data
         return data
