@@ -137,14 +137,14 @@
 			style="width: 20%"
 			>
 				<template #body="{ data }">
-					<div class="flex align-items-center gap-2">
+					<div class="flex align-items-center gap-2" v-if="data.practitioner_name">
 						<v-avatar :color="!data.practitioner_image ? colorCache[data.practitioner_name] || '': ''">
 							<img
 							v-if="data.practitioner_image"
 							class="h-100 w-100"
 							:src="data.practitioner_image"
 							/>
-							<span v-if="!data.practitioner_image" class="text-h6">{{ data.practitioner_name[0] }}</span>
+							<span v-if="!data.practitioner_image && data.practitioner_name" class="text-h6">{{ data.practitioner_name[0] }}</span>
 						</v-avatar>
 						<span>{{ data.practitioner_name }}</span>
 					</div>
@@ -168,7 +168,7 @@
 									class="h-100 w-100"
 									:src="image"
 								/>
-								<span v-if="!image" style="font-size: small;">{{ practitioner_name[0] }}</span>
+								<span v-if="!image && practitioner_name" style="font-size: small;">{{ practitioner_name[0] }}</span>
 							</v-avatar>
 							<span class="ms-2">{{ practitioner_name }}</span>
 						</template>
