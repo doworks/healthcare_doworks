@@ -198,6 +198,7 @@ export default {
 			], 
       filters: {staff_role: 'Nursing User'},
       auto: true, 
+      pageLength: undefined,
       transform(data) {
         this.services = data
         return data
@@ -216,12 +217,13 @@ export default {
       currentTime: dayjs(),
       nextPatientDetails: null,
       isFlipped: false,
-      appointmentsLoading: true,
+      appointmentsLoading: false,
       vitalSignsOpen: false,
       medicalHistoryActive: false,
       appointmentNoteOpen: false,
       alertVisible: false,
       services: [],
+      newNote: {},
       selectedRow: {patient: ''},
       patient: {
         custom_allergies_table: [],
@@ -234,10 +236,12 @@ export default {
         custom_genetic_conditions: [],
       },
       totalRecords: 0,
+      selectedDates: [dayjs()],
     };
   },
   created() {
     this.$socket.on('patient_appointments_chunk', (chunk) => {
+      this.appointmentsLoading = true;
       this.appointments = [...this.appointments, ...this.adjustAppointments(chunk.data)];
       if(chunk.total)
         this.totalRecords = chunk.total;
@@ -274,10 +278,6 @@ export default {
         this.services = this.adjustAppointments(response)
       }
     })
-    
-    this.$socket.on('connect', () => {
-      this.fetchRecords();  // Call fetchRecords only after the socket is connected
-    });
   },
   computed: {
     updatedAppointments() {
@@ -307,6 +307,14 @@ export default {
     },
   },
   mounted() {
+    if (this.$socket.connected) {
+      this.fetchRecords();  // Fetch appointments if socket is already connected
+    } else {
+      this.$socket.on('connect', () => {
+        this.fetchRecords();  // Fetch records when the socket connects
+      });
+    }
+    
     setInterval(() => {
       this.currentTime = dayjs();
     }, 1000); // Update every second
@@ -325,7 +333,6 @@ export default {
     },
     fetchRecords() {
       this.appointments = []
-      this.appointmentsLoading = true;
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
         filters: {appointment_date: ['in', [dayjs().format('YYYY-MM-DD')]]},
         total_records: true  // Only get the total count once
@@ -334,7 +341,7 @@ export default {
     groupAppointmentsByStatus() {
       this.groupedAppointments = {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],}
       this.appointments.forEach(appointment => {
-        const status = appointment.visit_status;
+        const status = appointment.custom_visit_status;
         if (!this.groupedAppointments[status])
           this.groupedAppointments[status] = [];
         this.groupedAppointments[status].push(appointment);
@@ -365,34 +372,46 @@ export default {
         const date = dayjs().isSame(dayjs(value.appointment_date), 'day')
         return date
       }).map((d) => {
-        try {
-          if(typeof d.patient_details === 'string'){
-            d.patient_details = JSON.parse(d.patient_details)    
-          }
-          if(typeof d.visit_notes === 'string'){
-            let notes = JSON.parse(d.visit_notes).map(note => {
-              note.time = dayjs(note.time).format('h:mm A DD/MM/YYYY')
-              return note
-            })
-            d.visit_notes = notes
-          }
-          if(typeof d.status_log === 'string'){
-            d.status_log = JSON.parse(d.status_log)
-            d.arriveTime = '-'
-            d.status_log.forEach(value => {
-              if(value.status == 'Arrived')
-              d.arriveTime = dayjs(value.time)
-            })
-          }
-          
-        } catch (error) {
-          console.error('Error parsing JSON:', error);
-        }
+
+        d.visit_notes = d.visit_notes.map(note => {
+          note.creation = dayjs(note.creation).format('h:mm A DD/MM/YYYY')
+          return note
+        })
+        
+        d.arriveTime = '-'
+        d.status_log.forEach(value => {
+          if(value.status == 'Arrived')
+          d.arriveTime = dayjs(value.time)
+        })
 
         d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
         d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
         return d;
 
+      });
+    },
+    onSubmitAppointmentNote() {
+      this.$call('frappe.client.insert', 
+        {doc: {
+          doctype: 'Appointment Note Table', 
+          parent: this.appointmentForm.name, 
+          parentfield: 'custom_visit_notes', 
+          parenttype: 'Patient Appointment', 
+          to: this.newNote.to, 
+          full_name: this.newNote.full_name,
+          note: this.newNote.note, 
+          read: 0, 
+        }}
+      ).then(response => {
+        this.appointmentNoteOpen = false;
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
       });
     },
     onPatientDetails(row) {

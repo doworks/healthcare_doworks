@@ -41,27 +41,6 @@
           </template>
         </a-input>
       </div>
-      <!-- <ListView
-      :columns="columns"
-      :rows="encounters"
-      :options="{
-        onRowClick: openRow,
-        selectable: true,
-        showTooltip: true,
-        resizeColumn: true,
-        emptyState: {
-          title: 'No patient encounters found',
-          description: 'Create a new patient encounter to get started',
-          button: {
-            label: 'New Patient Encounter',
-            variant: 'solid',
-            onClick: openNew,
-          },
-        },
-      }"
-      @update:selections="(selections) => {selectedRows = Array.from(selections)}"
-      row-key="name"
-      /> -->
       <DataTable 
       :value="encounters" 
       paginator 
@@ -69,7 +48,7 @@
       removableSort 
       :rowsPerPageOptions="[20, 100, 500, 2500]"
       v-model:filters="filters"
-      :globalFilterFields="['name', 'patient_name', 'practitioner_name', 'status']"
+      :globalFilterFields="['name', 'patient_name', 'practitioner_name', 'status', 'encounter_date']"
       selectionMode="single"
       @row-click="openRow"
       v-model:selection="selectedRows"
@@ -77,49 +56,12 @@
       >
         <template #empty> No Patient Encounters found </template>
         <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
-        <Column header="Title" field="title" sortable style="width: 25%"></Column>
+        <Column header="ID" field="name" sortable style="width: 25%"></Column>
+        <Column header="Practitioner" field="practitioner_name" sortable style="width: 25%"></Column>
         <Column header="Status" field="status" sortable style="width: 25%"></Column>
         <Column header="Encounter Date" field="encounter_date" sortable style="width: 25%"></Column>
-        <Column header="ID" field="name" sortable style="width: 25%"></Column>
       </DataTable>
     </div>
-
-    <!-- <v-dialog v-model="rowDialog" :width="dialogWidth">
-      <v-card :title="title">
-        <template v-slot:text>
-          <slot name="dialog" :row="row"></slot>
-        </template>
-        <v-card-actions>
-          <v-btn prepend-icon="mdi mdi-close" size="small" variant="text" @click="hideDialog">Cancel</v-btn>
-          <v-btn prepend-icon="mdi mdi-check" size="small" variant="flat" color="green" @click="saveItem(row)">Save</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog v-model="deleteRowsDialog" header="Confirm" width="auto">
-      <v-card title="Confirm">
-        <template v-slot:text>
-          <div class="flex items-center gap-4">
-            <i class="pi pi-exclamation-triangle !text-3xl" />
-            <span v-if="selectedRows.length == 1">Are you sure you want to delete this encounter?</span>
-            <span v-else>Are you sure you want to delete the selected encounters?</span>
-          </div>
-        </template>
-        
-        <v-card-actions>
-          <v-btn
-            text="No"
-            variant="text"
-            @click="deleteRowsDialog = false"
-          ></v-btn>
-          <v-btn
-            text="Yes"
-            variant="text"
-            @click="deleteSelectedRows"
-          ></v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog> -->
 
     <v-overlay
     :model-value="loadingOverlay"
@@ -153,17 +95,8 @@ export default {
       deleteRowsDialog: false,
       selectedRows: null,
       encounters: [],
-      columns: [
-        {label: 'Title', key: 'title'},
-        {label: 'Status', key: 'status'},
-        {label: 'Encounter Date', key: 'encounter_date'},
-        {label: 'Practitioner Name', key: 'practitioner_name'},
-        {label: 'ID', key: 'name'},
-      ],
       searchFilter: '',
-      filters: {
-        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      },
+      filters: {global: { value: null, matchMode: FilterMatchMode.CONTAINS }},
     };
   },
   created() {
@@ -188,7 +121,7 @@ export default {
       this.loadingOverlay = true;
       this.$call('frappe.client.get_list', {
         doctype: 'Patient Encounter', 
-        fields: ['name', 'title', 'status', 'encounter_date', 'practitioner_name'],
+        fields: ['name', 'title', 'status', 'encounter_date', 'practitioner_name', 'patient_name'],
         order_by: 'modified desc',
         limit_page_length: null
       }).then(response => {

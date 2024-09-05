@@ -1675,77 +1675,99 @@ export default {
       doctype: 'Medication', 
       fields: ['*'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'medications'
     }},
     items() { return { 
       type: 'list', 
       doctype: 'Item', 
       fields: ['name', 'item_code', 'item_name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'items'
     }},
     dosageForms() { return { 
       type: 'list', 
       doctype: 'Dosage Form', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'dosageForms'
     }},
     dosages() { return { 
       type: 'list', 
       doctype: 'Prescription Dosage', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'dosages'
     }},
     prescriptionDurations() { return { 
       type: 'list', 
       doctype: 'Prescription Duration', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'prescriptionDurations'
     }},
     codeValues() { return { 
       type: 'list', 
       doctype: 'Code Value', 
       fields: ['name', 'code_system'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'codeValues'
     }},
     clinicalProcedureTemplates() { return { 
       type: 'list', 
       doctype: 'Clinical Procedure Template', 
       fields: ['name', 'template', 'medical_department'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'clinicalProcedureTemplates'
     }},
     departments() { return { 
       type: 'list', 
       doctype: 'Department', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'departments'
     }},
     practitioners() { return { 
       type: 'list', 
       doctype: 'Healthcare Practitioner', 
       fields: ['name', 'practitioner_name', 'department'], 
       auto: true,
-      orderBy: 'practitioner_name'
+      orderBy: 'practitioner_name',
+      pageLength: undefined,
+      cache: 'practitioners'
     }},
     patientCareTypes() { return { 
       type: 'list', 
       doctype: 'Patient Care Type', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'patientCareTypes'
     }},
     therapyTypes() { return { 
       type: 'list', 
       doctype: 'Therapy Type', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'therapyTypes'
     }},
     labTests() { return { 
       type: 'list', 
@@ -1753,28 +1775,36 @@ export default {
       fields: ['name'], 
       filters: {is_billable: 1},
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'labTests'
     }},
     observationTemplate() { return { 
       type: 'list', 
       doctype: 'Observation Template', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'observationTemplate'
     }},
     uoms() { return { 
       type: 'list', 
       doctype: 'UOM', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'uoms'
     }},
     batches() { return { 
       type: 'list', 
       doctype: 'Batch', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'batches'
     }},
     complaints() { return { 
       type: 'list', 
@@ -1782,6 +1812,8 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
+      pageLength: undefined,
+      cache: 'complaints',
       // transform data before setting it
       transform(data) {
         for (let d of data) {
@@ -1797,6 +1829,8 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
+      pageLength: undefined,
+      cache: 'diagnosis',
       // transform data before setting it
       transform(data) {
         for (let d of data) {
@@ -1811,14 +1845,18 @@ export default {
       doctype: 'Sample Collection', 
       fields: ['name'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'sampleCollections'
     }},
     serviceUnits() { return { 
 			type: 'list', 
 			doctype: 'Healthcare Service Unit', 
 			fields:['name'], 
 			auto: true, 
-			orderBy: 'name'
+			orderBy: 'name',
+      pageLength: undefined,
+      cache: 'serviceUnits'
 		}},
   },
   data() {

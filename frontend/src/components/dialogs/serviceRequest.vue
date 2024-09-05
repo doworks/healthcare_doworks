@@ -241,23 +241,98 @@
       }
     },
     resources: {
-      codeValues() { return { type: 'list', doctype: 'Code Value', fields: ['name', 'display', 'code_system'], auto: true, orderBy: 'display'}},
-      // doctypes() { return { type: 'list', doctype: 'Doctype', fields: ['name'], auto: true, orderBy: 'name'}},
-      roles() { return { type: 'list', doctype: 'Role', fields: ['name'], filters:{'restrict_to_domain': 'Healthcare'}, auto: true, orderBy: 'name'}},
-      patientCareTypes() { return { type: 'list', doctype: 'Patient Care Type', fields: ['name'], auto: true, orderBy: 'name'}},
-      serviceUnitTypes() { return { type: 'list', doctype: 'Healthcare Service Unit Type', fields: ['name'], auto: true, orderBy: 'name'}},
+      codeValues() { return { 
+        type: 'list', 
+        doctype: 'Code Value', 
+        fields: ['name', 'display', 'code_system'], 
+        auto: true, 
+        orderBy: 'display',
+        pageLength: undefined,
+        cache: 'codeValues'
+      }},
+      // doctypes() { return { type: 'list', doctype: 'Doctype', fields: ['name'], auto: true, orderBy: 'name', pageLength: undefined,}},
+      roles() { return { 
+        type: 'list', 
+        doctype: 'Role', 
+        fields: ['name'], 
+        filters:{'restrict_to_domain': 'Healthcare'}, 
+        auto: true, 
+        orderBy: 'name',
+        pageLength: undefined,
+        cache: 'roles'
+      }},
+      patientCareTypes() { return { 
+        type: 'list', 
+        doctype: 'Patient Care Type', 
+        fields: ['name'], 
+        auto: true, 
+        orderBy: 'name',
+        pageLength: undefined,
+        cache: 'patientCareTypes'
+      }},
+      serviceUnitTypes() { return { 
+        type: 'list', 
+        doctype: 'Healthcare Service Unit Type', 
+        fields: ['name'], 
+        auto: true, 
+        orderBy: 'name',
+        pageLength: undefined,
+        cache: 'serviceUnitTypes'
+      }},
 
-      therapyTypes() { return { type: 'list', doctype: 'Therapy Type', fields: ['name'], auto: true, orderBy: 'name'}},
-      labTestTemplates() { return { type: 'list', doctype: 'Lab Test Template', fields: ['name', 'department'], auto: true, orderBy: 'name'}},
-      clinicalProcedureTemplates() { return { type: 'list', doctype: 'Clinical Procedure Template', fields: ['name'], auto: true, orderBy: 'name'}},
-      observationTemplate() { return { type: 'list', doctype: 'Observation Template', fields: ['name'], auto: true, orderBy: 'name'}},
-      healthcareActivity() { return { type: 'list', doctype: 'Healthcare Activity', fields: ['name'], auto: true, orderBy: 'name'}},
+      therapyTypes() { return { 
+        type: 'list', 
+        doctype: 'Therapy Type', 
+        fields: ['name'], 
+        auto: true, 
+        orderBy: 'name',
+        pageLength: undefined,
+        cache: 'therapyTypes'
+      }},
+      labTestTemplates() { return { 
+        type: 'list', 
+        doctype: 'Lab Test Template', 
+        fields: ['name', 'department'], 
+        auto: true, 
+        orderBy: 'name',
+        pageLength: undefined,
+        cache: 'labTestTemplates'
+      }},
+      clinicalProcedureTemplates() { return { 
+        type: 'list', 
+        doctype: 'Clinical Procedure Template', 
+        fields: ['name'], 
+        auto: true, 
+        orderBy: 'name',
+        pageLength: undefined,
+        cache: 'clinicalProcedureTemplates'
+      }},
+      observationTemplate() { return { 
+        type: 'list', 
+        doctype: 'Observation Template', 
+        fields: ['name'], 
+        auto: true, 
+        orderBy: 'name',
+        pageLength: undefined,
+        cache: 'observationTemplate'
+      }},
+      healthcareActivity() { return { 
+        type: 'list', 
+        doctype: 'Healthcare Activity', 
+        fields: ['name'], 
+        auto: true, 
+        orderBy: 'name',
+        pageLength: undefined,
+        cache: 'healthcareActivity'
+      }},
       appointmentTypes() { return { 
         type: 'list', 
         doctype: 'Appointment Type', 
         fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
         auto: true, 
-        orderBy: 'appointment_type'
+        orderBy: 'appointment_type',
+        pageLength: undefined,
+        cache: 'appointmentTypes'
       }},
       practitioners() { return { 
         type: 'list', 
@@ -265,7 +340,9 @@
         fields: ['practitioner_name', 'image', 'department', 'name'], 
         filter: {status: 'Active'},
         auto: true, 
-        orderBy: 'practitioner_name'
+        orderBy: 'practitioner_name',
+        pageLength: undefined,
+        cache: 'practitioners'
       }},
     },
     computed: {

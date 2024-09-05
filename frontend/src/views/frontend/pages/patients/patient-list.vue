@@ -108,8 +108,6 @@ export default {
       }
     })
   },
-  mounted() {
-  },
   methods: {
     showAlert(message, duration) {
       this.message = message;
@@ -123,7 +121,8 @@ export default {
       this.$call('frappe.client.get_list', {
         doctype: 'Patient', 
         fields: ['name', 'patient_name', 'custom_cpr', 'sex', 'dob', 'mobile', 'email', 'custom_file_number'],
-        order_by: 'name'
+        order_by: 'name',
+        limit_page_length: null
       }).then(response => {
         this.patients = response.map(patient => {
           patient.age = this.calculateAge(patient.dob)

@@ -12,7 +12,7 @@ app_license = "mit"
 add_to_apps_screen = [
 	{
 		"name": "frontend",
-		"logo": "/assets/healthcare/healthcare.png",
+		"logo": "/assets/healthcare/images/healthcare.png",
 		"title": "Healthcare",
 		"route": "/frontend",
         "has_permission": "healthcare_doworks.api.methods.check_app_permission",

@@ -158,7 +158,9 @@ export default {
       doctype: 'Lab Test Template', 
       fields: ['name', 'department'], 
       auto: true,
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'labTestTemplates'
     }},
   },
   computed: {

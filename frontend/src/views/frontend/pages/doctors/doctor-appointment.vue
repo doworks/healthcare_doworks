@@ -97,7 +97,7 @@
         </v-tab>
       </v-tabs>
       <div v-if="appointmentsLoading">
-        <v-progress-linear :value="(appointments.length / totalRecords) * 100" height="4"></v-progress-linear>
+        <v-progress-linear :value="(appointments.length / totalRecords) * 100" color="purple" height="4"></v-progress-linear>
       </div>
       <div class="tab-content">
         <v-window v-model="tab" disabled>
@@ -108,7 +108,9 @@
             :selectedDepartments="selectedDepartments" 
             :appointments="value" 
             :tab="key.toLowerCase()"
+            :loading="appointmentsLoading"
             ref="appointmentTabRef"
+            @show-alert="showAlert"
             @appointment-dialog="appointmentDialog"
             @appointment-note-dialog="appointmentNoteDialog"
             @vital-sign-dialog="vitalSignDialog"
@@ -147,8 +149,15 @@
         title="Add Note"
       >
         <v-card-text>
-          <a-form-item label="Provider">
-            <a-input v-model:value="newNote.provider" />
+          <a-form-item label="To">
+            <a-select
+            v-model:value="newNote.to"
+            :options="$resources.users.data"
+            :fieldNames="{label: 'full_name', value: 'name'}"
+            show-search
+            style="min-width: 400px; max-width: 600px;"
+            @change="(value, option) => {newNote.full_name = option.full_name}"
+            ></a-select>
           </a-form-item>
           <a-form-item label="Notes">
             <a-textarea v-model:value="newNote.note" placeholder="Notes" :rows="4" />
@@ -309,13 +318,32 @@ export default {
     AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear,
   },
   resources: {
-    departments() { return { type: 'list', doctype: 'Medical Department', fields: ['name', 'department'], auto: true, orderBy: 'department'}},
+    users() { return { 
+      type: 'list', 
+      doctype: 'User', 
+      fields: ['name', 'full_name'], 
+      auto: true, 
+      orderBy: 'full_name',
+      pageLength: undefined,
+      cache: 'users'
+    }},
+    departments() { return { 
+      type: 'list', 
+      doctype: 'Medical Department', 
+      fields: ['name', 'department'], 
+      auto: true, 
+      orderBy: 'department',
+      pageLength: undefined,
+      cache: 'departments'
+    }},
     appointmentTypes() { return { 
       type: 'list', 
       doctype: 'Appointment Type', 
       fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
       auto: true, 
-      orderBy: 'appointment_type'
+      orderBy: 'appointment_type',
+      pageLength: undefined,
+      cache: 'appointmentTypes'
     }},
     practitioners() { return { 
       type: 'list', 
@@ -323,7 +351,9 @@ export default {
       fields: ['practitioner_name', 'image', 'department', 'name'], 
       filter: {status: 'Active'},
       auto: true, 
-      orderBy: 'practitioner_name'
+      orderBy: 'practitioner_name',
+      pageLength: undefined,
+      cache: 'practitioners'
     }},
     serviceUnits() { return { 
       type: 'list', 
@@ -331,14 +361,18 @@ export default {
       fields:['name'], 
       filters:{'allow_appointments': 1}, 
       auto: true, 
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'serviceUnits'
     }},
     patients() { return { 
       type: 'list', 
       doctype: 'Patient', 
       fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
       auto: true, 
-      orderBy: 'patient_name'
+      orderBy: 'patient_name',
+      pageLength: undefined,
+      cache: 'patients'
     }},
   },
   data() {
@@ -348,7 +382,7 @@ export default {
       groupedAppointments: {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],},
       searchValue: '',
       selectedDepartments: undefined,
-      appointmentsLoading: true,
+      appointmentsLoading: false,
       appointmentOpen: false,
       appointmentNoteOpen: false,
       vitalSignsOpen: false,
@@ -382,6 +416,7 @@ export default {
   },
   created() {
     this.$socket.on('patient_appointments_chunk', (chunk) => {
+      this.appointmentsLoading = true;
       this.appointments = this.adjustAppointments([...this.appointments, ...chunk.data]);
       if(chunk.total)
         this.totalRecords = chunk.total;
@@ -414,13 +449,16 @@ export default {
         }
       }
     })
-
-    this.$socket.on('connect', () => {
-      this.fetchRecords();  // Call fetchRecords only after the socket is connected
-    });
   },
 
   mounted() {
+    if (this.$socket.connected) {
+      this.fetchRecords();  // Fetch appointments if socket is already connected
+    } else {
+      this.$socket.on('connect', () => {
+        this.fetchRecords();  // Fetch records when the socket connects
+      });
+    }
   },
   methods: {
     showAlert(message, duration) {
@@ -433,7 +471,6 @@ export default {
     fetchRecords() {
       this.appointments = []
       const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'));
-      this.appointmentsLoading = true;
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
         filters: {appointment_date: ['in', dates]},
         total_records: true  // Only get the total count once
@@ -441,19 +478,16 @@ export default {
     },
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
-        if(typeof d.visit_notes === 'string'){
-          let notes = d.visit_notes.map(note => {
-            note.time = dayjs(note.time).format('h:mm A DD/MM/YYYY')
-            return note
-          })
-          d.visit_notes = notes
-        }
+        d.visit_notes = d.visit_notes.map(note => {
+          note.creation = dayjs(note.creation).format('h:mm A DD/MM/YYYY')
+          return note
+        })
         d.arriveTime = '-'
         d.status_log.forEach(value => {
           if(value.status == 'Arrived')
             d.arriveTime = dayjs(value.time)
         })
-
+        d.appointment_date_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('D/MM/YYYY');
 				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
 				d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
 
@@ -728,16 +762,16 @@ export default {
     },
     onSubmitAppointmentNote() {
       this.lodingOverlay = true;
-      console.log(this.appointmentForm)
       this.$call('frappe.client.insert', 
         {doc: {
           doctype: 'Appointment Note Table', 
           parent: this.appointmentForm.name, 
           parentfield: 'custom_visit_notes', 
           parenttype: 'Patient Appointment', 
-          provider: this.newNote.provider, 
+          to: this.newNote.to, 
+          full_name: this.newNote.full_name,
           note: this.newNote.note, 
-          time: dayjs().format('YYYY/MM/DD hh:mm:ss')
+          read: 0, 
         }}
       ).then(response => {
         this.lodingOverlay = false;

@@ -56,7 +56,6 @@
                                     <a-select
                                     v-model:value="form.symptomsArray"
                                     :options="$resources.complaints.data"
-                                    :fieldNames="{label: 'name', value: 'name'}"
                                     mode="multiple"
                                     style="width: 100%"
                                     disabled
@@ -68,7 +67,6 @@
                                     <a-select
                                     v-model:value="form.diagnosisArray"
                                     :options="$resources.diagnosis.data"
-                                    :fieldNames="{label: 'name', value: 'name'}"
                                     mode="multiple"
                                     style="width: 100%"
                                     disabled

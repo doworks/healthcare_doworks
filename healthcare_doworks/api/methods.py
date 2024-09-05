@@ -491,14 +491,14 @@ def get_appointment_details(appointment):
 		appointment['last_visit'] = last_visit[0]['encounter_date']
 
 	# Get visit notes
-	visit_notes = frappe.get_list('Appointment Note Table',
+	visit_notes = frappe.get_all('Appointment Note Table',
 		filters={'parent': appointment['name']},
-		fields=['provider', 'note', 'time']
+		fields=['to', 'full_name', 'note', 'creation', 'read']
 	)
 	appointment['visit_notes'] = visit_notes
 
 	# Get status log
-	status_log = frappe.get_list('Appointment Time Logs',
+	status_log = frappe.get_all('Appointment Time Logs',
 		filters={'parent': appointment['name']},
 		fields=['status', 'time']
 	)

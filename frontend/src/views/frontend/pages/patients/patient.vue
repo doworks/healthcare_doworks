@@ -554,15 +554,23 @@ export default {
     VTabs, VTab, VWindow, VWindowItem, VEmptyState,
   },
   resources: {
-    genders() { return { type: 'list', doctype: 'Gender', fields: ['gender'], auto: true } },
-    inpatientRecords() { return { type: 'list', doctype: 'Inpatient Record', fields: ['name'], auto: true } },
+    genders() { return { type: 'list', doctype: 'Gender', fields: ['gender'], auto: true, pageLength: undefined, cache: 'genders' } },
+    inpatientRecords() { return { 
+      type: 'list', 
+      doctype: 'Inpatient Record', 
+      fields: ['name'], 
+      auto: true, 
+      pageLength: undefined, 
+      cache: 'inpatientRecords'
+    }},
     vitalSigns() { return { 
       type: 'list', 
       doctype: 'Vital Signs', 
       fields: ['*'], 
       filters: {patient: this.$route.params.patientId},
       auto: true,
-      orderBy: 'signs_date desc'
+      orderBy: 'signs_date desc',
+      pageLength: undefined,
     }},
     consultations() { return { 
       type: 'list', 
@@ -570,7 +578,8 @@ export default {
       fields: ['name', 'creation', 'medical_department', 'practitioner_name', 'custom_appointment_category'], 
       filters: {patient: this.$route.params.patientId, custom_appointment_category: ['not in', 'Procedure', 'Session']},
       auto: true,
-      orderBy: 'creation desc'
+      orderBy: 'creation desc',
+      pageLength: undefined,
     }},
     procedures() { return { 
       type: 'list', 
@@ -578,7 +587,8 @@ export default {
       fields: ['*'], 
       filters: {patient: this.$route.params.patientId},
       auto: true,
-      orderBy: 'start_date desc'
+      orderBy: 'start_date desc',
+      pageLength: undefined,
     }},
   },
   data() {

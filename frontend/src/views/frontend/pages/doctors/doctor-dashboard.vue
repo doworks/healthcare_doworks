@@ -25,11 +25,11 @@
         <template #content>
           <div class="flex justify-between gap-8">
             <div class="flex flex-col gap-1">
-              <span class="text-surface-500 dark:text-surface-400 text-sm">Walked In Patients</span>
+              <span class="text-surface-500 dark:text-surface-400 text-sm">Walked-in Patients</span>
               <!-- <span class="font-bold text-lg">{{ val.value }}%</span>
               <h6 >Today Appointments</h6> -->
               <div class="d-flex">
-                <span class="text-green font-bold text-lg">{{walkedInPatients}}</span>
+                <span class="text-green font-bold text-lg">{{appointments.filter(val => val.status == 'Walked In').length}}</span>
               </div>
             </div>
             <span class="w-8 h-8 rounded-full inline-flex justify-center items-center text-center bg-green">
@@ -123,7 +123,11 @@
                         toggleOP(e)
                       }"
                     >
-                      <v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
+                      <v-badge 
+                      color="success" :content="data.visit_notes.filter(val => !val.read).length + (data.notes && 1)" 
+                      :offset-y="5" 
+                      :offset-x="6"
+                      >
                         <img :src="bellImage" width="40px" class="me-1"/>
                       </v-badge>
                     </v-btn>
@@ -133,12 +137,12 @@
               </Column>
             </DataTable>
             <OverlayPanel ref="op">
-              <div class="flex flex-column gap-3 w-25rem">
+              <div class="flex flex-column gap-3 w-min-96">
                 <div v-if="selectedRow.notes">
                   <span class="fw-semibold d-block mb-2">Appointment Notes</span>
-                  <a-textarea v-model:value="selectedRow.notes" disabled/>
+                  <a-textarea v-model:value="selectedRow.notes" :rows="4"/>
                 </div>
-                <div v-if="selectedRow.visit_notes">
+                <div v-if="selectedRow.visit_notes.length > 0">
                   <DataTable 
                   :value="selectedRow.visit_notes" 
                   selectionMode="single" 
@@ -151,9 +155,19 @@
                         <span class="text-xl font-bold">Visit Notes</span>
                       </div>
                     </template>
-                    <Column header="time" field="time"></Column>
-                    <Column header="provider" field="provider"></Column>
-                    <Column header="note" field="note"></Column>
+                    <Column>
+                      <template #body="{ data }">
+                        <div>
+                          <v-btn v-if="data.read" size="small" variant="text" icon="mdi mdi-eye" @click="() => { data.read = 0 }">
+                          </v-btn>
+                          <v-btn v-else-if="!data.read" size="small" variant="text" icon="mdi mdi-eye-off" @click="() => { data.read = 1 }">
+                          </v-btn>
+                        </div>
+                      </template>
+                    </Column>
+                    <Column header="Time" field="creation"></Column>
+                    <Column header="To" field="full_name"></Column>
+                    <Column header="Note" field="note"></Column>
                   </DataTable>
                 </div>
               </div>
@@ -247,6 +261,7 @@ export default {
       isFlipped: false,
       appointmentsLoading: false,
       totalRecords: 0,
+      selectedDates: [dayjs()],
     };
   },
   created() {
@@ -254,7 +269,6 @@ export default {
       this.appointments = [...this.appointments, ...this.adjustAppointments(chunk.data)];
       if(chunk.total)
         this.totalRecords = chunk.total;
-      console.log(this.appointments)
       if (this.appointments.length >= this.totalRecords) {
         this.appointmentsLoading = false;
       }
@@ -296,7 +310,7 @@ export default {
         if(appointment.arriveTime)
           return {
             ...appointment,
-            timeSinceArrived: `${hours}h ${minutes}m ${seconds}s`
+            timeSinceArrived: `${hours}h ${minutes}m`
           };
           return appointment
         });
@@ -318,9 +332,17 @@ export default {
     },
   },
   mounted() {
+    if (this.$socket.connected) {
+      this.fetchRecords();  // Fetch appointments if socket is already connected
+    } else {
+      this.$socket.on('connect', () => {
+        this.fetchRecords();  // Fetch records when the socket connects
+      });
+    }
+    
     setInterval(() => {
 			this.currentTime = dayjs();
-		}, 1000); // Update every second
+		}, 60000); // Update every second
     this.adjustContainerHeight();
   },
   methods: {
@@ -347,28 +369,18 @@ export default {
         const date = dayjs().isSame(dayjs(value.appointment_date), 'day')
         return date
       }).map((d) => {
-        try {
-          d.arriveTime = null
-          if(typeof d.patient_details === 'string'){
-            d.patient_details = JSON.parse(d.patient_details)    
-          }
-          if(typeof d.visit_notes === 'string'){
-            let notes = JSON.parse(d.visit_notes).map(note => {
-              note.time = dayjs(note.time).format('h:mm A DD/MM/YYYY')
-              return note
-            })
-            d.visit_notes = notes
-          }
-          if(typeof d.status_log === 'string'){
-            d.status_log = JSON.parse(d.status_log)
-            d.status_log.forEach(value => {
-              if(value.status == 'Arrived')
-              d.arriveTime = dayjs(value.time)
-            })
-          }
-        } catch (error) {
-          console.error('Error parsing JSON:', error);
-        }
+        d.arriveTime = null
+
+        d.visit_notes = d.visit_notes.map(note => {
+          note.creation = dayjs(note.creation).format('h:mm A DD/MM/YYYY')
+          return note
+        })
+
+        d.status_log.forEach(value => {
+          if(value.status == 'Arrived')
+          d.arriveTime = dayjs(value.time)
+        })
+
 				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
 
         return d;

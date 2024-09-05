@@ -58,6 +58,7 @@ import PatientEncounterDialog from '@/components/dialogs/patientEncounter.vue'
 import ProcedureDialog from '@/components/dialogs/procedure.vue'
 import ServiceRequestDialog from '@/components/dialogs/serviceRequest.vue'
 import PatientMedicalHistoryDialog from '@/components/dialogs/patientMedicalHistory.vue'
+import PatientQuick from '@/components/dialogs/patient-quick.vue'
 						  // My App End //
 
 
@@ -89,6 +90,7 @@ app.component('patientEncounterDialog',PatientEncounterDialog)
 app.component('procedureDialog',ProcedureDialog)
 app.component('serviceRequestDialog',ServiceRequestDialog)
 app.component('patientMedicalHistoryDialog',PatientMedicalHistoryDialog)
+app.component('patientQuick',PatientQuick)
 // Use other UI libraries and plugins
 app.use(Antd);
 
@@ -155,7 +157,7 @@ router.beforeEach(async (to, from, next) => {
 });
 
 // Handle Global Resources
-let resources = reactive({user: {}, siteName: ''});
+let resources = reactive({user: {}, siteName: '', colorCache: {}});
 
 // Global Properties,
 // components can inject this

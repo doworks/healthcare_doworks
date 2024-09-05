@@ -3,7 +3,7 @@
 		<DataTable
 		v-model:filters="filters"
 		size="small"
-		sortField="appointment_time"
+		:sortField="tab == 'arrived' ? 'arriveTime' : 'appointment_time'"
 		paginator
 		dataKey="id"
 		filterDisplay="row"
@@ -15,7 +15,6 @@
 		selectionMode="single" 
 		:metaKeySelection="true" 
 		@row-contextmenu="handleRowContextMenu"
-		lazy
 		>
 			<template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
 			<template #loading> Loading Appointments data. Please wait.</template>
@@ -26,7 +25,7 @@
 			style="width: 20%"
 			>
 				<template #body="{ data }">
-					<router-link :to="{ name: 'patient', params: { patientId: data.patient_details.id } }">
+					<router-link style="color: unset; text-decoration: unset" :to="{ name: 'patient', params: { patientId: data.patient_details.id } }">
 						<div class="flex align-items-center gap-2">
 							<v-avatar>
 								<img
@@ -62,7 +61,12 @@
 			style="width: 10%"
 			>
 				<template #body="{ data }">
-					{{ data.appointment_time_moment }}
+					<div class="text-center">
+						{{ data.appointment_date_moment }}
+					</div>
+					<div class="text-center">
+						{{ data.appointment_time_moment }}
+					</div>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-input 
@@ -78,7 +82,7 @@
 			field="arriveTime" 
 			:showFilterMenu="false" 
 			:showClearButton="false" 
-			style="width: 10%"
+			style="width: 5%"
 			>
 				<template #body="{ data }">
 					{{ data.timeSinceArrived }}
@@ -204,7 +208,7 @@
 					</a-select>
 				</template>
 			</Column>
-			<Column header="For" 
+			<Column header="Room" 
 			field="service_unit" 
 			:showFilterMenu="false" 
 			:showClearButton="false" 
@@ -230,9 +234,30 @@
 					</a-select>
 				</template>
 			</Column>
+			<Column header="Payment Type" 
+			field="custom_payment_type" 
+			:showFilterMenu="false" 
+			:showClearButton="false" 
+			style="width: 10%"
+			>
+
+			</Column>
 			<Column style="width: 5%">
 				<template #body="{ data }">
 					<div>
+						<v-btn 
+						v-if="tab == 'scheduled' || tab == 'arrived'" 
+						variant="text" 
+						color="green"
+						icon="mdi mdi-arrow-right-bold-outline" 
+						@click="() => { 
+							selectedRow = data
+							let next = ''
+							if(tab == 'scheduled') next = 'Arrived'
+							if(tab == 'arrived') next = 'Ready'
+							updateStatus({label: next}) 
+						}">
+						</v-btn>
 						<v-btn 
 							v-if="data.notes || data.visit_notes.length > 0" 
 							size="small" 
@@ -243,7 +268,11 @@
 								toggleOP(e)
 							}"
 						>
-							<v-badge color="success" :content="data.visit_notes.length + (data.notes && 1)" :offset-y="5" :offset-x="6">
+							<v-badge 
+							color="success" :content="data.visit_notes.filter(val => !val.read).length + (data.notes && 1)" 
+							:offset-y="5" 
+							:offset-x="6"
+							>
 								<img :src="bellImage" width="40px" class="me-1"/>
 							</v-badge>
 						</v-btn>
@@ -254,12 +283,12 @@
 		</DataTable>
 		<ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = null"/>
 		<OverlayPanel ref="op">
-			<div class="flex flex-column gap-3 w-25rem">
+			<div class="flex flex-column gap-3 w-min-96">
 				<div v-if="selectedRow.notes">
 					<span class="fw-semibold d-block mb-2">Appointment Notes</span>
-					<a-textarea v-model:value="selectedRow.notes" disabled/>
+					<a-textarea v-model:value="selectedRow.notes" :rows="4"/>
 				</div>
-				<div v-if="selectedRow.visit_notes">
+				<div v-if="selectedRow.visit_notes.length > 0">
 					<!-- <span class="fw-semibold d-block mb-2">Visit Notes</span>
 					<ul class="list-none p-0 m-0 flex flex-column">
 						<li v-for="(note, index) in selectedRow.visit_notes" :key="index" class="flex align-items-center gap-2 mb-3">
@@ -284,9 +313,19 @@
 								<span class="text-xl font-bold">Visit Notes</span>
 							</div>
 						</template>
-						<Column header="time" field="time"></Column>
-						<Column header="provider" field="provider"></Column>
-						<Column header="note" field="note"></Column>
+						<Column>
+							<template #body="{ data }">
+								<div>
+									<v-btn v-if="data.read" size="small" variant="text" icon="mdi mdi-eye" @click="() => { data.read = 0 }">
+									</v-btn>
+									<v-btn v-else-if="!data.read" size="small" variant="text" icon="mdi mdi-eye-off" @click="() => { data.read = 1 }">
+									</v-btn>
+								</div>
+							</template>
+						</Column>
+						<Column header="Time" field="creation"></Column>
+						<Column header="To" field="full_name"></Column>
+						<Column header="Note" field="note"></Column>
 					</DataTable>
 				</div>
 			</div>
@@ -317,10 +356,11 @@ export default {
 	},
 	props: {
 		appointments: {default: []},
-		tab:{type: String, default: 'scheduled'},
+		tab: {type: String, default: 'scheduled'},
 		searchValue: {type: String, default: ''},
 		selectedDates: {default: [dayjs()]},
 		selectedDepartments: {default: []},
+		loading: {type: Boolean, default: true},
 	},
 	resources: {
 		practitioners() { return { 
@@ -330,6 +370,8 @@ export default {
 			filter: {status: 'Active'},
 			auto: true, 
 			orderBy: 'practitioner_name',
+			pageLength: undefined,
+			cache: 'practitioners',
 			transform(data) {
 				for (let d of data) {
 					if(!this.colorCache[d.practitioner_name])
@@ -343,7 +385,9 @@ export default {
 			doctype: 'Healthcare Service Unit', 
 			fields:['name'], 
 			auto: true, 
-			orderBy: 'name'
+			orderBy: 'name',
+			pageLength: undefined,
+			cache: 'serviceUnits'
 		}},
   	},
 	computed: {
@@ -356,7 +400,7 @@ export default {
 				const seconds = diffInSeconds % 60;
 				return {
 					...appointment,
-					timeSinceArrived: `${hours}h ${minutes}m ${seconds}s`
+					timeSinceArrived: `${hours}h ${minutes}m`
 				};
 			});
 		},
@@ -364,7 +408,7 @@ export default {
 	mounted() {
 		setInterval(() => {
 			this.currentTime = dayjs();
-		}, 1000); // Update every second
+		}, 60000); // Update every n mili seconds
 	},
 	data() {
 		return {
@@ -384,6 +428,7 @@ export default {
 				service_unit: { value: null, matchMode: FilterMatchMode.EQUALS },
 				status: { value: null, matchMode: FilterMatchMode.EQUALS },
 				'patient_details.mobile': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+				custom_payment_type: { value: null, matchMode: FilterMatchMode.EQUALS },
 			},
 			statuses: [{label:'Scheduled', value:'Scheduled'}, {label:'Rescheduled', value:'Rescheduled'}, {label:'Walked In', value:'Walked In'}],
 			purposes: [{label:'General', value:'General'}, {label:'Follow-up', value:'Follow-up'}, {label:'Consultation', value:'Consultation'}],
@@ -418,9 +463,9 @@ export default {
 					command: () => this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)
 				},
 				{
-					label: 'Add CPR Reading',
+					label: 'ID Card Reading',
 					icon: 'mdi mdi-card-account-details-outline',
-					disabled: true
+					command: () => this.$emit('show-alert', 'Please Inser A Card!', 10000)
 				},
 				{
 					label: 'Vital Signs',

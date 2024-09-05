@@ -9,6 +9,50 @@
         <v-divider class="m-0"></v-divider>
         <v-card-text>
           <v-container>
+            <h3>Patient Details</h3>
+            <v-row>
+              <v-col cols="12" md="6">
+                <a-form-item label="Patient" name="patient">
+                  <a-input-group class="w-full" style="display: flex" compact>
+                    <a-select
+                    show-search
+                    class="w-full"
+                    v-model:value="appointmentForm.patient_name"
+                    :options="$resources.patients.data"
+                    :fieldNames="{label: 'patient_name', value: 'name'}"
+                    :filterOption="patientFilterOption"
+                    @change="(value, option) => {
+                      appointmentForm.patient = option.name;
+                      appointmentForm.patient_sex = option.sex;
+                      appointmentForm.patient_mobile = option.mobile
+                      appointmentForm.patient_age = calculateAge(option.dob)
+                    }"
+                    >
+                      <template #option="{ patient_name, mobile, custom_cpr }">
+                        <div class="flex flex-col">
+                          <span v-if="patient_name" class="ms-2"><strong>Name:</strong> {{ patient_name }}</span>
+                          <span v-if="custom_cpr" class="ms-2 text-xs"><strong>CPR:</strong> {{ custom_cpr }}</span>
+                          <span v-if="mobile" class="ms-2 text-xs"><strong>Mobile:</strong> {{ mobile }}</span>
+                        </div>
+                      </template>
+                    </a-select>
+                    <a-button type="primary" @click="newPatientOpen = true"><i class="mdi mdi-plus" /></a-button>
+                  </a-input-group>
+                </a-form-item>
+                <a-form-item label="Patient Mobile" v-if="appointmentForm.patient">
+                  <a-input v-model:value="appointmentForm.patient_mobile" disabled/>
+                </a-form-item>
+              </v-col>
+              <v-col cols="12" md="6">
+                <a-form-item label="Patient Gender" v-if="appointmentForm.patient">
+                  <a-input v-model:value="appointmentForm.patient_sex" disabled/>
+                </a-form-item>
+                <a-form-item label="Patient Age" v-if="appointmentForm.patient">
+                  <a-input v-model:value="appointmentForm.patient_age" disabled/>
+                </a-form-item>
+              </v-col>
+            </v-row>
+            <v-divider class="mt-2 mb-8"></v-divider>
             <v-row>
               <v-col cols="12" md="6">
                 <a-form-item label="Appointment Category">
@@ -22,6 +66,7 @@
                   v-model:value="appointmentForm.appointment_type"
                   :options="$resources.appointmentTypes.data"
                   @change="(value, option) => {
+                    console.log($resources.patients)
                     appointmentForm.appointment_for = option.allow_booking_for;
                     appointmentForm.duration = option.default_duration;
                     appointmentForm.practitioner = '';
@@ -38,10 +83,18 @@
                 </a-form-item>
                 
                 <a-form-item v-if="appointmentForm.appointment_type" label="Appointment Duration">
-                  <a-input disabled v-model:value="appointmentForm.duration" />
+                  <a-input v-model:value="appointmentForm.duration" />
                 </a-form-item>
               </v-col>
               <v-col cols="12" md="6">
+                <a-form-item label="Branch" name="branch">
+                  <a-select
+                  v-model:value="appointmentForm.custom_branch"
+                  :options="$resources.branches.data"
+                  :fieldNames="{label: 'name', value: 'name'}"
+                  show-search
+                  ></a-select>
+                </a-form-item>
                 <a-form-item label="Practitioner" 
                 name="practitioner" 
                 v-if="appointmentForm.appointment_for === 'Practitioner'" 
@@ -96,37 +149,6 @@
                 <a-checkbox class="mb-3" v-model:checked="appointmentForm.custom_is_walked_in" @change="walkedIn">Walked In?</a-checkbox>
                 <a-form-item label="Notes">
                   <a-textarea v-model:value="appointmentForm.notes" placeholder="Notes" :rows="4" />
-                </a-form-item>
-              </v-col>
-            </v-row>
-            <v-divider class="mt-2 mb-8"></v-divider>
-            <h3>Patient Details</h3>
-            <v-row>
-              <v-col cols="12" md="6">
-                <a-form-item label="Patient" name="patient">
-                  <a-select
-                  v-model:value="appointmentForm.patient_name"
-                  :options="$resources.patients.data"
-                  :fieldNames="{label: 'patient_name', value: 'name'}"
-                  @change="(value, option) => {
-                    appointmentForm.patient = option.name;
-                    appointmentForm.patient_sex = option.sex;
-                    appointmentForm.patient_mobile = option.mobile
-                    appointmentForm.patient_age = calculateAge(option.dob)
-                  }"
-                  show-search
-                  ></a-select>
-                </a-form-item>
-                <a-form-item label="Patient Mobile" v-if="appointmentForm.patient">
-                  <a-input v-model:value="appointmentForm.patient_mobile" disabled/>
-                </a-form-item>
-              </v-col>
-              <v-col cols="12" md="6">
-                <a-form-item label="Patient Gender" v-if="appointmentForm.patient">
-                  <a-input v-model:value="appointmentForm.patient_sex" disabled/>
-                </a-form-item>
-                <a-form-item label="Patient Age" v-if="appointmentForm.patient">
-                  <a-input v-model:value="appointmentForm.patient_age" disabled/>
                 </a-form-item>
               </v-col>
             </v-row>
@@ -214,6 +236,7 @@
         </v-card-actions>
       </a-form>
     </v-card>
+    <patientQuick :isOpen="newPatientOpen" @update:isOpen="newPatientOpen = $event" @submitted="patientSubmitted"/>
   </v-dialog>
 </template>
 
@@ -229,9 +252,7 @@ import { VItemGroup, VItem } from 'vuetify/components/VItemGroup';
 
 export default {
 	inject: ['$call'],
-	components: {
-		VDivider, VContainer, VCol, VRow, VItemGroup, VItem,
-	},
+	components: {VDivider, VContainer, VCol, VRow, VItemGroup, VItem},
 	props: {
 		isOpen: {
       type: Boolean,
@@ -266,13 +287,32 @@ export default {
     },
 	},
   resources: {
-    departments() { return { type: 'list', doctype: 'Medical Department', fields: ['name', 'department'], auto: true, orderBy: 'department'}},
+    departments() { return { 
+      type: 'list', 
+      doctype: 'Medical Department', 
+      fields: ['name', 'department'], 
+      auto: true, 
+      orderBy: 'department', 
+      pageLength: undefined,
+      cache: 'departments'
+    }},
+    branches() { return { 
+      type: 'list', 
+      doctype: 'Branch', 
+      fields: ['name'], 
+      auto: true, 
+      orderBy: 'name', 
+      pageLength: undefined,
+      cache: 'branches'
+    }},
     appointmentTypes() { return { 
       type: 'list', 
       doctype: 'Appointment Type', 
       fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
       auto: true, 
-      orderBy: 'appointment_type'
+      orderBy: 'appointment_type',
+      pageLength: undefined,
+      cache: 'appointmentTypes'
     }},
     practitioners() { return { 
       type: 'list', 
@@ -280,7 +320,9 @@ export default {
       fields: ['practitioner_name', 'image', 'department', 'name'], 
       filter: {status: 'Active'},
       auto: true, 
-      orderBy: 'practitioner_name'
+      orderBy: 'practitioner_name',
+      pageLength: undefined,
+      cache: 'practitioners'
     }},
     serviceUnits() { return { 
       type: 'list', 
@@ -288,14 +330,18 @@ export default {
       fields:['name'], 
       filters:{'allow_appointments': 1}, 
       auto: true, 
-      orderBy: 'name'
+      orderBy: 'name',
+      pageLength: undefined,
+      cache: 'serviceUnits'
     }},
     patients() { return { 
       type: 'list', 
       doctype: 'Patient', 
       fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
       auto: true, 
-      orderBy: 'patient_name'
+      orderBy: 'patient_name',
+      pageLength: undefined,
+      cache: 'patients'
     }},
   },
   computed: {
@@ -337,6 +383,7 @@ export default {
 	data() {
 		return {
       lodingOverlay: false,
+      newPatientOpen: false,
       categoryOptions: [
         {label: 'First Time', value: 'First Time'}, 
         {label: 'Follow-up', value: 'Follow-up'}, 
@@ -453,7 +500,18 @@ export default {
     },
     walkedIn() {
       this.appointmentForm.appointment_date = dayjs()
-    }
+    },
+    patientFilterOption(input, option) {
+      const fieldsToSearch = ['patient_name', 'custom_cpr', 'mobile', 'email']; 
+
+      return fieldsToSearch.some(field =>
+        option[field]?.toString().toLowerCase().includes(input.toLowerCase())
+      );
+    },
+    patientSubmitted(doc) {
+      this.$resources.patients.insert.submit(doc)
+      this.newPatientOpen = false
+    },
 	},
 };
 </script>

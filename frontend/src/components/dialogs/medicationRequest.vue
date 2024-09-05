@@ -153,11 +153,51 @@ export default {
         },
 	},
     resources: {
-        medications() { return { type: 'list', doctype: 'Lab Test Template', fields: ['name'], auto: true, orderBy: 'name'}},
-        items() { return { type: 'list', doctype: 'Item', fields: ['name', 'item_name'], auto: true, orderBy: 'item_name'}},
-        dosageForms() { return { type: 'list', doctype: 'Dosage Form', fields: ['name', 'dosage_form'], auto: true, orderBy: 'dosage_form'}},
-        prescriptionDosages() { return { type: 'list', doctype: 'Prescription Dosage', fields: ['name', 'dosage'], auto: true, orderBy: 'dosage'}},
-        prescriptionDurations() { return { type: 'list', doctype: 'Prescription Duration', fields: ['name'], auto: true, orderBy: 'name'}},
+        medications() { return { 
+			type: 'list', 
+			doctype: 'Medication', 
+			fields: ['name'], 
+			auto: true, 
+			orderBy: 'name', 
+			pageLength: undefined,
+            cache: 'medications'
+		}},
+        items() { return { 
+			type: 'list', 
+			doctype: 'Item', 
+			fields: ['name', 'item_name'], 
+			auto: true, 
+			orderBy: 'item_name', 
+			pageLength: undefined,
+            cache: 'items'
+		}},
+        dosageForms() { return { 
+            type: 'list', 
+            doctype: 'Dosage Form', 
+            fields: ['name', 'dosage_form'], 
+            auto: true, 
+            orderBy: 'dosage_form', 
+            pageLength: undefined,
+            cache: 'dosageForms'
+        }},
+        prescriptionDosages() { return { 
+            type: 'list', 
+            doctype: 'Prescription Dosage', 
+            fields: ['name', 'dosage'], 
+            auto: true, 
+            orderBy: 'dosage', 
+            pageLength: undefined,
+            cache: 'prescriptionDosages'
+        }},
+        prescriptionDurations() { return { 
+            type: 'list', 
+            doctype: 'Prescription Duration', 
+            fields: ['name'], 
+            auto: true, 
+            orderBy: 'name', 
+            pageLength: undefined,
+            cache: 'prescriptionDurations'
+        }},
     },
     computed: {
         dialogVisible: {
