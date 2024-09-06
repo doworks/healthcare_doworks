@@ -616,7 +616,7 @@ export default {
 //  			// console.info(data_string);
 //  			var data = JSON.parse(data_string);
 // 			if(!data){
-// 				this.$emit('show-alert', 'Please Inser A Card!', 10000)
+				this.$emit('show-alert', 'Please Inser A Card!', 10000)
 // 				return
 // 			}
  			
