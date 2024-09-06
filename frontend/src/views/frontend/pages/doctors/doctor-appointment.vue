@@ -321,7 +321,7 @@ export default {
     users() { return { 
       type: 'list', 
       doctype: 'User', 
-      filters: {'status': 'Active'},
+      filters: {enabled: 1},
       fields: ['name', 'full_name'], 
       auto: true, 
       orderBy: 'full_name',

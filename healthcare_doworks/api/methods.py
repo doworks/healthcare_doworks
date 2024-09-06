@@ -92,6 +92,11 @@ def change_status(docname, status):
 	})
 	doc.save()
 
+@frappe.whitelist()
+def fetch_nurse_records():
+	users = frappe.db.get_all('User', filters={'status': 'Active'}, fields=['name', 'full_name'],)
+	return users
+
 # Patient Encounter Page
 @frappe.whitelist()
 def patient_encounter_name(appointment_id):
