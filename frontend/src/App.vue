@@ -34,17 +34,17 @@ export default {
 			fields: ['name', 'department'], 
 			auto: true, 
 			orderBy: 'department',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'departments'
 		}},
 		practitioners() { return { 
 			type: 'list', 
 			doctype: 'Healthcare Practitioner', 
 			fields: ['practitioner_name', 'image', 'department', 'name'], 
-			filter: {status: 'Active'},
+			filters: {status: 'Active'},
 			auto: true, 
 			orderBy: 'practitioner_name',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'practitioners',
 		}},
 		serviceUnits() { return { 
@@ -54,16 +54,17 @@ export default {
 			filters:{'allow_appointments': 1}, 
 			auto: true, 
 			orderBy: 'name',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'serviceUnits',
 		}},
 		patients() { return { 
 			type: 'list', 
 			doctype: 'Patient', 
 			fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
+			filters: {status: 'Active'},
 			auto: true, 
 			orderBy: 'patient_name',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'patients',
 		}},
 		medications() { return { 
@@ -72,7 +73,7 @@ export default {
 			fields: ['name'], 
 			auto: true, 
 			orderBy: 'name', 
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'medications',
 		}},
         items() { return { 
@@ -81,7 +82,7 @@ export default {
 			fields: ['name', 'item_name'], 
 			auto: true, 
 			orderBy: 'item_name', 
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'items',
 		}},
 		complaints() { return { 
@@ -90,7 +91,7 @@ export default {
 			fields: ['name'], 
 			auto: true,
 			orderBy: 'name',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'complaints',
 			// transform data before setting it
 			transform(data) {
@@ -107,7 +108,7 @@ export default {
 			fields: ['name'], 
 			auto: true,
 			orderBy: 'name',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'diagnosis',
 			// transform data before setting it
 			transform(data) {

@@ -33,7 +33,7 @@
               <!-- <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="..."> -->
               <v-avatar v-if="records.patient.image" size="80" :image="records.patient.image"></v-avatar>
               <div class="text-start d-flex flex-column">
-                <h4 class="mb-0">{{ records.patient.patient_name }}</h4>
+                <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
                 <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
                 <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
                 <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
@@ -76,7 +76,7 @@
                   <!-- <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="..."> -->
                   <v-avatar v-if="records.patient.image" size="80" class="me-3" :image="records.patient.image"></v-avatar>
                   <div class="text-start d-flex flex-column">
-                    <h4 class="mb-0">{{ records.patient.patient_name }}</h4>
+                    <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
                     <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
                     <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
                     <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
@@ -1676,7 +1676,7 @@ export default {
       fields: ['*'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'medications'
     }},
     items() { return { 
@@ -1685,7 +1685,7 @@ export default {
       fields: ['name', 'item_code', 'item_name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'items'
     }},
     dosageForms() { return { 
@@ -1694,7 +1694,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'dosageForms'
     }},
     dosages() { return { 
@@ -1703,7 +1703,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'dosages'
     }},
     prescriptionDurations() { return { 
@@ -1712,7 +1712,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'prescriptionDurations'
     }},
     codeValues() { return { 
@@ -1721,7 +1721,7 @@ export default {
       fields: ['name', 'code_system'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'codeValues'
     }},
     clinicalProcedureTemplates() { return { 
@@ -1730,7 +1730,7 @@ export default {
       fields: ['name', 'template', 'medical_department'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'clinicalProcedureTemplates'
     }},
     departments() { return { 
@@ -1739,7 +1739,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'departments'
     }},
     practitioners() { return { 
@@ -1748,7 +1748,7 @@ export default {
       fields: ['name', 'practitioner_name', 'department'], 
       auto: true,
       orderBy: 'practitioner_name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'practitioners'
     }},
     patientCareTypes() { return { 
@@ -1757,7 +1757,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'patientCareTypes'
     }},
     therapyTypes() { return { 
@@ -1766,7 +1766,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'therapyTypes'
     }},
     labTests() { return { 
@@ -1776,7 +1776,7 @@ export default {
       filters: {is_billable: 1},
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'labTests'
     }},
     observationTemplate() { return { 
@@ -1785,7 +1785,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'observationTemplate'
     }},
     uoms() { return { 
@@ -1794,7 +1794,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'uoms'
     }},
     batches() { return { 
@@ -1803,7 +1803,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'batches'
     }},
     complaints() { return { 
@@ -1812,7 +1812,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'complaints',
       // transform data before setting it
       transform(data) {
@@ -1829,7 +1829,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'diagnosis',
       // transform data before setting it
       transform(data) {
@@ -1846,7 +1846,7 @@ export default {
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'sampleCollections'
     }},
     serviceUnits() { return { 
@@ -1855,7 +1855,7 @@ export default {
 			fields:['name'], 
 			auto: true, 
 			orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'serviceUnits'
 		}},
   },

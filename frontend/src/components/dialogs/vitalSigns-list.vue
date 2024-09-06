@@ -123,8 +123,16 @@ export default {
             },
         },
     },
+    created() {
+    },
     mounted() {
-        this.fetchVitalSigns()
+    },
+    watch: {
+        apointment(newVal) {
+            if (newVal) {
+                this.fetchVitalSigns()
+            }
+        },
     },
 	methods: {
         showAlert(message, duration) {
@@ -139,7 +147,7 @@ export default {
         },
         fetchVitalSigns(){
             this.lodingOverlay = true;
-            this.$call('healthcare_doworks.api.methods.vital_signs_list', {patient: this.appointment.patient})
+            this.$call('healthcare_doworks.api.methods.vital_signs_list', {patient: this.appointment.patient_details.id})
             .then(response => {
                 this.vitalSigns = response.map(signs => {
                     signs.signs_date = dayjs(signs.signs_date + ' ' + signs.signs_time);

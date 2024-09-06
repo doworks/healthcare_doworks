@@ -368,10 +368,10 @@ export default {
 			type: 'list', 
 			doctype: 'Healthcare Practitioner', 
 			fields: ['practitioner_name', 'image', 'department', 'name'], 
-			filter: {status: 'Active'},
+			filters: {status: 'Active'},
 			auto: true, 
 			orderBy: 'practitioner_name',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'practitioners',
 			transform(data) {
 				console.log(data)
@@ -388,7 +388,7 @@ export default {
 			fields:['name'], 
 			auto: true, 
 			orderBy: 'name',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'serviceUnits'
 		}},
   	},
@@ -456,13 +456,13 @@ export default {
 				{
 					label: 'Add Note',
 					icon: 'mdi mdi-text',
-					command: () => this.$emit('appointment-note-dialog', this.selectedRow)
+					command: () => {this.$emit('appointment-note-dialog', this.selectedRow)}
 				},
 				{separator: true},
 				{
 					label: 'Reschedule Appointment',
 					icon: 'mdi mdi-clock-outline',
-					command: () => this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)
+					command: () => {this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)}
 				},
 				{
 					label: 'ID Card Reading',
@@ -472,17 +472,17 @@ export default {
 				{
 					label: 'Vital Signs',
 					icon: 'mdi mdi-pulse',
-					command: () => this.$emit('vital-sign-dialog', this.selectedRow)
+					command: () => {this.$emit('vital-sign-dialog', this.selectedRow)}
 				},
 				{
 					label: 'Update Room',
 					icon: 'mdi mdi-door-open',
-					command: () => this.$emit('service-unit-dialog', this.selectedRow)
+					command: () => {this.$emit('service-unit-dialog', this.selectedRow)}
 				},
 				{
 					label: 'Update Payment Type',
 					icon: 'pi pi-wallet',
-					command: () => this.$emit('payment-type-dialog', this.selectedRow)
+					command: () => {this.$emit('payment-type-dialog', this.selectedRow)}
 				},
 				{
 					label: 'Patient Encounter',
@@ -497,7 +497,7 @@ export default {
 				{
 					label: 'Tranfer To Practitioner',
 					icon: 'mdi mdi-transit-transfer',
-					command: () => this.$emit('transfer-practitioner-dialog', this.selectedRow)
+					command: () => {this.$emit('transfer-practitioner-dialog', this.selectedRow)}
 				},
       		],
 			colorCache: {},

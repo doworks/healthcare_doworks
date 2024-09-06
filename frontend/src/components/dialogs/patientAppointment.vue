@@ -263,8 +263,8 @@ export default {
       default: {
         doctype: 'Patient Appointment',
 				name: '',
-				appointment_type: 'Practitioner',
-				appointment_for: 'Practitioner',
+				appointment_type: '',
+				appointment_for: '',
 				duration: '',
 				custom_appointment_category: 'First Time',
         custom_payment_type: '',
@@ -293,7 +293,7 @@ export default {
       fields: ['name', 'department'], 
       auto: true, 
       orderBy: 'department', 
-      pageLength: null,
+      pageLength: 1000,
       cache: 'departments'
     }},
     branches() { return { 
@@ -302,7 +302,7 @@ export default {
       fields: ['name'], 
       auto: true, 
       orderBy: 'name', 
-      pageLength: null,
+      pageLength: 1000,
       cache: 'branches'
     }},
     appointmentTypes() { return { 
@@ -311,17 +311,21 @@ export default {
       fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
       auto: true, 
       orderBy: 'appointment_type',
-      pageLength: null,
-      cache: 'appointmentTypes'
+      pageLength: 1000,
+      cache: 'appointmentTypes',
+      transform(data) {
+				this.appointmentForm.appointment_type = data[0].appointment_type
+        this.appointmentForm.appointment_for = data[0].allow_booking_for
+			},
     }},
     practitioners() { return { 
       type: 'list', 
       doctype: 'Healthcare Practitioner', 
       fields: ['practitioner_name', 'image', 'department', 'name'], 
-      filter: {status: 'Active'},
+      filters: {status: 'Active'},
       auto: true, 
       orderBy: 'practitioner_name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'practitioners'
     }},
     serviceUnits() { return { 
@@ -331,16 +335,17 @@ export default {
       filters:{'allow_appointments': 1}, 
       auto: true, 
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'serviceUnits'
     }},
     patients() { return { 
       type: 'list', 
       doctype: 'Patient', 
       fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
+      filters: {status: 'Active'},
       auto: true, 
       orderBy: 'patient_name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'patients'
     }},
   },
@@ -384,6 +389,7 @@ export default {
 		return {
       lodingOverlay: false,
       newPatientOpen: false,
+      patientSearch: '',
       categoryOptions: [
         {label: 'First Time', value: 'First Time'}, 
         {label: 'Follow-up', value: 'Follow-up'}, 
@@ -509,9 +515,31 @@ export default {
       );
     },
     patientSubmitted(doc) {
+      console.log(doc)
       this.$resources.patients.insert.submit(doc)
+      this.$resources.patients.reload()
+      this.appointmentForm.patient = doc.patient_name
+      this.appointmentForm.patient_name = doc.patient_name
+      this.appointmentForm.patient_sex = doc.sex;
+      this.appointmentForm.patient_mobile = doc.mobile
+      this.appointmentForm.patient_age = this.calculateAge(doc.dob)
       this.newPatientOpen = false
     },
+    // patientSearch(val) {
+    //   this.$call('healthcare_doworks.api.methods.reschedule_appointment', {form})
+    //   .then(response => {
+    //     this.lodingOverlay = false;
+    //     this.closeDialog()
+    //   }).catch(error => {
+    //     console.error(error);
+    //     let message = error.message.split('\n');
+    //     message = message.find(line => line.includes('frappe.exceptions'));
+    //     if(message){
+    //       const firstSpaceIndex = message.indexOf(' ');
+    //       this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+    //     }
+    //   });
+    // },
 	},
 };
 </script>

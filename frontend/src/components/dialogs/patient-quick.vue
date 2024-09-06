@@ -86,7 +86,7 @@ export default {
     isOpen: {type: Boolean, required: true, default: false},
   },
   resources: {
-    genders() { return { type: 'list', doctype: 'Gender', fields: ['gender', 'name'], auto: true, pageLength: null, cache: 'genders' } },
+    genders() { return { type: 'list', doctype: 'Gender', fields: ['gender', 'name'], auto: true, pageLength: 1000, cache: 'genders' } },
   },
   computed: {
     dialogVisible: {

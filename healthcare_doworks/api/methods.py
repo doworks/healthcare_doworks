@@ -172,7 +172,7 @@ def patient_encounter_records(encounter_id):
 			status = frappe.get_doc('Code Value', service.status)
 			service.practitioner = practitioner.practitioner_name
 			service.status = status.display
-		encounters = frappe.db.get_list('Patient Encounter', filters={"status": ['!=', 'Cancelled']}, pluck='name')
+		encounters = frappe.db.get_list('Patient Encounter', filters={"status": ['!=', 'Cancelled'], 'patient': patient.name}, pluck='name')
 		encounter_docs = []
 		pdf_extensions = ['pdf']
 		word_extensions = ['doc', 'docx', 'dot', 'dotx']

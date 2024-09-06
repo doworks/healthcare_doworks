@@ -554,13 +554,13 @@ export default {
     VTabs, VTab, VWindow, VWindowItem, VEmptyState,
   },
   resources: {
-    genders() { return { type: 'list', doctype: 'Gender', fields: ['gender'], auto: true, pageLength: null, cache: 'genders' } },
+    genders() { return { type: 'list', doctype: 'Gender', fields: ['gender'], auto: true, pageLength: 1000, cache: 'genders' } },
     inpatientRecords() { return { 
       type: 'list', 
       doctype: 'Inpatient Record', 
       fields: ['name'], 
       auto: true, 
-      pageLength: null, 
+      pageLength: 1000, 
       cache: 'inpatientRecords'
     }},
     vitalSigns() { return { 
@@ -570,7 +570,7 @@ export default {
       filters: {patient: this.$route.params.patientId},
       auto: true,
       orderBy: 'signs_date desc',
-      pageLength: null,
+      pageLength: 1000,
     }},
     consultations() { return { 
       type: 'list', 
@@ -579,7 +579,7 @@ export default {
       filters: {patient: this.$route.params.patientId, custom_appointment_category: ['not in', 'Procedure', 'Session']},
       auto: true,
       orderBy: 'creation desc',
-      pageLength: null,
+      pageLength: 1000,
     }},
     procedures() { return { 
       type: 'list', 
@@ -588,7 +588,7 @@ export default {
       filters: {patient: this.$route.params.patientId},
       auto: true,
       orderBy: 'start_date desc',
-      pageLength: null,
+      pageLength: 1000,
     }},
   },
   data() {

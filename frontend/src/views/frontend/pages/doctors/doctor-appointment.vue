@@ -139,7 +139,7 @@
     :isOpen="vitalSignsOpen" 
     @update:isOpen="vitalSignsOpen = $event" 
     @show-alert="showAlert" 
-    :appointment="{'name': selectedRow.name, 'patient': selectedRow.patient_details.id}"
+    :appointment="selectedRow"
     />
     <v-dialog v-model="appointmentNoteOpen" width="auto">
       <v-card
@@ -321,10 +321,11 @@ export default {
     users() { return { 
       type: 'list', 
       doctype: 'User', 
+      filters: {'status': 'Active'},
       fields: ['name', 'full_name'], 
       auto: true, 
       orderBy: 'full_name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'users'
     }},
     departments() { return { 
@@ -333,7 +334,7 @@ export default {
       fields: ['name', 'department'], 
       auto: true, 
       orderBy: 'department',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'departments'
     }},
     appointmentTypes() { return { 
@@ -342,17 +343,21 @@ export default {
       fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
       auto: true, 
       orderBy: 'appointment_type',
-      pageLength: null,
-      cache: 'appointmentTypes'
+      pageLength: 1000,
+      cache: 'appointmentTypes',
+      transform(data) {
+				this.appointmentForm.appointment_type = data[0].appointment_type
+        this.appointmentForm.appointment_for = data[0].allow_booking_for
+			},
     }},
     practitioners() { return { 
       type: 'list', 
       doctype: 'Healthcare Practitioner', 
       fields: ['practitioner_name', 'image', 'department', 'name'], 
-      filter: {status: 'Active'},
+      filters: {status: 'Active'},
       auto: true, 
       orderBy: 'practitioner_name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'practitioners'
     }},
     serviceUnits() { return { 
@@ -362,16 +367,17 @@ export default {
       filters:{'allow_appointments': 1}, 
       auto: true, 
       orderBy: 'name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'serviceUnits'
     }},
     patients() { return { 
       type: 'list', 
       doctype: 'Patient', 
       fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
+      filters: {status: 'Active'},
       auto: true, 
       orderBy: 'patient_name',
-      pageLength: null,
+      pageLength: 1000,
       cache: 'patients'
     }},
   },
@@ -575,8 +581,8 @@ export default {
         })
         this.appointmentForm.name = '';
 				this.appointmentForm.duration = duration;
-				this.appointmentForm.appointment_type = 'Practitioner';
-				this.appointmentForm.appointment_for = 'Practitioner';
+				this.appointmentForm.appointment_type = this.$resources.appointmentTypes.data[0].appointment_type;
+				this.appointmentForm.appointment_for = this.$resources.appointmentTypes.data[0].allow_booking_for;
 				this.appointmentForm.custom_appointment_category = 'First Time';
         this.appointmentForm.custom_payment_type = '';
         this.appointmentForm.practitioner = '';
@@ -617,6 +623,7 @@ export default {
 		},
     vitalSignDialog(row) {
       this.selectedRow = row
+      console.log(this.selectedRow)
 			this.vitalSignsOpen = true;
 		},
     transferPractitionerDialog(row) {

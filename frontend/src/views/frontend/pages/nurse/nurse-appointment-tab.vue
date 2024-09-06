@@ -340,10 +340,10 @@ export default {
 			type: 'list', 
 			doctype: 'Healthcare Practitioner', 
 			fields: ['practitioner_name', 'image', 'department', 'name'], 
-			filter: {status: 'Active'},
+			filters: {status: 'Active'},
 			auto: true, 
 			orderBy: 'practitioner_name',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'practitioners',
 			transform(data) {
 				for (let d of data) {
@@ -359,7 +359,7 @@ export default {
 			fields:['name'], 
 			auto: true, 
 			orderBy: 'name',
-			pageLength: null,
+			pageLength: 1000,
 			cache: 'serviceUnits'
 		}},
   	},
