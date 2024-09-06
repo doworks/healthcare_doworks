@@ -467,7 +467,7 @@ export default {
 				{
 					label: 'ID Card Reading',
 					icon: 'mdi mdi-card-account-details-outline',
-					command: () => {readIdCard()}
+					command: () => {this.readIdCard()}
 				},
 				{
 					label: 'Vital Signs',
