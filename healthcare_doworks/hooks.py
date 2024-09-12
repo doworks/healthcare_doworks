@@ -164,6 +164,12 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
+scheduler_events = {
+    "all": [
+        "healthcare_doworks.api.methods.mark_no_show_appointments"
+    ],
+}
+
 # scheduler_events = {
 #       "all": [
 #               "healthcare_doworks.tasks.all"

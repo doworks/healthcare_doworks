@@ -158,8 +158,17 @@
 					style="width: 100%; align-items: center;"
 					placeholder="Any Practitioner"
 					max-tag-count="responsive"
-					:options="$resources.practitioners.data"
+					:options="$resources.practitioners.data?.options"
 					:fieldNames="{label: 'practitioner_name', value: 'name'}"
+					show-search
+                    :loading="$resources.practitioners.list.loading"
+                    @search="(value) => {handleSearch(
+						value, 
+						$resources.practitioners, 
+						{status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
+						{status: 'Active'},
+                    )}"
+                    :filterOption="false"
 					>
 						<template #option="{ practitioner_name, image }">
 							<v-avatar size="25" :color="!image ? colorCache[practitioner_name] : ''">
@@ -215,14 +224,23 @@
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-select
-						v-model:value="filterModel.value"
-						@change="(filterCallback())"
-						class="p-column-filter"
-						style="width: 100%; align-items: center;"
-						placeholder="Any"
-						:options="$resources.serviceUnits.data"
-						:fieldNames="{label: 'name', value: 'name'}"
-						allowClear
+					v-model:value="filterModel.value"
+					@change="(filterCallback())"
+					class="p-column-filter"
+					style="width: 100%; align-items: center;"
+					placeholder="Any"
+					:options="$resources.serviceUnits.data?.options"
+					:fieldNames="{label: 'name', value: 'name'}"
+					allowClear
+					show-search
+					:loading="$resources.serviceUnits.list.loading"
+					@search="(value) => {handleSearch(
+						value, 
+						$resources.serviceUnits, 
+						{name: ['like', `%${value}%`]}, 
+						{},
+					)}"
+					:filterOption="false"
 					>
 						<template #option="{ name: val }">
 							<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
@@ -343,12 +361,17 @@ export default {
 			filters: {status: 'Active'},
 			auto: true, 
 			orderBy: 'practitioner_name',
-			pageLength: 1000,
-			cache: 'practitioners',
+			pageLength: 10,
+			url: 'frappe.desk.reportview.get',
 			transform(data) {
-				for (let d of data) {
-					if(!this.colorCache[d.practitioner_name])
-						this.colorCache[d.practitioner_name] = this.getColorFromName(d.practitioner_name)
+				if(data.values.length == 0)
+					data.options = []
+				else{
+					data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+					for (let d of data.options) {
+						if(!this.colorCache[d.practitioner_name])
+							this.colorCache[d.practitioner_name] = this.getColorFromName(d.practitioner_name)
+					}
 				}
 				return data
 			},
@@ -359,8 +382,15 @@ export default {
 			fields:['name'], 
 			auto: true, 
 			orderBy: 'name',
-			pageLength: 1000,
-			cache: 'serviceUnits'
+			pageLength: 10,
+			url: 'frappe.desk.reportview.get', 
+			transform(data) {
+				if(data.values.length == 0)
+					data.options = []
+				else
+					data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+				return data
+			}
 		}},
   	},
 	computed: {
@@ -379,6 +409,7 @@ export default {
 		}
 	},
 	mounted() {
+		console.log(this.$route)
 		setInterval(() => {
 			this.currentTime = dayjs();
 		}, 60000); // Update every second
@@ -550,6 +581,34 @@ export default {
 		},
 		toggleOP(event) {
 			this.$refs.op.toggle(event)
+		},
+		transformData (keys, values) {
+			return values.map(row => {
+				const obj = {};
+				keys.forEach((key, index) => {
+					obj[key] = row[index];  // Map each key to its corresponding value
+				});
+				return obj;
+			});
+		},
+		handleSearch(query, resource, filters, initialFilters) {
+			// Clear the previous timeout to avoid spamming requests
+			clearTimeout(this.searchTimeout);
+
+			// Set a new timeout (300ms) for debouncing
+			this.searchTimeout = setTimeout(() => {
+				if (query) {
+					// Update list resource options to fetch matching records from server
+					resource.update({filters});
+
+					// Fetch the updated results
+					resource.reload();
+				} else {
+					// If no search query, load initial records
+					resource.update({filters: initialFilters});
+					resource.reload();
+				}
+			}, 300);  // Debounce delay of 300ms
 		},
 	},
 };

@@ -123,12 +123,8 @@ export default {
             },
         },
     },
-    created() {
-    },
-    mounted() {
-    },
     watch: {
-        apointment(newVal) {
+        appointment(newVal) {
             if (newVal) {
                 this.fetchVitalSigns()
             }

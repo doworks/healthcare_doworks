@@ -27,8 +27,17 @@
                     <a-select
                     v-model:value="form.status"
                     :fieldNames="{label: 'display', value: 'name'}"
-                    :options="$resources.codeValues.data.filter(item => item.code_system === 'Request Status')"
+                    :options="$resources.codeValues.data?.options.filter(item => item.code_system === 'Request Status')"
                     style="width: 100%"
+                    show-search
+                    :loading="$resources.codeValues.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.codeValues, 
+                      {display: ['like', `%${value}%`]}, 
+                      {},
+                    )}"
+                    :filterOption="false"
                     ></a-select>
                   </a-form-item>
                   <a-form-item label="Expected By" name="expected_date">
@@ -47,9 +56,18 @@
                   <a-form-item label="Ordered by Practitioner" name="practitioner">
                     <a-select
                     v-model:value="form.practitioner"
-                    :options="$resources.practitioners.data"
+                    :options="$resources.practitioners.data?.options"
                     :fieldNames="{label: 'practitioner_name', value: 'name'}"
                     style="width: 100%"
+                    show-search
+                    :loading="$resources.practitioners.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.practitioners, 
+                      {status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
+                      {status: 'Active'},
+                    )}"
+                    :filterOption="false"
                     ></a-select>
                   </a-form-item>
                   <a-form-item label="Practitioner Email" name="practitioner_email" :class="{'d-none': !form.practitioner || !form.practitioner_email}">
@@ -61,9 +79,18 @@
                   <a-form-item label="Referred to Practitioner" name="referred_to_practitioner">
                     <a-select
                     v-model:value="form.referred_to_practitioner"
-                    :options="$resources.practitioners.data"
+                    :options="$resources.practitioners.data?.options"
                     :fieldNames="{label: 'practitioner_name', value: 'name'}"
                     style="width: 100%"
+                    show-search
+                    :loading="$resources.practitioners.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.practitioners, 
+                      {status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
+                      {status: 'Active'},
+                    )}"
+                    :filterOption="false"
                     ></a-select>
                   </a-form-item>
                 </v-col>
@@ -86,17 +113,35 @@
                   <a-form-item label="Staff Role" name="staff_role" extra="The role responsible for performing the service">
                     <a-select
                     v-model:value="form.staff_role"
-                    :options="$resources.roles.data"
+                    :options="$resources.roles.data?.options"
                     :fieldNames="{label: 'name', value: 'name'}"
                     style="width: 100%"
+                    show-search
+                    :loading="$resources.roles.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.roles, 
+                      {restrict_to_domain: 'Healthcare', name: ['like', `%${value}%`]}, 
+                      {restrict_to_domain: 'Healthcare'},
+                    )}"
+                    :filterOption="false"
                     ></a-select>
                   </a-form-item>
                   <a-form-item label="Patient Care Type" name="patient_care_type">
                     <a-select
                     v-model:value="form.patient_care_type"
-                    :options="$resources.patientCareTypes.data"
+                    :options="$resources.patientCareTypes.data?.options"
                     :fieldNames="{label: 'name', value: 'name'}"
                     style="width: 100%"
+                    show-search
+                    :loading="$resources.patientCareTypes.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.patientCareTypes, 
+                      {name: ['like', `%${value}%`]}, 
+                      {},
+                    )}"
+                    :filterOption="false"
                     ></a-select>
                   </a-form-item>
                 </v-col>
@@ -104,17 +149,35 @@
                   <a-form-item label="Intent" name="intent" extra=" ">
                     <a-select
                     v-model:value="form.intent"
-                    :options="$resources.codeValues.data.filter(item => item.code_system === 'Intent')"
+                    :options="$resources.codeValues.data?.options.filter(item => item.code_system === 'Intent')"
                     :fieldNames="{label: 'display', value: 'name'}"
                     style="width: 100%"
+                    show-search
+                    :loading="$resources.codeValues.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.codeValues, 
+                      {display: ['like', `%${value}%`]}, 
+                      {},
+                    )}"
+                    :filterOption="false"
                     ></a-select>
                   </a-form-item>
                   <a-form-item label="Priority" name="priority">
                     <a-select
                     v-model:value="form.priority"
-                    :options="$resources.codeValues.data.filter(item => item.code_system === 'Priority')"
+                    :options="$resources.codeValues.data?.options.filter(item => item.code_system === 'Priority')"
                     :fieldNames="{label: 'display', value: 'name'}"
                     style="width: 100%"
+                    show-search
+                    :loading="$resources.codeValues.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.codeValues, 
+                      {display: ['like', `%${value}%`]}, 
+                      {},
+                    )}"
+                    :filterOption="false"
                     ></a-select>
                   </a-form-item>
                 </v-col>
@@ -142,10 +205,19 @@
                   <a-form-item label="Healthcare Service Unit Type" name="healthcare_service_unit_type">
                     <a-select
                     v-model:value="form.healthcare_service_unit_type"
-                    :options="$resources.serviceUnitTypes.data"
+                    :options="$resources.serviceUnitTypes.data?.options"
                     :fieldNames="{label: 'name', value: 'name'}"
                     style="width: 100%"
                     @change="setTemplateOptions"
+                    show-search
+                    :loading="$resources.serviceUnitTypes.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.serviceUnitTypes, 
+                      {name: ['like', `%${value}%`]}, 
+                      {},
+                    )}"
+                    :filterOption="false"
                     ></a-select>
                   </a-form-item>
                 </v-col>
@@ -247,8 +319,15 @@
         fields: ['name', 'display', 'code_system'], 
         auto: true, 
         orderBy: 'display',
-        pageLength: 1000,
-        cache: 'codeValues'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
       // doctypes() { return { type: 'list', doctype: 'Doctype', fields: ['name'], auto: true, orderBy: 'name', pageLength: 1000,}},
       roles() { return { 
@@ -258,8 +337,15 @@
         filters:{'restrict_to_domain': 'Healthcare'}, 
         auto: true, 
         orderBy: 'name',
-        pageLength: 1000,
-        cache: 'roles'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
       patientCareTypes() { return { 
         type: 'list', 
@@ -267,8 +353,15 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: 1000,
-        cache: 'patientCareTypes'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
       serviceUnitTypes() { return { 
         type: 'list', 
@@ -276,8 +369,15 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: 1000,
-        cache: 'serviceUnitTypes'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
 
       therapyTypes() { return { 
@@ -286,8 +386,15 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: 1000,
-        cache: 'therapyTypes'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
       labTestTemplates() { return { 
         type: 'list', 
@@ -295,8 +402,15 @@
         fields: ['name', 'department'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: 1000,
-        cache: 'labTestTemplates'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
       clinicalProcedureTemplates() { return { 
         type: 'list', 
@@ -304,8 +418,15 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: 1000,
-        cache: 'clinicalProcedureTemplates'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
       observationTemplate() { return { 
         type: 'list', 
@@ -313,8 +434,15 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: 1000,
-        cache: 'observationTemplate'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
       healthcareActivity() { return { 
         type: 'list', 
@@ -322,8 +450,15 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: 1000,
-        cache: 'healthcareActivity'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
       appointmentTypes() { return { 
         type: 'list', 
@@ -331,8 +466,15 @@
         fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
         auto: true, 
         orderBy: 'appointment_type',
-        pageLength: 1000,
-        cache: 'appointmentTypes'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
       practitioners() { return { 
         type: 'list', 
@@ -341,8 +483,15 @@
         filters: {status: 'Active'},
         auto: true, 
         orderBy: 'practitioner_name',
-        pageLength: 1000,
-        cache: 'practitioners'
+        pageLength: 10,
+        url: 'frappe.desk.reportview.get', 
+        transform(data) {
+          if(data.values.length == 0)
+            data.options = []
+          else
+            data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          return data
+        }
       }},
     },
     computed: {
@@ -484,19 +633,47 @@
       },
       setTemplateOptions(value) {
         if(value === 'Therapy Type')
-          this.template_dn_options = this.$resources.therapyTypes.data
+          this.template_dn_options = this.$resources.therapyTypes.data?.options
         else if(value === 'Lab Test Template')
-          this.template_dn_options = this.$resources.labTestTemplates.data
+          this.template_dn_options = this.$resources.labTestTemplates.data?.options
         else if(value === 'Clinical Procedure Template')
-          this.template_dn_options = this.$resources.clinicalProcedureTemplates.data
+          this.template_dn_options = this.$resources.clinicalProcedureTemplates.data?.options
         else if(value === 'Appointment Type')
-          this.template_dn_options = this.$resources.appointmentTypes.data
+          this.template_dn_options = this.$resources.appointmentTypes.data?.options
         else if(value === 'Observation Template')
-          this.template_dn_options = this.$resources.observationTemplate.data
+          this.template_dn_options = this.$resources.observationTemplate.data?.options
         else if(value === 'Healthcare Activity')
-          this.template_dn_options = this.$resources.healthcareActivity.data
+          this.template_dn_options = this.$resources.healthcareActivity.data?.options
         else
           this.template_dn_options = []
+      },
+      transformData (keys, values) {
+        return values.map(row => {
+          const obj = {};
+          keys.forEach((key, index) => {
+            obj[key] = row[index];  // Map each key to its corresponding value
+          });
+          return obj;
+        });
+      },
+      handleSearch(query, resource, filters, initialFilters) {
+        // Clear the previous timeout to avoid spamming requests
+        clearTimeout(this.searchTimeout);
+
+        // Set a new timeout (300ms) for debouncing
+        this.searchTimeout = setTimeout(() => {
+          if (query) {
+            // Update list resource options to fetch matching records from server
+            resource.update({filters});
+
+            // Fetch the updated results
+            resource.reload();
+          } else {
+            // If no search query, load initial records
+            resource.update({filters: initialFilters});
+            resource.reload();
+          }
+        }, 300);  // Debounce delay of 300ms
       },
     },
   };

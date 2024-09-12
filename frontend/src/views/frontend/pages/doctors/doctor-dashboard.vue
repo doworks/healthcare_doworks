@@ -318,7 +318,7 @@ export default {
     nextAppointmentTime() {
       if(this.appointments[0]){
         const firstValidAppointment = this.appointments
-        .filter(appointment => appointment.visit_status !== 'Completed' && appointment.visit_status !== 'No Show')
+        .filter(appointment => appointment.visit_status == 'Scheduled' && appointment.visit_status == 'Arrived' && appointment.visit_status == 'Ready')
         .sort((a, b) => dayjs(a.appointment_date + ' ' + a.appointment_time) - dayjs(b.appointment_date + ' ' + b.appointment_time))[0];
         const nextappointment = dayjs(firstValidAppointment.appointment_date + ' ' + firstValidAppointment.appointment_time);
         // const diffInSeconds = this.currentTime.diff(nextappointment, 'second');

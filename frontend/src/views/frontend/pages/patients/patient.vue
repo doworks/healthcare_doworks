@@ -57,10 +57,19 @@
                   <a-form-item label="Gender" name="sex">
                     <a-select 
                     v-model:value="form.sex" 
-                    :options="$resources.genders.data" 
+                    :options="$resources.genders.data?.options" 
                     :fieldNames="{label: 'gender', value: 'gender'}"
                     @change="value => {autoSave('Patient', form.name, 'sex', value)}"
                     allowClear
+                    show-search
+                    :loading="$resources.genders.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.genders, 
+                      {gender: ['like', `%${value}%`]}, 
+                      {},
+                    )}"
+                    :filterOption="false"
                     ></a-select>
                   </a-form-item>
                   <a-form-item label="Blood Group" name="blood_group">
@@ -96,10 +105,19 @@
                   <a-form-item label="Inpatient Record" name="inpatient_record" >
                     <a-select 
                     v-model:value="form.inpatient_record" 
-                    :options="$resources.inpatientRecords.data" 
+                    :options="$resources.inpatientRecords.data?.options" 
                     :fieldNames="{label: 'name', value: 'name'}"
                     @change="value => {autoSave('Patient', form.name, 'inpatient_record', value)}"
                     allowClear
+                    show-search
+                    :loading="$resources.inpatientRecords.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.inpatientRecords, 
+                      {name: ['like', `%${value}%`]}, 
+                      {},
+                    )}"
+                    :filterOption="false"
                     >
                   </a-select>
                   </a-form-item>
@@ -554,14 +572,33 @@ export default {
     VTabs, VTab, VWindow, VWindowItem, VEmptyState,
   },
   resources: {
-    genders() { return { type: 'list', doctype: 'Gender', fields: ['gender'], auto: true, pageLength: 1000, cache: 'genders' } },
+    genders() { return { 
+      type: 'list', 
+      doctype: 'Gender', 
+      fields: ['gender'], 
+      auto: true, 
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
     inpatientRecords() { return { 
       type: 'list', 
       doctype: 'Inpatient Record', 
       fields: ['name'], 
       auto: true, 
-      pageLength: 1000, 
-      cache: 'inpatientRecords'
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
     vitalSigns() { return { 
       type: 'list', 
@@ -820,6 +857,34 @@ export default {
           console.log('error', err);
         });
       })
+    },
+    transformData (keys, values) {
+      return values.map(row => {
+        const obj = {};
+        keys.forEach((key, index) => {
+          obj[key] = row[index];  // Map each key to its corresponding value
+        });
+        return obj;
+      });
+    },
+    handleSearch(query, resource, filters, initialFilters) {
+      // Clear the previous timeout to avoid spamming requests
+      clearTimeout(this.searchTimeout);
+
+      // Set a new timeout (300ms) for debouncing
+      this.searchTimeout = setTimeout(() => {
+        if (query) {
+          // Update list resource options to fetch matching records from server
+          resource.update({filters});
+
+          // Fetch the updated results
+          resource.reload();
+        } else {
+          // If no search query, load initial records
+          resource.update({filters: initialFilters});
+          resource.reload();
+        }
+      }, 300);  // Debounce delay of 300ms
     },
   },
   name: 'Patients List',

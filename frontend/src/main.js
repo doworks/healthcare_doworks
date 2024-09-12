@@ -58,7 +58,8 @@ import PatientEncounterDialog from '@/components/dialogs/patientEncounter.vue'
 import ProcedureDialog from '@/components/dialogs/procedure.vue'
 import ServiceRequestDialog from '@/components/dialogs/serviceRequest.vue'
 import PatientMedicalHistoryDialog from '@/components/dialogs/patientMedicalHistory.vue'
-import PatientQuick from '@/components/dialogs/patient-quick.vue'
+import PatientQuickDialog from '@/components/dialogs/patient-quick.vue'
+import AppointmentNoteDialog from '@/components/dialogs/appointmentNote.vue'
 						  // My App End //
 
 
@@ -90,7 +91,8 @@ app.component('patientEncounterDialog',PatientEncounterDialog)
 app.component('procedureDialog',ProcedureDialog)
 app.component('serviceRequestDialog',ServiceRequestDialog)
 app.component('patientMedicalHistoryDialog',PatientMedicalHistoryDialog)
-app.component('patientQuick',PatientQuick)
+app.component('patientQuickDialog',PatientQuickDialog)
+app.component('appointmentNoteDialog',AppointmentNoteDialog)
 // Use other UI libraries and plugins
 app.use(Antd);
 

@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 import datetime
-from frappe.utils import nowdate
+from frappe.utils import nowdate, now_datetime, add_to_date
 from frappe.utils.file_manager import save_file
 # from healthcare.healthcare.doctype.patient_appointment.patient_appointment import update_status
 from frappe.utils.pdf import get_pdf
@@ -496,9 +496,10 @@ def get_appointment_details(appointment):
 		appointment['last_visit'] = last_visit[0]['encounter_date']
 
 	# Get visit notes
+	to_options = ['', frappe.session.user, frappe.session.full_name]
 	visit_notes = frappe.get_all('Appointment Note Table',
-		filters={'parent': appointment['name']},
-		fields=['to', 'full_name', 'note', 'creation', 'read', 'owner']
+		filters={'parent': appointment['name'], 'to': ['in', to_options]},
+		fields=['to', 'full_name', 'note', 'time', 'read', 'from']
 	)
 	appointment['visit_notes'] = visit_notes
 
@@ -543,3 +544,20 @@ def check_app_permission():
 	# 	return True
 
 	return True
+
+def mark_no_show_appointments():
+	# Get current time
+	current_time = now_datetime()
+
+	# Fetch appointments where the visit status is 'Scheduled'
+	appointments = frappe.get_all('Patient Appointment', 
+		filters={
+			'custom_visit_status': 'Scheduled',
+			'appointment_time': ['<', add_to_date(current_time, minutes=-15)]  # Appointment is 15 minutes past
+		}, 
+		fields=['name'])
+	print('hi')
+	print(appointments)
+	# Loop through appointments and mark as no-show
+	for appointment in appointments:
+		change_status(appointment.name, 'No Show')

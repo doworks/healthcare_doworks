@@ -14,9 +14,18 @@
                 <a-form-item label="Test Template" name="template">
                   <a-select
                     v-model:value="form.template"
-                    :options="$resources.labTestTemplates.data"
+                    :options="$resources.labTestTemplates.data?.options"
                     @change="(value, option) => {form.department = option.department}"
                     :fieldNames="{label: 'name', value: 'name'}"
+                    show-search
+                    :loading="$resources.labTestTemplates.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.labTestTemplates, 
+                      {name: ['like', `%${value}%`]}, 
+                      {},
+                    )}"
+                    :filterOption="false"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Department" name="department" v-if="form.department">
@@ -159,8 +168,15 @@ export default {
       fields: ['name', 'department'], 
       auto: true,
       orderBy: 'name',
-      pageLength: 1000,
-      cache: 'labTestTemplates'
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
   },
   computed: {
@@ -249,8 +265,36 @@ export default {
         });
       })
       .catch(err => {
-          console.log('error', err);
+        console.log('error', err);
       });
+    },
+    transformData (keys, values) {
+      return values.map(row => {
+        const obj = {};
+        keys.forEach((key, index) => {
+          obj[key] = row[index];  // Map each key to its corresponding value
+        });
+        return obj;
+      });
+    },
+    handleSearch(query, resource, filters, initialFilters) {
+      // Clear the previous timeout to avoid spamming requests
+      clearTimeout(this.searchTimeout);
+
+      // Set a new timeout (300ms) for debouncing
+      this.searchTimeout = setTimeout(() => {
+        if (query) {
+          // Update list resource options to fetch matching records from server
+          resource.update({filters});
+
+          // Fetch the updated results
+          resource.reload();
+        } else {
+          // If no search query, load initial records
+          resource.update({filters: initialFilters});
+          resource.reload();
+        }
+      }, 300);  // Debounce delay of 300ms
     },
   },
 };

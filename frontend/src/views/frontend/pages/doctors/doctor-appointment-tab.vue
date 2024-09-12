@@ -162,8 +162,17 @@
 					style="width: 100%; align-items: center;"
 					placeholder="Any Practitioner"
 					max-tag-count="responsive"
-					:options="$resources.practitioners.data"
+					:options="$resources.practitioners.data?.options"
 					:fieldNames="{label: 'practitioner_name', value: 'name'}"
+					show-search
+                    :loading="$resources.practitioners.list.loading"
+                    @search="(value) => {handleSearch(
+						value, 
+						$resources.practitioners, 
+						{status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
+						{status: 'Active'},
+                    )}"
+                    :filterOption="false"
 					>
 						<template #option="{ practitioner_name, image }">
 							<v-avatar size="25" :color="!image ? colorCache[practitioner_name] : ''">
@@ -219,14 +228,23 @@
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-select
-						v-model:value="filterModel.value"
-						@change="(filterCallback())"
-						class="p-column-filter"
-						style="width: 100%; align-items: center;"
-						placeholder="Any"
-						:options="$resources.serviceUnits.data"
-						:fieldNames="{label: 'name', value: 'name'}"
-						allowClear
+					v-model:value="filterModel.value"
+					@change="(filterCallback())"
+					class="p-column-filter"
+					style="width: 100%; align-items: center;"
+					placeholder="Any"
+					:options="$resources.serviceUnits.data?.options"
+					:fieldNames="{label: 'name', value: 'name'}"
+					allowClear
+					show-search
+                    :loading="$resources.serviceUnits.list.loading"
+                    @search="(value) => {handleSearch(
+						value, 
+						$resources.serviceUnits, 
+						{name: ['like', `%${value}%`]}, 
+						{},
+                    )}"
+                    :filterOption="false"
 					>
 						<template #option="{ name: val }">
 							<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
@@ -276,7 +294,13 @@
 								<img :src="bellImage" width="40px" class="me-1"/>
 							</v-badge>
 						</v-btn>
-						<i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
+						<!-- <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i> -->
+						<v-btn v-else
+						icon="mdi mdi-bell-plus-outline" 
+						variant="text" 
+						@click="$emit('appointment-note-dialog', data)"
+						>
+						</v-btn>
 					</div>
 				</template>
 			</Column>
@@ -288,6 +312,12 @@
 					<span class="fw-semibold d-block mb-2">Appointment Notes</span>
 					<a-textarea v-model:value="selectedRow.notes" :rows="4"/>
 				</div>
+				<v-btn
+				icon="mdi mdi-bell-plus-outline" 
+				variant="text" 
+				@click="$emit('appointment-note-dialog', data)"
+				>
+				</v-btn>
 				<div v-if="selectedRow.visit_notes.length > 0">
 					<!-- <span class="fw-semibold d-block mb-2">Visit Notes</span>
 					<ul class="list-none p-0 m-0 flex flex-column">
@@ -323,8 +353,17 @@
 								</div>
 							</template>
 						</Column>
-						<Column header="Time" field="creation"></Column>
-						<Column header="From" field="owner"></Column>
+						<Column header="Time" field="dayDate">
+							<template #body="{ data }">
+								<div>
+									{{ data.dayDate }}
+								</div>
+								<div>
+									{{ data.dayTime }}
+								</div>
+							</template>
+						</Column>
+						<Column header="From" field="from"></Column>
 						<Column header="To" field="full_name"></Column>
 						<Column header="Note" field="note"></Column>
 					</DataTable>
@@ -372,13 +411,17 @@ export default {
 			filters: {status: 'Active'},
 			auto: true, 
 			orderBy: 'practitioner_name',
-			pageLength: 1000,
-			cache: 'practitioners',
+			pageLength: 10,
+			url: 'frappe.desk.reportview.get',
 			transform(data) {
-				console.log(data)
-				for (let d of data) {
-					if(!this.colorCache[d.practitioner_name])
-						this.colorCache[d.practitioner_name] = this.getColorFromName(d.practitioner_name)
+				if(data.values.length == 0)
+					data.options = []
+				else{
+					data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+					for (let d of data.options) {
+						if(!this.colorCache[d.practitioner_name])
+							this.colorCache[d.practitioner_name] = this.getColorFromName(d.practitioner_name)
+					}
 				}
 				return data
 			},
@@ -389,8 +432,15 @@ export default {
 			fields:['name'], 
 			auto: true, 
 			orderBy: 'name',
-			pageLength: 1000,
-			cache: 'serviceUnits'
+			pageLength: 10,
+			url: 'frappe.desk.reportview.get', 
+			transform(data) {
+				if(data.values.length == 0)
+					data.options = []
+				else
+					data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+				return data
+			}
 		}},
   	},
 	computed: {
@@ -437,11 +487,11 @@ export default {
 			purposes: [{label:'General', value:'General'}, {label:'Follow-up', value:'Follow-up'}, {label:'Consultation', value:'Consultation'}],
 			selectedRow: null,
 			contextItems: [
-				{
+				...(this.$route.name == 'appointments' ? [{
 					label: 'New Appointment',
 					icon: 'mdi mdi-account-multiple-plus-outline',
 					command: () => this.$emit('appointment-dialog', 'New Appointment', false, this.selectedRow)
-				},
+				}] : []),
 				{
 					label: 'Status',
 					icon: 'mdi mdi-clipboard-edit-outline',
@@ -460,11 +510,11 @@ export default {
 					command: () => {this.$emit('appointment-note-dialog', this.selectedRow)}
 				},
 				{separator: true},
-				{
+				...(this.$route.name == 'appointments' ? [{
 					label: 'Reschedule Appointment',
 					icon: 'mdi mdi-clock-outline',
 					command: () => {this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)}
-				},
+				}] : []),
 				{
 					label: 'ID Card Reading',
 					icon: 'mdi mdi-card-account-details-outline',
@@ -475,16 +525,21 @@ export default {
 					icon: 'mdi mdi-pulse',
 					command: () => {this.$emit('vital-sign-dialog', this.selectedRow)}
 				},
+				...(this.$route.name == 'nurse-dashboard' ? [{
+					label: 'Medical History',
+					icon: 'mdi mdi-medical-bag',
+					command: () => this.$emit('medical-history-dialog', this.selectedRow)
+				}] : []),
 				{
 					label: 'Update Room',
 					icon: 'mdi mdi-door-open',
 					command: () => {this.$emit('service-unit-dialog', this.selectedRow)}
 				},
-				{
+				...(this.$route.name == 'appointments' ? [{
 					label: 'Update Payment Type',
 					icon: 'pi pi-wallet',
 					command: () => {this.$emit('payment-type-dialog', this.selectedRow)}
-				},
+				}] : []),
 				{
 					label: 'Patient Encounter',
 					icon: 'mdi mdi-bandage',
@@ -567,6 +622,8 @@ export default {
 			return Math.abs(hash);
 		},
 		getInitials(name) {
+			if(!name)
+				name = 'Undefined'
 			let names = name.split(' '),
 				initials = names[0].substring(0, 1).toUpperCase();
 			
@@ -601,13 +658,41 @@ export default {
 		toggleOP(event) {
 			this.$refs.op.toggle(event)
 		},
+		transformData (keys, values) {
+			return values.map(row => {
+				const obj = {};
+				keys.forEach((key, index) => {
+					obj[key] = row[index];  // Map each key to its corresponding value
+				});
+				return obj;
+			});
+		},
+		handleSearch(query, resource, filters, initialFilters) {
+			// Clear the previous timeout to avoid spamming requests
+			clearTimeout(this.searchTimeout);
+
+			// Set a new timeout (300ms) for debouncing
+			this.searchTimeout = setTimeout(() => {
+				if (query) {
+					// Update list resource options to fetch matching records from server
+					resource.update({filters});
+
+					// Fetch the updated results
+					resource.reload();
+				} else {
+					// If no search query, load initial records
+					resource.update({filters: initialFilters});
+					resource.reload();
+				}
+			}, 300);  // Debounce delay of 300ms
+		},
 		async readIdCard(event) {
             // var xmlHttp = new XMLHttpRequest();
             // xmlHttp.open( "GET", "http://localhost:5000/card", false ); // false for synchronous request
             // xmlHttp.send( null );
             //xmlHttp.setRequestHeader("Authorization", "Basic "+"o6py7d5i5r53ogoac7yhn38n6rw5vcm7qfd8hqdhdms39qphvjhrehw9h94wqexufhkzykkuce7wbcto");
             const response = await axios.get('http://localhost:5000/card');
-			this.cardData = response.data;
+			// this.cardData = response.data;
 			console.log(response)
             
             // cur_frm.set_value("full_name",xmlHttp.responseText)

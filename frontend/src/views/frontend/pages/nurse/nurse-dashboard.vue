@@ -1,6 +1,6 @@
 <template>
   <!-- Main Wrapper -->
-  <div class="main-wrapper mr-3" id="doctor-dashboard" style="margin-right: -10px;">
+  <div class="main-wrapper mr-3" id="nurse-dashboard" style="margin-right: -10px;">
     <v-alert
       v-if="alertVisible"
       position="absolute"
@@ -50,13 +50,11 @@
           </div>
         </template>
       </Card>
-      <Card class="flex-1 border border-surface shadow-none">
+      <!-- <Card class="flex-1 border border-surface shadow-none">
         <template #content>
           <div class="flex justify-between gap-8">
             <div class="flex flex-col gap-1">
               <span class="text-surface-500 dark:text-surface-400 text-sm">Next Appointment</span>
-              <!-- <span class="font-bold text-lg">{{ val.value }}%</span>
-              <h6 >Today Appointments</h6> -->
               <div class="d-flex">
                 <span class="text-red font-bold text-lg">{{nextAppointmentTime}}</span>
               </div>
@@ -66,7 +64,7 @@
             </span>
           </div>
         </template>
-      </Card>
+      </Card> -->
     </div>
 
     <!-- Appointment Tab -->
@@ -116,7 +114,7 @@
     <!-- /Page Content -->
     <vitalSignsListDialog 
     :isOpen="vitalSignsOpen" 
-    :appointment="{'name': selectedRow.name, 'patient': selectedRow.patient}"
+    :appointment="selectedRow"
     @update:isOpen="vitalSignsOpen = $event" 
     @show-alert="showAlert" 
     />
@@ -126,40 +124,12 @@
     @show-alert="showAlert" 
     :patient="patient"
     />
-    <v-dialog v-model="appointmentNoteOpen" width="auto">
-      <v-card
-        rounded="lg"
-        width="auto"
-        prepend-icon="mdi mdi-door-open"
-        title="Add Note"
-      >
-        <v-card-text>
-          <a-form-item label="Provider">
-            <a-input v-model:value="newNote.provider" />
-          </a-form-item>
-          <a-form-item label="Notes">
-            <a-textarea v-model:value="newNote.note" placeholder="Notes" :rows="4" />
-          </a-form-item>
-        </v-card-text>
-
-        <v-card-actions class="my-2 d-flex justify-end">
-          <v-btn
-          class="text-none"
-          text="Cancel"
-          @click="isActive.value = false"
-          ></v-btn>
-
-          <v-btn
-          class="text-none"
-          color="blue"
-          
-          text="submit"
-          variant="tonal"
-          @click="onSubmitAppointmentNote()"
-          ></v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <appointmentNoteDialog 
+    :isOpen="appointmentNoteOpen" 
+    @update:isOpen="appointmentNoteOpen = $event" 
+    @show-alert="showAlert" 
+    :appointmentId="selectedRow.name"
+    />
   </div>
   <!-- /Main Wrapper -->
 </template>
@@ -168,8 +138,7 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
-import AppointmentTab from './nurse-appointment-tab.vue'
-import patientDetailsCard from '../doctors/patient-details-card.vue'
+import AppointmentTab from '../doctors/doctor-appointment-tab.vue'
 
 import { VAvatar } from 'vuetify/components/VAvatar';
 import { VChip } from 'vuetify/components/VChip';
@@ -184,7 +153,7 @@ import femaleImage from '@/assets/img/female.png';
 export default {
   inject: ['$call', '$socket'],
   components: {
-    AppointmentTab, patientDetailsCard, VAvatar, VChip, VListItem, VEmptyState, VProgressLinear,
+    AppointmentTab, VAvatar, VChip, VListItem, VEmptyState, VProgressLinear,
   },
   resources: {
     services() { return { 
@@ -223,7 +192,6 @@ export default {
       appointmentNoteOpen: false,
       alertVisible: false,
       services: [],
-      newNote: {},
       selectedRow: {patient: ''},
       patient: {
         custom_allergies_table: [],
@@ -348,7 +316,7 @@ export default {
       });
     },
     appointmentNoteDialog(row) {
-      this.appointmentForm.name = row.appointment_id;
+      this.selectedRow = row
 			this.appointmentNoteOpen = true;
 		},
     vitalSignDialog(row) {
@@ -388,30 +356,6 @@ export default {
         d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
         return d;
 
-      });
-    },
-    onSubmitAppointmentNote() {
-      this.$call('frappe.client.insert', 
-        {doc: {
-          doctype: 'Appointment Note Table', 
-          parent: this.appointmentForm.name, 
-          parentfield: 'custom_visit_notes', 
-          parenttype: 'Patient Appointment', 
-          to: this.newNote.to, 
-          full_name: this.newNote.full_name,
-          note: this.newNote.note, 
-          read: 0, 
-        }}
-      ).then(response => {
-        this.appointmentNoteOpen = false;
-      }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
       });
     },
     onPatientDetails(row) {
@@ -461,15 +405,10 @@ export default {
       this.progressValue = (this.appointments.length / this.totalRecords) * 100;
     },
   },
-  name: "doctor-dashboard",
+  name: "nurse-dashboard",
 };
 </script>
 
-<style>
-#doctor-dashboard .p-paginator-bottom{
-  display: none;
-}
-</style>
 <style scoped>
 .details-card {
   background-color: rgba(228, 228, 228, 0.541);

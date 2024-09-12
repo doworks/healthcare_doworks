@@ -15,18 +15,25 @@
                 <a-form-item label="Patient" name="patient">
                   <a-input-group class="w-full" style="display: flex" compact>
                     <a-select
-                    show-search
                     class="w-full"
                     v-model:value="appointmentForm.patient_name"
-                    :options="$resources.patients.data"
+                    :options="$resources.patients.data?.options"
                     :fieldNames="{label: 'patient_name', value: 'name'}"
-                    :filterOption="patientFilterOption"
                     @change="(value, option) => {
                       appointmentForm.patient = option.name;
                       appointmentForm.patient_sex = option.sex;
                       appointmentForm.patient_mobile = option.mobile
                       appointmentForm.patient_age = calculateAge(option.dob)
                     }"
+                    show-search
+                    :loading="$resources.patients.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.patients, 
+                      {status: 'Active', patient_name: ['like', `%${value}%`]}, 
+                      {status: 'Active'},
+                    )}"
+                    :filterOption="false"
                     >
                       <template #option="{ patient_name, mobile, custom_cpr }">
                         <div class="flex flex-col">
@@ -64,9 +71,8 @@
                 <a-form-item label="Appointment Type" name="appointment_type">
                   <a-select
                   v-model:value="appointmentForm.appointment_type"
-                  :options="$resources.appointmentTypes.data"
+                  :options="$resources.appointmentTypes.data?.options"
                   @change="(value, option) => {
-                    console.log($resources.patients)
                     appointmentForm.appointment_for = option.allow_booking_for;
                     appointmentForm.duration = option.default_duration;
                     appointmentForm.practitioner = '';
@@ -76,6 +82,15 @@
                     appointmentForm.appointment_time = '';
                   }"
                   :fieldNames="{label: 'appointment_type', value: 'name'}"
+                  show-search
+                  :loading="$resources.appointmentTypes.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.appointmentTypes, 
+                    {appointment_type: ['like', `%${value}%`]}, 
+                    {},
+                  )}"
+                  :filterOption="false"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
@@ -90,9 +105,17 @@
                 <a-form-item label="Branch" name="branch">
                   <a-select
                   v-model:value="appointmentForm.custom_branch"
-                  :options="$resources.branches.data"
+                  :options="$resources.branches.data?.options"
                   :fieldNames="{label: 'name', value: 'name'}"
                   show-search
+                  :loading="$resources.branches.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.branches, 
+                    {name: ['like', `%${value}%`]}, 
+                    {},
+                  )}"
+                  :filterOption="false"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Practitioner" 
@@ -102,13 +125,21 @@
                 >
                   <a-select
                   v-model:value="appointmentForm.practitioner_name"
-                  :options="$resources.practitioners.data"
+                  :options="$resources.practitioners.data?.options"
                   :fieldNames="{label: 'practitioner_name', value: 'name'}"
-                  show-search
                   @change="(value, option) => {
                     appointmentForm.practitioner = option.name
                     $emit('show-slots')
                   }"
+                  show-search
+                  :loading="$resources.practitioners.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.practitioners, 
+                    {status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
+                    {status: 'Active'},
+                  )}"
+                  :filterOption="false"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Department" 
@@ -118,9 +149,17 @@
                 >
                   <a-select
                   v-model:value="appointmentForm.department"
-                  :options="$resources.departmentsdata"
+                  :options="$resources.departments.data?.options"
                   :fieldNames="{label: 'department', value: 'name'}"
                   show-search
+                  :loading="$resources.departments.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.departments, 
+                    {department: ['like', `%${value}%`]}, 
+                    {},
+                  )}"
+                  :filterOption="false"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Service Unit" 
@@ -130,9 +169,17 @@
                 >
                   <a-select
                   v-model:value="appointmentForm.service_unit"
-                  :options="$resources.serviceUnits.data"
+                  :options="$resources.serviceUnits.data?.options"
                   :fieldNames="{label: 'name', value: 'name'}"
                   show-search
+                  :loading="$resources.patients.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.patients, 
+                    {name: ['like', `%${value}%`]}, 
+                    {},
+                  )}"
+                  :filterOption="false"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment Date" name="appointment_date" v-if="!appointmentForm.custom_is_walked_in">
@@ -236,7 +283,7 @@
         </v-card-actions>
       </a-form>
     </v-card>
-    <patientQuick :isOpen="newPatientOpen" @update:isOpen="newPatientOpen = $event" @submitted="patientSubmitted"/>
+    <patientQuickDialog :isOpen="newPatientOpen" @update:isOpen="newPatientOpen = $event" @submitted="patientSubmitted"/>
   </v-dialog>
 </template>
 
@@ -293,8 +340,15 @@ export default {
       fields: ['name', 'department'], 
       auto: true, 
       orderBy: 'department', 
-      pageLength: 1000,
-      cache: 'departments'
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
     branches() { return { 
       type: 'list', 
@@ -302,8 +356,15 @@ export default {
       fields: ['name'], 
       auto: true, 
       orderBy: 'name', 
-      pageLength: 1000,
-      cache: 'branches'
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
     appointmentTypes() { return { 
       type: 'list', 
@@ -311,11 +372,17 @@ export default {
       fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
       auto: true, 
       orderBy: 'appointment_type',
-      pageLength: 1000,
-      cache: 'appointmentTypes',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
       transform(data) {
-				this.appointmentForm.appointment_type = data[0].appointment_type
-        this.appointmentForm.appointment_for = data[0].allow_booking_for
+        if(data.values.length == 0)
+          data.options = []
+        else{
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          this.appointmentForm.appointment_type = data.options[0].appointment_type
+          this.appointmentForm.appointment_for = data.options[0].allow_booking_for
+        }
+        return data
 			},
     }},
     practitioners() { return { 
@@ -325,8 +392,15 @@ export default {
       filters: {status: 'Active'},
       auto: true, 
       orderBy: 'practitioner_name',
-      pageLength: 1000,
-      cache: 'practitioners'
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
     serviceUnits() { return { 
       type: 'list', 
@@ -335,18 +409,32 @@ export default {
       filters:{'allow_appointments': 1}, 
       auto: true, 
       orderBy: 'name',
-      pageLength: 1000,
-      cache: 'serviceUnits'
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
     patients() { return { 
       type: 'list', 
       doctype: 'Patient', 
       fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
       filters: {status: 'Active'},
+      limit_start: 0,
+      pageLength: 10, 
+      url: 'frappe.desk.reportview.get', 
       auto: true, 
-      orderBy: 'patient_name',
-      pageLength: 1000,
-      cache: 'patients'
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
   },
   computed: {
@@ -389,6 +477,7 @@ export default {
 		return {
       lodingOverlay: false,
       newPatientOpen: false,
+      searchTimeout: null,
       patientSearch: '',
       categoryOptions: [
         {label: 'First Time', value: 'First Time'}, 
@@ -515,31 +604,53 @@ export default {
       );
     },
     patientSubmitted(doc) {
-      console.log(doc)
-      this.$resources.patients.insert.submit(doc)
-      this.$resources.patients.reload()
-      this.appointmentForm.patient = doc.patient_name
-      this.appointmentForm.patient_name = doc.patient_name
-      this.appointmentForm.patient_sex = doc.sex;
-      this.appointmentForm.patient_mobile = doc.mobile
-      this.appointmentForm.patient_age = this.calculateAge(doc.dob)
-      this.newPatientOpen = false
+      this.$call('healthcare_doworks.api.methods.new_doc', {form: doc})
+      .then(response => {
+        this.$resources.patients.reload()
+        this.appointmentForm.patient = response.name
+        this.appointmentForm.patient_name = response.patient_name
+        this.appointmentForm.patient_sex = response.sex;
+        this.appointmentForm.patient_mobile = response.mobile
+        this.appointmentForm.patient_age = this.calculateAge(response.dob)
+        this.newPatientOpen = false
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+        }
+      });
     },
-    // patientSearch(val) {
-    //   this.$call('healthcare_doworks.api.methods.reschedule_appointment', {form})
-    //   .then(response => {
-    //     this.lodingOverlay = false;
-    //     this.closeDialog()
-    //   }).catch(error => {
-    //     console.error(error);
-    //     let message = error.message.split('\n');
-    //     message = message.find(line => line.includes('frappe.exceptions'));
-    //     if(message){
-    //       const firstSpaceIndex = message.indexOf(' ');
-    //       this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-    //     }
-    //   });
-    // },
+    transformData (keys, values) {
+      return values.map(row => {
+        const obj = {};
+        keys.forEach((key, index) => {
+          obj[key] = row[index];  // Map each key to its corresponding value
+        });
+        return obj;
+      });
+    },
+    handleSearch(query, resource, filters, initialFilters) {
+      // Clear the previous timeout to avoid spamming requests
+      clearTimeout(this.searchTimeout);
+
+      // Set a new timeout (300ms) for debouncing
+      this.searchTimeout = setTimeout(() => {
+        if (query) {
+          // Update list resource options to fetch matching records from server
+          resource.update({filters});
+
+          // Fetch the updated results
+          resource.reload();
+        } else {
+          // If no search query, load initial records
+          resource.update({filters: initialFilters});
+          resource.reload();
+        }
+      }, 300);  // Debounce delay of 300ms
+    },
 	},
 };
 </script>

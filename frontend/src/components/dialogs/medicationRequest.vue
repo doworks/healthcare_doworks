@@ -14,15 +14,33 @@
                                 <a-form-item label="Medication" name="medication">
                                     <a-select
                                         v-model:value="form.medication"
-                                        :options="$resources.medications.data"
+                                        :options="$resources.medications.data?.options"
                                         :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.medications.list.loading"
+                                        @search="(value) => {handleSearch(
+                                            value, 
+                                            $resources.medications, 
+                                            {name: ['like', `%${value}%`]}, 
+                                            {},
+                                        )}"
+                                        :filterOption="false"
                                     ></a-select>
                                 </a-form-item>
                                 <a-form-item label="Medication Item" name="medication_item">
                                     <a-select
                                         v-model:value="form.medication_item"
-                                        :options="$resources.items.data"
+                                        :options="$resources.items.data?.options"
                                         :fieldNames="{label: 'item_name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.items.list.loading"
+                                        @search="(value) => {handleSearch(
+                                            value, 
+                                            $resources.items, 
+                                            {item_name: ['like', `%${value}%`]}, 
+                                            {},
+                                        )}"
+                                        :filterOption="false"
                                     ></a-select>
                                 </a-form-item>
                                 <a-form-item label="Order Date" name="form_order_date">
@@ -54,15 +72,33 @@
                                 <a-form-item label="Dosage Form" name="dosage_form">
                                     <a-select
                                         v-model:value="form.dosage_form"
-                                        :options="$resources.dosageForms.data"
+                                        :options="$resources.dosageForms.data?.options"
                                         :fieldNames="{label: 'dosage_form', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.dosageForms.list.loading"
+                                        @search="(value) => {handleSearch(
+                                            value, 
+                                            $resources.dosageForms, 
+                                            {dosage_form: ['like', `%${value}%`]}, 
+                                            {},
+                                        )}"
+                                        :filterOption="false"
                                     ></a-select>
                                 </a-form-item>
                                 <a-form-item label="Dosage" name="dosage">
                                     <a-select
                                         v-model:value="form.dosage"
-                                        :options="$resources.prescriptionDosages.data"
+                                        :options="$resources.prescriptionDosages.data?.options"
                                         :fieldNames="{label: 'dosage', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.prescriptionDosages.list.loading"
+                                        @search="(value) => {handleSearch(
+                                            value, 
+                                            $resources.prescriptionDosages, 
+                                            {dosage: ['like', `%${value}%`]}, 
+                                            {},
+                                        )}"
+                                        :filterOption="false"
                                     ></a-select>
                                 </a-form-item>
                             </v-col>
@@ -73,8 +109,17 @@
                                 <a-form-item label="Period" name="period">
                                     <a-select
                                         v-model:value="form.period"
-                                        :options="$resources.prescriptionDurations.data"
+                                        :options="$resources.prescriptionDurations.data?.options"
                                         :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.prescriptionDurations.list.loading"
+                                        @search="(value) => {handleSearch(
+                                            value, 
+                                            $resources.prescriptionDurations, 
+                                            {name: ['like', `%${value}%`]}, 
+                                            {},
+                                        )}"
+                                        :filterOption="false"
                                     ></a-select>
                                 </a-form-item>
                                 <a-form-item label="Occurrence Time" name="occurrence_time">
@@ -159,8 +204,15 @@ export default {
 			fields: ['name'], 
 			auto: true, 
 			orderBy: 'name', 
-			pageLength: 1000,
-            cache: 'medications'
+			pageLength: 10,
+            url: 'frappe.desk.reportview.get', 
+            transform(data) {
+                if(data.values.length == 0)
+                    data.options = []
+                else
+                    data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+                return data
+            }
 		}},
         items() { return { 
 			type: 'list', 
@@ -168,8 +220,15 @@ export default {
 			fields: ['name', 'item_name'], 
 			auto: true, 
 			orderBy: 'item_name', 
-			pageLength: 1000,
-            cache: 'items'
+			pageLength: 10,
+            url: 'frappe.desk.reportview.get', 
+            transform(data) {
+                if(data.values.length == 0)
+                    data.options = []
+                else
+                    data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+                return data
+            }
 		}},
         dosageForms() { return { 
             type: 'list', 
@@ -177,8 +236,15 @@ export default {
             fields: ['name', 'dosage_form'], 
             auto: true, 
             orderBy: 'dosage_form', 
-            pageLength: 1000,
-            cache: 'dosageForms'
+            pageLength: 10,
+            url: 'frappe.desk.reportview.get', 
+            transform(data) {
+                if(data.values.length == 0)
+                    data.options = []
+                else
+                    data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+                return data
+            }
         }},
         prescriptionDosages() { return { 
             type: 'list', 
@@ -186,8 +252,15 @@ export default {
             fields: ['name', 'dosage'], 
             auto: true, 
             orderBy: 'dosage', 
-            pageLength: 1000,
-            cache: 'prescriptionDosages'
+            pageLength: 10,
+            url: 'frappe.desk.reportview.get', 
+            transform(data) {
+                if(data.values.length == 0)
+                    data.options = []
+                else
+                    data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+                return data
+            }
         }},
         prescriptionDurations() { return { 
             type: 'list', 
@@ -195,8 +268,15 @@ export default {
             fields: ['name'], 
             auto: true, 
             orderBy: 'name', 
-            pageLength: 1000,
-            cache: 'prescriptionDurations'
+            pageLength: 10,
+            url: 'frappe.desk.reportview.get', 
+            transform(data) {
+                if(data.values.length == 0)
+                    data.options = []
+                else
+                    data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+                return data
+            }
         }},
     },
     computed: {
@@ -274,7 +354,35 @@ export default {
             .catch(err => {
                 console.log('error', err);
             });
-        }
+        },
+        transformData (keys, values) {
+            return values.map(row => {
+                const obj = {};
+                keys.forEach((key, index) => {
+                    obj[key] = row[index];  // Map each key to its corresponding value
+                });
+                return obj;
+            });
+        },
+        handleSearch(query, resource, filters, initialFilters) {
+            // Clear the previous timeout to avoid spamming requests
+            clearTimeout(this.searchTimeout);
+
+            // Set a new timeout (300ms) for debouncing
+            this.searchTimeout = setTimeout(() => {
+                if (query) {
+                    // Update list resource options to fetch matching records from server
+                    resource.update({filters});
+
+                    // Fetch the updated results
+                    resource.reload();
+                } else {
+                    // If no search query, load initial records
+                    resource.update({filters: initialFilters});
+                    resource.reload();
+                }
+            }, 300);  // Debounce delay of 300ms
+        },
 	},
 };
 </script>

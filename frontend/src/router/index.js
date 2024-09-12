@@ -16,7 +16,7 @@ const routes = [
     path: "/",
     name: "Home",
     beforeEnter: (to, from, next) => {
-      next('/doctor-dashboard');
+      next('/appointments');
     },
   },
   {
@@ -40,8 +40,8 @@ const routes = [
     component: Patient
   },
   {
-    path: '/doctor-dashboard',
-    name: 'doctor-dashboard',
+    path: '/practitioner-dashboard',
+    name: 'practitioner-dashboard',
     component: DoctorDashBoard
   },
   {

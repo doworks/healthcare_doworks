@@ -27,99 +27,6 @@ export default {
 		VLayout,
 		VMain,
 	},
-	resources: {
-		departments() { return { 
-			type: 'list', 
-			doctype: 'Medical Department', 
-			fields: ['name', 'department'], 
-			auto: true, 
-			orderBy: 'department',
-			pageLength: 1000,
-			cache: 'departments'
-		}},
-		practitioners() { return { 
-			type: 'list', 
-			doctype: 'Healthcare Practitioner', 
-			fields: ['practitioner_name', 'image', 'department', 'name'], 
-			filters: {status: 'Active'},
-			auto: true, 
-			orderBy: 'practitioner_name',
-			pageLength: 1000,
-			cache: 'practitioners',
-		}},
-		serviceUnits() { return { 
-			type: 'list', 
-			doctype: 'Healthcare Service Unit', 
-			fields:['name'], 
-			filters:{'allow_appointments': 1}, 
-			auto: true, 
-			orderBy: 'name',
-			pageLength: 1000,
-			cache: 'serviceUnits',
-		}},
-		patients() { return { 
-			type: 'list', 
-			doctype: 'Patient', 
-			fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
-			filters: {status: 'Active'},
-			auto: true, 
-			orderBy: 'patient_name',
-			pageLength: 1000,
-			cache: 'patients',
-		}},
-		medications() { return { 
-			type: 'list', 
-			doctype: 'Medication', 
-			fields: ['name'], 
-			auto: true, 
-			orderBy: 'name', 
-			pageLength: 1000,
-			cache: 'medications',
-		}},
-        items() { return { 
-			type: 'list', 
-			doctype: 'Item', 
-			fields: ['name', 'item_name'], 
-			auto: true, 
-			orderBy: 'item_name', 
-			pageLength: 1000,
-			cache: 'items',
-		}},
-		complaints() { return { 
-			type: 'list', 
-			doctype: 'Complaint', 
-			fields: ['name'], 
-			auto: true,
-			orderBy: 'name',
-			pageLength: 1000,
-			cache: 'complaints',
-			// transform data before setting it
-			transform(data) {
-				for (let d of data) {
-				d.label = d.name
-				d.value = d.name
-				}
-				return data
-			},
-		}},
-		diagnosis() { return { 
-			type: 'list', 
-			doctype: 'Diagnosis', 
-			fields: ['name'], 
-			auto: true,
-			orderBy: 'name',
-			pageLength: 1000,
-			cache: 'diagnosis',
-			// transform data before setting it
-			transform(data) {
-				for (let d of data) {
-				d.label = d.name
-				d.value = d.name
-				}
-				return data
-			},
-		}},
-	},
 	setup() {
 		// loadStyles();
 
@@ -136,11 +43,6 @@ export default {
 		};
 	},
 	methods: {
-		getColorFromName(name) {
-			const hash = this.hashStringToNumber(name);
-			const index = hash % colors.length;
-			return colors[index];
-		},
 	},
 	name: "App",
 };

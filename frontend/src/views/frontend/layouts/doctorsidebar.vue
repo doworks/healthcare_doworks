@@ -26,11 +26,11 @@
         <v-list-item 
         v-if="isHealthcareAdministrator" 
         prepend-icon="fa fa-display" 
-        title="Doctor Dashboard" 
-        value="doctorDashboard" 
+        title="Practitioner Dashboard" 
+        value="practitionerDashboard" 
         nav 
-        to="/doctor-dashboard"
-        :class="{ 'v-list-item--active': $route.name == 'doctor-dashboard' }"
+        to="/practitioner-dashboard"
+        :class="{ 'v-list-item--active': $route.name == 'practitioner-dashboard' }"
         ></v-list-item>
         <v-list-item 
         v-if="isNurse" 
@@ -98,7 +98,7 @@
         handler(newValue) {
           if(this.$myresources.user.name){
             this.currenColor = this.getColorFromName(this.$myresources.user.name)
-            this.isHealthcareAdministrator = this.$myresources.user.roles.some(value => value.role == 'Healthcare Administrator')
+            this.isHealthcareAdministrator = this.$myresources.user.roles.some(value => value.role == 'Practitioner')
             this.isNurse = this.$myresources.user.roles.some(value => value.role == 'Nursing User')
           }
         },

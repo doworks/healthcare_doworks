@@ -60,14 +60,23 @@
           </div>
           <div class="flex flex-col" style="width: 15rem">
             <a-select
-              v-model:value="selectedDepartments"
-              mode="multiple"
-              style="width: 100%; align-items: center; max-height: 62px;"
-              placeholder="Departments"
-              max-tag-count="responsive"
-              :options="$resources.departments.data"
-              :fieldNames="{label:'department', value: 'name'}"
-              size="large"
+            v-model:value="selectedDepartments"
+            mode="multiple"
+            style="width: 100%; align-items: center; max-height: 62px;"
+            placeholder="Departments"
+            max-tag-count="responsive"
+            :options="$resources.departments.data?.options"
+            :fieldNames="{label:'department', value: 'name'}"
+            size="large"
+            show-search
+            :loading="$resources.departments.list.loading"
+            @search="(value) => {handleSearch(
+              value, 
+              $resources.departments, 
+              {department: ['like', `%${value}%`]}, 
+              {},
+            )}"
+            :filterOption="false"
             >
             </a-select>
           </div>
@@ -97,7 +106,7 @@
         </v-tab>
       </v-tabs>
       <div v-if="appointmentsLoading">
-        <v-progress-linear :value="(appointments.length / totalRecords) * 100" color="purple" height="4"></v-progress-linear>
+        <v-progress-linear v-model="progressValue" color="purple" height="4"></v-progress-linear>
       </div>
       <div class="tab-content">
         <v-window v-model="tab" disabled>
@@ -141,47 +150,12 @@
     @show-alert="showAlert" 
     :appointment="selectedRow"
     />
-    <v-dialog v-model="appointmentNoteOpen" width="auto">
-      <v-card
-        rounded="lg"
-        width="auto"
-        prepend-icon="mdi mdi-door-open"
-        title="Add Note"
-      >
-        <v-card-text>
-          <a-form-item label="To">
-            <a-select
-            v-model:value="newNote.to"
-            :options="$resources.users.data"
-            :fieldNames="{label: 'full_name', value: 'name'}"
-            show-search
-            style="min-width: 400px; max-width: 600px;"
-            @change="(value, option) => {newNote.full_name = option.full_name}"
-            ></a-select>
-          </a-form-item>
-          <a-form-item label="Notes">
-            <a-textarea v-model:value="newNote.note" placeholder="Notes" :rows="4" />
-          </a-form-item>
-        </v-card-text>
-
-        <v-card-actions class="my-2 d-flex justify-end">
-          <v-btn
-          class="text-none"
-          text="Cancel"
-          @click="isActive.value = false"
-          ></v-btn>
-
-          <v-btn
-          class="text-none"
-          color="blue"
-          
-          text="Submit"
-          variant="tonal"
-          @click="onSubmitAppointmentNote()"
-          ></v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <appointmentNoteDialog 
+    :isOpen="appointmentNoteOpen" 
+    @update:isOpen="appointmentNoteOpen = $event" 
+    @show-alert="showAlert" 
+    :appointmentId="selectedRow.name"
+    />
     <v-dialog v-model="serviceUnitOpen" width="auto">
       <v-card
         rounded="lg"
@@ -191,11 +165,19 @@
       >
         <v-card-text>
           <a-select
-            v-model:value="appointmentForm.service_unit"
-            :options="$resources.serviceUnits.data"
-            :fieldNames="{label: 'name', value: 'name'}"
-            show-search
-            style="min-width: 400px; max-width: 600px;"
+          v-model:value="appointmentForm.service_unit"
+          :options="$resources.serviceUnits.data?.options"
+          :fieldNames="{label: 'name', value: 'name'}"
+          style="min-width: 400px; max-width: 600px;"
+          show-search
+          :loading="$resources.serviceUnits.list.loading"
+          @search="(value) => {handleSearch(
+            value, 
+            $resources.serviceUnits, 
+            {allow_appointments: 1, name: ['like', `%${value}%`]}, 
+            {allow_appointments: 1},
+          )}"
+          :filterOption="false"
           ></a-select>
         </v-card-text>
 
@@ -203,7 +185,7 @@
           <v-btn
           class="text-none"
           text="Cancel"
-          @click="isActive.value = false"
+          @click="serviceUnitOpen = false"
           ></v-btn>
 
           <v-btn
@@ -226,11 +208,19 @@
       >
         <v-card-text>
           <a-select
-            v-model:value="appointmentForm.practitioner_name"
-            :options="$resources.practitioners.data"
-            :fieldNames="{label: 'practitioner_name', value: 'name'}"
-            show-search
-            style="min-width: 400px; max-width: 600px;"
+          v-model:value="appointmentForm.practitioner_name"
+          :options="$resources.practitioners.data?.options"
+          :fieldNames="{label: 'practitioner_name', value: 'name'}"
+          style="min-width: 400px; max-width: 600px;"
+          show-search
+          :loading="$resources.practitioners.list.loading"
+          @search="(value) => {handleSearch(
+            value, 
+            $resources.practitioners, 
+            {status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
+            {status: 'Active'},
+          )}"
+          :filterOption="false"
           ></a-select>
         </v-card-text>
 
@@ -238,7 +228,7 @@
           <v-btn
           class="text-none"
           text="Cancel"
-          @click="isActive.value = false"
+          @click="transferOpen = false"
           ></v-btn>
 
           <v-btn
@@ -271,7 +261,7 @@
           <v-btn
           class="text-none"
           text="Cancel"
-          @click="isActive.value = false"
+          @click="paymentTypeOpen = false"
           ></v-btn>
 
           <v-btn
@@ -318,24 +308,21 @@ export default {
     AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear,
   },
   resources: {
-    users() { return { 
-      type: 'list', 
-      doctype: 'User', 
-      filters: {enabled: 1},
-      fields: ['name', 'full_name'], 
-      auto: true, 
-      orderBy: 'full_name',
-      pageLength: 1000,
-      cache: 'users'
-    }},
     departments() { return { 
       type: 'list', 
       doctype: 'Medical Department', 
       fields: ['name', 'department'], 
       auto: true, 
       orderBy: 'department',
-      pageLength: 1000,
-      cache: 'departments'
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
     appointmentTypes() { return { 
       type: 'list', 
@@ -343,12 +330,18 @@ export default {
       fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
       auto: true, 
       orderBy: 'appointment_type',
-      pageLength: 1000,
-      cache: 'appointmentTypes',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
       transform(data) {
-				this.appointmentForm.appointment_type = data[0].appointment_type
-        this.appointmentForm.appointment_for = data[0].allow_booking_for
-			},
+        if(data.values.length == 0)
+          data.options = []
+        else{
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          this.appointmentForm.appointment_type = data.options[0].appointment_type
+          this.appointmentForm.appointment_for = data.options[0].allow_booking_for
+        }
+        return data
+      }
     }},
     practitioners() { return { 
       type: 'list', 
@@ -357,8 +350,15 @@ export default {
       filters: {status: 'Active'},
       auto: true, 
       orderBy: 'practitioner_name',
-      pageLength: 1000,
-      cache: 'practitioners'
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
     serviceUnits() { return { 
       type: 'list', 
@@ -367,8 +367,15 @@ export default {
       filters:{'allow_appointments': 1}, 
       auto: true, 
       orderBy: 'name',
-      pageLength: 1000,
-      cache: 'serviceUnits'
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
     patients() { return { 
       type: 'list', 
@@ -377,8 +384,15 @@ export default {
       filters: {status: 'Active'},
       auto: true, 
       orderBy: 'patient_name',
-      pageLength: 1000,
-      cache: 'patients'
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
     }},
   },
   data() {
@@ -397,7 +411,6 @@ export default {
       paymentTypeOpen: false,
       lodingOverlay: false,
       slots: {},
-      newNote: {},
       message: '',
       alertVisible: false,
       appointmentForm: {},
@@ -418,6 +431,7 @@ export default {
         {label: 'Next Month',  value: 'next month'},
       ],
       totalRecords: 0,
+      progressValue: 0,
     };
   },
   created() {
@@ -485,7 +499,8 @@ export default {
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
         d.visit_notes = d.visit_notes.map(note => {
-          note.creation = dayjs(note.creation).format('h:mm A DD/MM/YYYY')
+          note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
+          note.dayTime = dayjs(note.time).format('h:mm A')
           return note
         })
         d.arriveTime = '-'
@@ -574,15 +589,10 @@ export default {
     },
     appointmentDialog(formType, isNew, row) {
       if(isNew){
-        let duration = 0
-        this.$resources.appointmentTypes.data.forEach(value => {
-          if(value.appointment_type === 'Practitioner')
-            duration = value.default_duration
-        })
         this.appointmentForm.name = '';
-				this.appointmentForm.duration = duration;
-				this.appointmentForm.appointment_type = this.$resources.appointmentTypes.data[0].appointment_type;
-				this.appointmentForm.appointment_for = this.$resources.appointmentTypes.data[0].allow_booking_for;
+				this.appointmentForm.duration = this.$resources.appointmentTypes.data.options[0].default_duration;
+				this.appointmentForm.appointment_type = this.$resources.appointmentTypes.data.options[0].appointment_type;
+				this.appointmentForm.appointment_for = this.$resources.appointmentTypes.data.options[0].allow_booking_for;
 				this.appointmentForm.custom_appointment_category = 'First Time';
         this.appointmentForm.custom_payment_type = '';
         this.appointmentForm.practitioner = '';
@@ -618,12 +628,11 @@ export default {
 			this.appointmentOpen = true
 		},
     appointmentNoteDialog(row) {
-      this.appointmentForm.name = row.name;
+      this.selectedRow = row
 			this.appointmentNoteOpen = true;
 		},
     vitalSignDialog(row) {
       this.selectedRow = row
-      console.log(this.selectedRow)
 			this.vitalSignsOpen = true;
 		},
     transferPractitionerDialog(row) {
@@ -767,32 +776,6 @@ export default {
         }
       });
     },
-    onSubmitAppointmentNote() {
-      this.lodingOverlay = true;
-      this.$call('frappe.client.insert', 
-        {doc: {
-          doctype: 'Appointment Note Table', 
-          parent: this.appointmentForm.name, 
-          parentfield: 'custom_visit_notes', 
-          parenttype: 'Patient Appointment', 
-          to: this.newNote.to, 
-          full_name: this.newNote.full_name,
-          note: this.newNote.note, 
-          read: 0, 
-        }}
-      ).then(response => {
-        this.lodingOverlay = false;
-        this.appointmentNoteOpen = false;
-      }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
-      });
-    },
     onSubmitServiceUnit() {
       this.lodingOverlay = true;
       this.$call('frappe.client.set_value', 
@@ -834,6 +817,34 @@ export default {
     },
     updateProgress() {
       this.progressValue = (this.appointments.length / this.totalRecords) * 100;
+    },
+    transformData (keys, values) {
+      return values.map(row => {
+        const obj = {};
+        keys.forEach((key, index) => {
+          obj[key] = row[index];  // Map each key to its corresponding value
+        });
+        return obj;
+      });
+    },
+    handleSearch(query, resource, filters, initialFilters) {
+      // Clear the previous timeout to avoid spamming requests
+      clearTimeout(this.searchTimeout);
+
+      // Set a new timeout (300ms) for debouncing
+      this.searchTimeout = setTimeout(() => {
+        if (query) {
+          // Update list resource options to fetch matching records from server
+          resource.update({filters});
+
+          // Fetch the updated results
+          resource.reload();
+        } else {
+          // If no search query, load initial records
+          resource.update({filters: initialFilters});
+          resource.reload();
+        }
+      }, 300);  // Debounce delay of 300ms
     },
     // formattedDayOfWeek() {
     //   if (!this.selectedDates) return '';
