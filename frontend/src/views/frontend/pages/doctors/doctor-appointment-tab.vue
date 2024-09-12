@@ -492,6 +492,11 @@ export default {
 					icon: 'mdi mdi-account-multiple-plus-outline',
 					command: () => this.$emit('appointment-dialog', 'New Appointment', false, this.selectedRow)
 				}] : []),
+				...(this.$route.name == 'appointments' ? [{
+					label: 'Visit Status Log',
+					icon: 'mdi mdi-timetable',
+					command: () => {this.$emit('visit-status-log', this.selectedRow)}
+				}] : []),
 				{
 					label: 'Status',
 					icon: 'mdi mdi-clipboard-edit-outline',

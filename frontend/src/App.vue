@@ -22,7 +22,7 @@ import '@/assets/css/prime.css';
 import { VLayout } from 'vuetify/components/VLayout'
 import { VMain } from 'vuetify/components/VMain'
 export default {
-	inject: ['$auth'],
+	inject: ['$auth', '$cardReader'],
 	components:{
 		VLayout,
 		VMain,
@@ -37,6 +37,10 @@ export default {
 	},
 	mounted(){
 		// console.log(this.$auth)
+		console.log(this.$cardReader)
+		this.$cardReader.on('card_data', (data) => {
+			console.log('Received card data:', data);
+		});
 	},
 	data() {
 		return {

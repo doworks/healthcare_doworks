@@ -6,6 +6,8 @@ import call from "./utils/call";
 import { initSocket } from './utils/socket'
 import Auth from "./utils/auth";
 
+import io from 'socket.io-client'; 
+
 // Import Frappe UI
 import { FrappeUI, setConfig, frappeRequest, resourcesPlugin } from 'frappe-ui'
             				// My App //
@@ -160,6 +162,10 @@ router.beforeEach(async (to, from, next) => {
 
 // Handle Global Resources
 let resources = reactive({user: {}, siteName: '', colorCache: {}});
+
+// Card Reader Socket
+let cardReader = io('http://localhost:5000', {reconnectionAttempts: 3})
+app.provide("$cardReader", cardReader);
 
 // Global Properties,
 // components can inject this

@@ -705,7 +705,7 @@
                             </div>
                           </v-col>
                         </v-row>
-                        <v-row v-if="procedureForm.custom_annotations">
+                        <v-row v-if="procedureForm.custom_annotations.length > 1">
                           <v-col>
                             <h3 class="mt-3">Annotations</h3>
                             <Galleria 

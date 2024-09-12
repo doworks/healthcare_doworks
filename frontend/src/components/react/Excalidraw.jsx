@@ -169,11 +169,9 @@ const ExcalidrawWrapper = () => {
   const [treatments, setTreatments] = useState([]);
   const [annotationsTemplate, setAnnotationsTemplate] = useState('');
   useEffect(() => {
-    console.log('getting annotations')
     call('healthcare_doworks.api.methods.annotations_records')
     .then(response => {
       let vars = {}
-      console.log(response)
       response.treatments.forEach(treatment => {
         vars[treatment.treatment] = {}
         treatment.variables.forEach(value => {

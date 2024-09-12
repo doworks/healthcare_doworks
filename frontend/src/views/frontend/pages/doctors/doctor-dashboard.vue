@@ -131,7 +131,13 @@
                         <img :src="bellImage" width="40px" class="me-1"/>
                       </v-badge>
                     </v-btn>
-                    <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i>
+                    <!-- <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i> -->
+                    <v-btn v-else
+                    icon="mdi mdi-bell-plus-outline" 
+                    variant="text" 
+                    @click="$emit('appointment-note-dialog', data)"
+                    >
+                    </v-btn>
                   </div>
                 </template>
               </Column>
@@ -142,7 +148,25 @@
                   <span class="fw-semibold d-block mb-2">Appointment Notes</span>
                   <a-textarea v-model:value="selectedRow.notes" :rows="4"/>
                 </div>
+                <v-btn
+                icon="mdi mdi-plus" 
+                variant="text" 
+                @click="$emit('appointment-note-dialog', selectedRow)"
+                >
+                </v-btn>
                 <div v-if="selectedRow.visit_notes.length > 0">
+                  <!-- <span class="fw-semibold d-block mb-2">Visit Notes</span>
+                  <ul class="list-none p-0 m-0 flex flex-column">
+                    <li v-for="(note, index) in selectedRow.visit_notes" :key="index" class="flex align-items-center gap-2 mb-3">
+                      <div>
+                        <a-textarea v-model:value="note" disabled/>
+                        <span>{{ note.time }}</span>
+                      </div>
+                      <div class="flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
+                        <span>{{ note.provider }}</span>
+                      </div>
+                    </li>
+                  </ul> -->
                   <DataTable 
                   :value="selectedRow.visit_notes" 
                   selectionMode="single" 
@@ -165,7 +189,17 @@
                         </div>
                       </template>
                     </Column>
-                    <Column header="Time" field="creation"></Column>
+                    <Column header="Time" field="dayDate">
+                      <template #body="{ data }">
+                        <div>
+                          {{ data.dayDate }}
+                        </div>
+                        <div>
+                          {{ data.dayTime }}
+                        </div>
+                      </template>
+                    </Column>
+                    <Column header="From" field="from"></Column>
                     <Column header="To" field="full_name"></Column>
                     <Column header="Note" field="note"></Column>
                   </DataTable>
