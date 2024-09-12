@@ -313,9 +313,9 @@
 					<a-textarea v-model:value="selectedRow.notes" :rows="4"/>
 				</div>
 				<v-btn
-				icon="mdi mdi-bell-plus-outline" 
+				icon="mdi mdi-plus" 
 				variant="text" 
-				@click="$emit('appointment-note-dialog', data)"
+				@click="$emit('appointment-note-dialog', selectedRow)"
 				>
 				</v-btn>
 				<div v-if="selectedRow.visit_notes.length > 0">

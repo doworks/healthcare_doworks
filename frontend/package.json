@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base=/assets/healthcare_doworks/frontend/ && yarn copy-html-entry",
+    "build": "NODE_ENV=development vite build --base=/assets/healthcare_doworks/frontend/ && yarn copy-html-entry",
     "preview": "vite preview",
     "copy-html-entry": "cp ../healthcare_doworks/public/frontend/index.html ../healthcare_doworks/www/frontend.html"
   },

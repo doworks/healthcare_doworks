@@ -1,8 +1,8 @@
 <template>
   <v-dialog v-model="dialogVisible" width="auto">
-      <v-card rounded="lg" width="auto" prepend-icon="mdi mdi-door-open">
+      <v-card rounded="lg" width="auto">
         <v-card-title class="d-flex justify-space-between align-center">
-          <div class="text-h5 text-medium-emphasis ps-2">New Noto</div>
+          <div class="text-h5 text-medium-emphasis ps-2">New Note</div>
           <v-btn icon="mdi mdi-close" variant="text" @click="closeDialog"></v-btn>
         </v-card-title>
         <v-divider class="m-0"></v-divider>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Excalidraw, Sidebar, exportToBlob, exportToClipboard } from '@excalidraw/excalidraw';
-import call from "../../../../../doppio/libs/controllers/call";
+import call from "../../utils/reactCall";
 
 import { 
   List, ListItemDecorator, ListItemButton, Tabs, TabList, Tab, TabPanel, Radio, 
@@ -169,8 +169,11 @@ const ExcalidrawWrapper = () => {
   const [treatments, setTreatments] = useState([]);
   const [annotationsTemplate, setAnnotationsTemplate] = useState('');
   useEffect(() => {
-    call('healthcare_doworks.api.methods.annotations_records').then(response => {
+    console.log('getting annotations')
+    call('healthcare_doworks.api.methods.annotations_records')
+    .then(response => {
       let vars = {}
+      console.log(response)
       response.treatments.forEach(treatment => {
         vars[treatment.treatment] = {}
         treatment.variables.forEach(value => {
@@ -183,7 +186,9 @@ const ExcalidrawWrapper = () => {
         male: response.templates.filter(doc => doc.gender === 'Male'),
         female: response.templates.filter(doc => doc.gender === 'Female'),
       })
-    })
+    }).catch(error => {
+      console.error(error);
+    });
   }, []);
 
   useEffect(() => {
