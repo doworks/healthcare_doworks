@@ -31,13 +31,20 @@ export default defineConfig({
 			'@': path.resolve(__dirname, 'src'),
 			'vue': 'vue/dist/vue.esm-bundler.js',
 			'react': 'react',
-      		'react-dom': 'react-dom',
+			'react-dom': 'react-dom',
 		}
 	},
 	build: {
 		outDir: '../healthcare_doworks/public/frontend',
 		emptyOutDir: true,
 		target: 'es2015',
+		rollupOptions: {
+			output: {
+				manualChunks: {
+					react: ['react', 'react-dom'],
+				},
+			},
+		},
 	},
 	optimizeDeps: {
 		include: ['frappe-ui > feather-icons', 'showdown', 'engine.io-client'],
