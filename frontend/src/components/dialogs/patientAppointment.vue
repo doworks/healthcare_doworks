@@ -30,8 +30,9 @@
                     @search="(value) => {handleSearch(
                       value, 
                       $resources.patients, 
-                      {status: 'Active', patient_name: ['like', `%${value}%`]}, 
+                      {status: 'Active'}, 
                       {status: 'Active'},
+                      [['patient_name', 'like', `%${value}%`], ['mobile', 'like', `%${value}%`], ['custom_cpr', 'like', `%${value}%`]]
                     )}"
                     :filterOption="false"
                     >
@@ -66,6 +67,26 @@
                   <a-select
                   v-model:value="appointmentForm.custom_appointment_category"
                   :options="categoryOptions"
+                  ></a-select>
+                </a-form-item>
+                <a-form-item 
+                label="Procedure Template" 
+                name="custom_procedure_template" 
+                v-if="appointmentForm.custom_appointment_category == 'Procedure'"
+                >
+                  <a-select
+                  v-model:value="appointmentForm.custom_procedure_template"
+                  :options="$resources.clinicalProcedureTemplates.data?.options"
+                  :fieldNames="{label: 'name', value: 'name'}"
+                  show-search
+                  :loading="$resources.clinicalProcedureTemplates.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.clinicalProcedureTemplates, 
+                    {name: ['like', `%${value}%`]}, 
+                    {},
+                  )}"
+                  :filterOption="false"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment Type" name="appointment_type">
@@ -314,6 +335,7 @@ export default {
 				appointment_for: '',
 				duration: '',
 				custom_appointment_category: 'First Time',
+        custom_procedure_template: '',
         custom_payment_type: '',
 				practitioner: '',
         practitioner_name: '',
@@ -436,6 +458,22 @@ export default {
         return data
       }
     }},
+    clinicalProcedureTemplates() { return { 
+      type: 'list', 
+      doctype: 'Clinical Procedure Template', 
+      fields: ['name', 'template', 'medical_department'], 
+      auto: true,
+      orderBy: 'name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
   },
   computed: {
     dialogVisible: {
@@ -461,6 +499,10 @@ export default {
         }],
         appointment_date: [{ required: true, message: 'Please choose a date!' }],
         appointment_time: [{ required: !this.appointmentForm.custom_is_walked_in, message: 'Please choose a time!' }],
+        custom_procedure_template: [{ 
+          required: this.appointmentForm.custom_appointment_category == 'Procedure', 
+          message: 'Please choose a procedure template!' 
+        }],
       });
     },
   },
@@ -632,7 +674,7 @@ export default {
         return obj;
       });
     },
-    handleSearch(query, resource, filters, initialFilters) {
+    handleSearch(query, resource, filters, initialFilters, orFilters) {
       // Clear the previous timeout to avoid spamming requests
       clearTimeout(this.searchTimeout);
 
@@ -640,13 +682,13 @@ export default {
       this.searchTimeout = setTimeout(() => {
         if (query) {
           // Update list resource options to fetch matching records from server
-          resource.update({filters});
+          resource.update({filters, orFilters});
 
           // Fetch the updated results
           resource.reload();
         } else {
           // If no search query, load initial records
-          resource.update({filters: initialFilters});
+          resource.update({filters: initialFilters, orFilters});
           resource.reload();
         }
       }, 300);  // Debounce delay of 300ms

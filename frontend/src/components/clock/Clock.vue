@@ -2,7 +2,7 @@
   <div class="clock" v-if="hourtime != ''">
     <div class="clock__hours" v-if="isHour">
       <span class="clock__hourtime" v-text="hourtime"></span>
-      <span v-text="hours"></span>
+      <div v-text="hours"></div>
     </div>
     <div class="clock__minutes" v-text="minutes" v-if="isMinute"></div>
     <div class="clock__seconds" v-text="seconds" v-if="isSecond"></div>

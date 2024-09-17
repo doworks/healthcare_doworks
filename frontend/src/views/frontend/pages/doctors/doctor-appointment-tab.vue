@@ -163,7 +163,7 @@
 					placeholder="Any Practitioner"
 					max-tag-count="responsive"
 					:options="$resources.practitioners.data?.options"
-					:fieldNames="{label: 'practitioner_name', value: 'name'}"
+					:fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
 					show-search
                     :loading="$resources.practitioners.list.loading"
                     @search="(value) => {handleSearch(
@@ -185,8 +185,8 @@
 							</v-avatar>
 							<span class="ms-2">{{ practitioner_name }}</span>
 						</template>
-						<template #tagRender="{ option, onClose }">
-							<v-chip size="small" closable @click:close="onClose">
+						<!-- <template #tagRender="{ option, onClose }">
+							<v-chip size="small" closable @click:close="onClose" v-if="option">
 								<v-avatar size="20" :color="!option.image ? colorCache[option.practitioner_name] : ''">
 									<img
 										v-if="option.image"
@@ -197,7 +197,7 @@
 								</v-avatar>
 								<span>{{ option.practitioner_name }}</span>
 							</v-chip>
-						</template>
+						</template> -->
 					</a-select>
 				</template>
 			</Column>

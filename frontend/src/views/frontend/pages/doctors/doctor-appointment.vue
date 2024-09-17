@@ -594,6 +594,7 @@ export default {
 				this.appointmentForm.appointment_type = this.$resources.appointmentTypes.data.options[0].appointment_type;
 				this.appointmentForm.appointment_for = this.$resources.appointmentTypes.data.options[0].allow_booking_for;
 				this.appointmentForm.custom_appointment_category = 'First Time';
+        this.appointmentForm.custom_procedure_template = '';
         this.appointmentForm.custom_payment_type = '';
         this.appointmentForm.practitioner = '';
 				this.appointmentForm.practitioner_name = '';
@@ -610,6 +611,7 @@ export default {
 				this.appointmentForm.appointment_type = row.appointment_type;
 				this.appointmentForm.appointment_for = row.appointment_for;
 				this.appointmentForm.custom_appointment_category = row.custom_appointment_category;
+        this.appointmentForm.custom_procedure_template = row.custom_procedure_template;
         this.appointmentForm.custom_payment_type = row.custom_payment_type;
         this.appointmentForm.practitioner = row.practitioner;
 				this.appointmentForm.practitioner_name = row.practitioner_name;

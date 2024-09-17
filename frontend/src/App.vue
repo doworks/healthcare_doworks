@@ -16,9 +16,9 @@
 
 <script>
 import '@/assets/css/feather.css';
-// import '@/assets/css/custom.css';
 import 'frappe-ui/src/style.css';
 import '@/assets/css/prime.css';
+// import '@/assets/css/custom.css';
 import { VLayout } from 'vuetify/components/VLayout'
 import { VMain } from 'vuetify/components/VMain'
 export default {
@@ -53,6 +53,9 @@ export default {
 </script>
 
 <style>
+html {
+	font-size: 75% !important;
+}
 #body-main{
 	background-color: papayawhip;
 	padding-left: 70px;
