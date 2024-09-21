@@ -1853,8 +1853,8 @@
 
               </Stepper>
               <div class="d-flex py-4 gap-2">
-                <!-- <v-btn variant="flat" color="lime" @click="submitEncounter()">Save</v-btn>
-                <v-btn variant="flat" color="amber" @click="submitEncounter(true)">Submit</v-btn> -->
+                <!-- <v-btn variant="flat" color="lime" @click="submitEncounter()">Save</v-btn> -->
+                <v-btn variant="flat" color="amber" @click="submitEncounter(true)">Submit</v-btn>
               </div>
             </a-form>
           </template>
