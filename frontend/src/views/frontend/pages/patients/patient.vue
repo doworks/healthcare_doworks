@@ -155,7 +155,11 @@
                   name="patient_details" 
                   extra="Additional information regarding the patient"
                   >
-                  <a-textarea v-model:value="form.patient_details" :rows="14" />
+                  <a-textarea 
+                  v-model:value="form.patient_details" 
+                  :rows="14" 
+                  @blur="event => {autoSave('Patient', form.name, 'patient_details', event.target.value)}"
+                  />
                   </a-form-item>
                 </v-col>
               </v-row>

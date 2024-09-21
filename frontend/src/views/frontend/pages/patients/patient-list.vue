@@ -48,7 +48,7 @@
       removableSort 
       :rowsPerPageOptions="[20, 100, 500, 2500]"
       v-model:filters="filters"
-      :globalFilterFields="['custom_cpr', 'patient_name', 'mobile', 'email']"
+      :globalFilterFields="['custom_cpr', 'patient_name', 'mobile', 'email', 'custom_file_number']"
       selectionMode="single"
       @row-click="openRow"
       v-model:selection="selectedRows"
@@ -58,6 +58,7 @@
         <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
         <Column header="Full Name" field="patient_name" sortable></Column>
         <Column header="CPR" field="custom_cpr" sortable></Column>
+        <Column header="File Number" field="custom_file_number" sortable></Column>
         <Column header="Age" field="age" sortable></Column>
         <Column header="Mobile" field="mobile" sortable></Column>
         <Column header="Email" field="email" sortable></Column>

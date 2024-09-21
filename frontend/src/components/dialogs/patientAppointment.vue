@@ -139,11 +139,7 @@
                   :filterOption="false"
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Practitioner" 
-                name="practitioner" 
-                v-if="appointmentForm.appointment_for === 'Practitioner'" 
-                @change="setPaymentDetails()"
-                >
+                <a-form-item label="Practitioner" name="practitioner" @change="setPaymentDetails()">
                   <a-select
                   v-model:value="appointmentForm.practitioner_name"
                   :options="$resources.practitioners.data?.options"
@@ -260,15 +256,31 @@
                       :data-tele-conf="slot.maximum_appointments ? '' : slotInfo.tele_conf || 0"
                       :data-overlap-appointments="slot.maximum_appointments ? '' : slotInfo.service_unit_capacity || 0"
                       style="margin: 0 10px 10px 0; width: auto"
+                      rounded="lg"
                       :data-toggle="slot.maximum_appointments ? '' : 'tooltip'"
                       :title="slot.maximum_appointments ? '' : slot.tool_tip || ''"
                       @click="handleSlotClick(toggle, slot.from_time, slotInfo.service_unit)"
                       >
+                      <div class="flex flex-col">
+
                         {{ slot.maximum_appointments ? `${slot.from_time} - ${slot.to_time}` : slot.from_time.substring(0, slot.from_time.length - 3)}}
-                        &nbsp
-                        <span v-if="slot.maximum_appointments || slotInfo.service_unit_capacity" :class="`badge ${slot.count_class}`">
+                        <!-- <v-badge 
+                        :color="slot.maximum_appointments || slotInfo.service_unit_capacity ? 'success' : 'red-accent-3'" 
+                        :content="slot.count" 
+                        
+                        >
+                        
+                        </v-badge> -->
+                        <span v-if="slotInfo.allow_overlap == 1" 
+                        :class="{
+                          'badge w-fit self-center mt-1': true,
+                          'bg-success': slot.count > 0,
+                          'bg-red-accent-3': slot.count == 0
+                        }"
+                        >
                           {{slot.count}}
                         </span>
+                      </div>
                       </v-btn>
                     </v-item>
                   </v-item-group>

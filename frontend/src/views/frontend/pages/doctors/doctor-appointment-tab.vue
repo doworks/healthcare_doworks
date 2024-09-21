@@ -15,6 +15,7 @@
 		selectionMode="single" 
 		:metaKeySelection="true" 
 		@row-contextmenu="handleRowContextMenu"
+		:rowClass="rowClass"
 		>
 			<template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
 			<template #loading> Loading Appointments data. Please wait.</template>
@@ -25,7 +26,11 @@
 			style="width: 20%"
 			>
 				<template #body="{ data }">
-					<router-link style="color: unset; text-decoration: unset" :to="{ name: 'patient', params: { patientId: data.patient_details.id } }">
+					<a 
+					:href="$router.resolve({ name: 'patient', params: { patientId: data.patient_details.id } }).href" 
+					target="_blank" 
+					style="color: unset; text-decoration: unset"
+					>
 						<div class="flex align-items-center gap-2">
 							<v-avatar>
 								<img
@@ -41,7 +46,7 @@
 								<span class="fw-light text-teal ms-3" style="font-size: smaller">{{ data.patient_details.cpr }}</span>
 							</div><br/>
 						</div>
-					</router-link>
+					</a>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-input 
@@ -264,6 +269,15 @@
 				<template #body="{ data }">
 					<div>
 						<v-btn 
+						v-if="tab == 'arrived'" 
+						variant="text" 
+						color="blue"
+						icon="mdi mdi-pulse" 
+						@click="() => { 
+							$emit('vital-sign-dialog', data)
+						}">
+						</v-btn>
+						<v-btn 
 						v-if="tab == 'scheduled' || tab == 'arrived'" 
 						variant="text" 
 						color="green"
@@ -274,6 +288,16 @@
 							if(tab == 'scheduled') next = 'Arrived'
 							if(tab == 'arrived') next = 'Ready'
 							updateStatus({label: next}) 
+						}">
+						</v-btn>
+						<v-btn 
+						v-if="tab == 'ready'" 
+						variant="text" 
+						color="blue"
+						icon="mdi mdi-bandage" 
+						@click="() => { 
+							selectedRow = data
+							goToEncounter()
 						}">
 						</v-btn>
 						<v-btn 
@@ -288,10 +312,10 @@
 						>
 							<v-badge 
 							color="success" :content="data.visit_notes.filter(val => !val.read).length + (data.notes && 1)" 
-							:offset-y="5" 
+							:offset-y="-1" 
 							:offset-x="6"
 							>
-								<img :src="bellImage" width="40px" class="me-1"/>
+								<img :src="bellImage" width="30px" class="me-1"/>
 							</v-badge>
 						</v-btn>
 						<!-- <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i> -->
@@ -346,9 +370,9 @@
 						<Column>
 							<template #body="{ data }">
 								<div>
-									<v-btn v-if="data.read" size="small" variant="text" icon="mdi mdi-eye" @click="() => { data.read = 0 }">
+									<v-btn v-if="data.read" size="small" variant="text" icon="mdi mdi-eye" @click="() => { updateSeen(data) }">
 									</v-btn>
-									<v-btn v-else-if="!data.read" size="small" variant="text" icon="mdi mdi-eye-off" @click="() => { data.read = 1 }">
+									<v-btn v-else-if="!data.read" size="small" variant="text" icon="mdi mdi-eye-off" @click="() => { updateSeen(data) }">
 									</v-btn>
 								</div>
 							</template>
@@ -520,6 +544,11 @@ export default {
 					icon: 'mdi mdi-clock-outline',
 					command: () => {this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)}
 				}] : []),
+				...(this.$route.name == 'appointments' ? [{
+					label: 'Appointment Invoice Items',
+					icon: 'mdi mdi-invoice-text-outline',
+					command: () => {this.$emit('appointment-invoice-dialog', this.selectedRow)}
+				}] : []),
 				{
 					label: 'ID Card Reading',
 					icon: 'mdi mdi-card-account-details-outline',
@@ -545,11 +574,11 @@ export default {
 					icon: 'pi pi-wallet',
 					command: () => {this.$emit('payment-type-dialog', this.selectedRow)}
 				}] : []),
-				{
+				...(this.tab == 'arrived' || this.tab == 'ready' || this.tab == 'in room' ? [{
 					label: 'Patient Encounter',
 					icon: 'mdi mdi-bandage',
 					command: () => {this.goToEncounter()}
-				},
+				}] : []),
 				{
 					label: 'Request a Service',
 					icon: 'mdi mdi-needle',
@@ -690,6 +719,13 @@ export default {
 					resource.reload();
 				}
 			}, 300);  // Debounce delay of 300ms
+		},
+		rowClass(data) {
+            return [{ 'bg-pink-lighten-5': data.custom_confirmed == 0 && this.tab == 'scheduled' }];
+        },
+		updateSeen(data) {
+			data.read = !data.read
+			this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {parent_doctype: 'Patient Appointment', parent_doc_name: this.selectedRow.name, child_table_fieldname: 'custom_visit_notes', filters: {name: data.name}, update_data: data})
 		},
 		async readIdCard(event) {
             // var xmlHttp = new XMLHttpRequest();

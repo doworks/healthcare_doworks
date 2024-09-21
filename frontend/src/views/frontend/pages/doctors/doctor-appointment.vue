@@ -17,7 +17,7 @@
       <!-- Clock And Other Filters -->
       <div class="flex-wrap flex-col flex-xxl-row gap-3 nav nav-tabs nav-tabs-solid pb-2">
         <div class="flex flex-wrap flex-col flex-lg-row gap-3 flex-auto order-2 order-xxl-1">
-          <div class="flex flex-col" style="width: 15rem">
+          <div class="flex flex-col" style="width: 17rem">
             <a-select v-if="dateFilterType === 'span'"
             v-model:value="selectedSpan"
             style="width: 100%; align-items: center; max-height: 62px; text-align: center"
@@ -58,7 +58,7 @@
               <a-radio-button value="range">Range</a-radio-button>
             </a-radio-group> -->
           </div>
-          <div class="flex flex-col" style="width: 15rem">
+          <div class="flex flex-col" style="width: 17rem">
             <a-select
             v-model:value="selectedDepartments"
             mode="multiple"
@@ -80,7 +80,7 @@
             >
             </a-select>
           </div>
-          <div class="flex flex-col" style="width: 15rem">
+          <div class="flex flex-col" style="width: 17rem">
             <a-input v-model:value="searchValue" placeholder="Search" size="large">
               <template #prefix>
                 <v-icon icon="mdi mdi-magnify" color="grey"></v-icon>
@@ -102,7 +102,7 @@
       <v-tabs v-model="tab" align-tabs="center" color="indigo" bg-color="white" show-arrows>
         <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key">
           {{ key }}
-          <v-badge color="indigo" :content="getBadgeNumber(key)" inline></v-badge>
+          <v-badge :color="getBadgeNumber(key) > 0 ? 'green' : 'indigo'" :content="getBadgeNumber(key)" inline></v-badge>
         </v-tab>
       </v-tabs>
       <div v-if="appointmentsLoading">
@@ -122,6 +122,7 @@
             @show-alert="showAlert"
             @appointment-dialog="appointmentDialog"
             @appointment-note-dialog="appointmentNoteDialog"
+            @appointment-invoice-dialog="appointmentInvoiceDialog"
             @vital-sign-dialog="vitalSignDialog"
             @service-unit-dialog="serviceUnitDialog"
             @payment-type-dialog="paymentTypeDialog"
@@ -155,6 +156,12 @@
     @update:isOpen="appointmentNoteOpen = $event" 
     @show-alert="showAlert" 
     :appointmentId="selectedRow.name"
+    />
+    <appointmentInvoiceDialog 
+    :isOpen="appointmentInvoiceOpen" 
+    @update:isOpen="appointmentInvoiceOpen = $event" 
+    @show-alert="showAlert" 
+    :appointment="selectedRow"
     />
     <v-dialog v-model="serviceUnitOpen" width="auto">
       <v-card
@@ -409,6 +416,7 @@ export default {
       serviceUnitOpen: false,
       transferOpen: false,
       paymentTypeOpen: false,
+      appointmentInvoiceOpen: false,
       lodingOverlay: false,
       slots: {},
       message: '',
@@ -604,6 +612,7 @@ export default {
 				this.appointmentForm.department = '';
 				this.appointmentForm.service_unit = '';
         this.appointmentForm.notes = '';
+        this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
 			}
 			else{
         this.appointmentForm.name = row.name;
@@ -621,10 +630,12 @@ export default {
 				this.appointmentForm.department = row.department;
 				this.appointmentForm.service_unit = row.service_unit;
         this.appointmentForm.notes = row.notes;
+        this.appointmentForm.appointment_date = dayjs(row.appointment_date)
+        this.appointmentForm.appointment_time = undefined;
 			}
       this.showSlots()
       this.appointmentForm.doctype = 'Patient Appointment';
-      this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
+      // this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
 			this.appointmentForm.type = formType
       this.appointmentForm.custom_is_walked_in = false;
 			this.appointmentOpen = true
@@ -632,6 +643,11 @@ export default {
     appointmentNoteDialog(row) {
       this.selectedRow = row
 			this.appointmentNoteOpen = true;
+		},
+    appointmentInvoiceDialog(row) {
+      console.log(row)
+      this.selectedRow = row
+			this.appointmentInvoiceOpen = true;
 		},
     vitalSignDialog(row) {
       this.selectedRow = row

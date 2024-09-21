@@ -39,7 +39,7 @@ def fetch_patient_appointments(filters=None, start=0, limit=50, total_records=Fa
 				'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
 				'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner',
 				'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
-				'custom_payment_type', 'patient_age', 'patient'
+				'custom_payment_type', 'patient_age', 'patient', 'custom_confirmed', 'custom_customer'
 			],
 			order_by='appointment_date asc, appointment_time asc',
 			start=start,
@@ -383,8 +383,12 @@ def edit_doc(form, submit=False):
 	return doc
 
 @frappe.whitelist()
-def new_doc(form, submit=False):
+def new_doc(form, children={}, submit=False):
 	doc = frappe.get_doc(form)
+	if children:
+		for key, items in children.items():
+			for item in items:
+				doc.append(key, item)
 	doc.insert()
 	if(submit):
 		doc.submit()
@@ -509,6 +513,13 @@ def get_appointment_details(appointment):
 		fields=['status', 'time']
 	)
 	appointment['status_log'] = status_log
+
+	# Get invoice items
+	invoice_items = frappe.get_all('Healthcare Invoice Item', 
+		filters={'parent': appointment['name']},
+		fields=['*']
+	)
+	appointment['invoice_items'] = invoice_items
 
 	# Get practitioner image
 	practitioner = frappe.get_doc('Healthcare Practitioner', appointment['practitioner'])

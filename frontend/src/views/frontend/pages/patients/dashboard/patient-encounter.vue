@@ -31,14 +31,20 @@
         <Card class="h-100" :class="{'rounded-bottom-0': $vuetify.display.smAndDown, 'rounded-end-0': !$vuetify.display.smAndDown}">
           <template #content>
             <div class="vital-sign-container d-flex align-items-center">
-              <!-- <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="..."> -->
-              <v-avatar v-if="records.patient.image" size="80" :image="records.patient.image"></v-avatar>
-              <div class="text-start d-flex flex-column">
-                <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
-                <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
-                <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
-                <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
-              </div>
+              <a 
+              :href="$router.resolve({ name: 'patient', params: { patientId: records.patient.name } }).href" 
+              target="_blank" 
+              style="color: unset; text-decoration: unset"
+              >
+                <!-- <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="..."> -->
+                <v-avatar v-if="records.patient.image" size="80" :image="records.patient.image"></v-avatar>
+                <div class="text-start d-flex flex-column">
+                  <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
+                  <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
+                  <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
+                  <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
+                </div>
+              </a>
             </div>
           </template>
         </Card>
@@ -74,14 +80,20 @@
             <Card :class="['h-100 rounded-end-0',{'rounded-0': this.isAffixed}]">
               <template #content>
                 <div class="vital-sign-container d-flex align-items-center">
-                  <!-- <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="..."> -->
-                  <v-avatar v-if="records.patient.image" size="80" class="me-3" :image="records.patient.image"></v-avatar>
-                  <div class="text-start d-flex flex-column">
-                    <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
-                    <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
-                    <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
-                    <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
-                  </div>
+                  <a 
+                  :href="$router.resolve({ name: 'patient', params: { patientId: records.patient.name } }).href" 
+                  target="_blank" 
+                  style="color: unset; text-decoration: unset"
+                  >
+                    <!-- <img v-if="records.patient.image" class="me-3 avatar avatar-xl bg-primary-light rounded-circle" :src="records.patient.image" alt="..."> -->
+                    <v-avatar v-if="records.patient.image" size="80" class="me-3" :image="records.patient.image"></v-avatar>
+                    <div class="text-start d-flex flex-column">
+                      <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
+                      <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
+                      <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
+                      <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
+                    </div>
+                  </a>
                 </div>
               </template>
             </Card>
@@ -94,10 +106,10 @@
                     <div class="vital-sign-container align-self-center">
                       <div class="mb-2 gap-2 d-flex align-items-center">
                         <i class="pi pi-heart" style="font-size: 1.5rem"></i>
-                        <h3 class="my-0 fw-normal">SYS</h3>
+                        <h6 class="my-0 fw-normal">SYS</h6>
                       </div>
                       <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h3 class="fw-normal mb-0">{{currentVS.bp_systolic || '-'}}</h3> <small class="align-self-end" v-if="currentVS.bp_systolic">mm Hg</small>
+                        <h6 class="fw-normal mb-0">{{currentVS.bp_systolic || '-'}}</h6> <small class="align-self-end" v-if="currentVS.bp_systolic">mm Hg</small>
                       </div>
                     </div>
                   </v-slide-group-item>
@@ -106,10 +118,10 @@
                     <div class="vital-sign-container align-self-center">
                       <div class="mb-2 gap-2 d-flex align-items-center">
                         <i class="pi pi-heart" style="font-size: 1.5rem"></i>
-                        <h3 class="my-0 fw-normal">DIA</h3>
+                        <h6 class="my-0 fw-normal">DIA</h6>
                       </div>
                       <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h3 class="fw-normal mb-0">{{currentVS.bp_diastolic || '-'}}</h3> <small class="align-self-end" v-if="currentVS.bp_diastolic">mm Hg</small>
+                        <h6 class="fw-normal mb-0">{{currentVS.bp_diastolic || '-'}}</h6> <small class="align-self-end" v-if="currentVS.bp_diastolic">mm Hg</small>
                       </div>
                     </div>
                   </v-slide-group-item>
@@ -118,10 +130,10 @@
                     <div class="vital-sign-container align-self-center">
                       <div class="mb-2 gap-1 d-flex align-items-center">
                         <img style="width: 30px;" :src="soundImage"/>
-                        <h3 class="my-0 fw-normal">Pulse</h3>
+                        <h6 class="my-0 fw-normal">Pulse</h6>
                       </div>
                       <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h3 class="fw-normal mb-0">{{currentVS.pulse || '-'}}</h3> <small class="align-self-end" v-if="currentVS.pulse">BPM</small>
+                        <h6 class="fw-normal mb-0">{{currentVS.pulse || '-'}}</h6> <small class="align-self-end" v-if="currentVS.pulse">BPM</small>
                       </div>
                     </div>
                   </v-slide-group-item>
@@ -130,10 +142,10 @@
                     <div class="vital-sign-container align-self-center">
                       <div class="mb-2 gap-2 d-flex align-items-center">
                         <img style="width: 25px;" :src="lungsImage"/>
-                        <h3 class="my-0 fw-normal">Risp</h3>
+                        <h6 class="my-0 fw-normal">Risp</h6>
                       </div>
                       <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h3 class="fw-normal mb-0">{{currentVS.respiratory_rate || '-'}}</h3> <small class="align-self-end" v-if="currentVS.respiratory_rate">BPM</small>
+                        <h6 class="fw-normal mb-0">{{currentVS.respiratory_rate || '-'}}</h6> <small class="align-self-end" v-if="currentVS.respiratory_rate">BPM</small>
                       </div>
                     </div>
                   </v-slide-group-item>
@@ -142,10 +154,10 @@
                     <div class="vital-sign-container align-self-center">
                       <div class="mb-2 gap-1 d-flex align-items-center">
                         <img style="width: 30px;" :src="celsiusImage"/>
-                        <h3 class="my-0 fw-normal">Temp</h3>
+                        <h6 class="my-0 fw-normal">Temp</h6>
                       </div>
                       <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h3 class="fw-normal mb-0">{{currentVS.temperature + '\u00B0' || '-'}}</h3> <small class="align-self-end" v-if="currentVS.temperature">C</small>
+                        <h6 class="fw-normal mb-0">{{currentVS.temperature + '\u00B0' || '-'}}</h6> <small class="align-self-end" v-if="currentVS.temperature">C</small>
                       </div>
                     </div>
                   </v-slide-group-item>
@@ -317,7 +329,7 @@
                   </div>
                   <div class="py-3" v-for="(allergy, index) in records.patient.custom_allergies_table" :key="index">
                     <div class="d-flex align-items-center justify-content-between mb-1">
-                      <h5>{{ allergy.type }}</h5>
+                      <h6>{{ allergy.type }}</h6>
                       <v-chip :color="getSeverity(allergy.severity).color" >
                         {{ getSeverity(allergy.severity).severity }}
                       </v-chip>
@@ -348,7 +360,7 @@
                     :key="index"
                   >
                     <div class="d-flex flex-column">
-                      <h5 class="mb-0">{{ item.name1 }}</h5>
+                      <h6 class="mb-0">{{ item.name1 }}</h6>
                       <p class="text-fade mb-0">{{ item.note }}</p>
                     </div>
                   </div>
@@ -372,11 +384,11 @@
                   >
                     <div class="d-flex">
                       <div class="d-flex flex-column flex-grow-1">
-                        <h5 class="mb-0">{{ item.surgery }}</h5>
+                        <h6 class="mb-0">{{ item.surgery }}</h6>
                         <p class="text-fade mb-0">{{ item.date }}</p>
                       </div>
                       <div class="text-end fw-500">
-                        <h5 class="mb-0">{{ item.practitioner }}</h5>
+                        <h6 class="mb-0">{{ item.practitioner }}</h6>
                       </div>
                     </div>
                     <p class="pt-3 m-0">{{ item.notes }}</p>
@@ -400,10 +412,10 @@
                   :key="index"
                   >
                     <div class="d-flex flex-row flex-grow-1 justify-content-between w-100">
-                      <h5 class="text-black mb-0 align-middle align-self-center">
+                      <h6 class="text-black mb-0 align-middle align-self-center">
                         {{ medication.name1 }}
                         <!-- <small class="text-fade">{{ medication.weight }}</small> -->
-                      </h5>
+                      </h6>
                       <div class="text-fade mb-0">
                         <v-chip 
                         :color=" medication.is_active ? 'grey-lighten-1' : 'grey-darken-2'" 
@@ -437,7 +449,7 @@
                     :key="index"
                   >
                     <div class="d-flex flex-column">
-                      <h5 class="mb-0">{{ item.habit }}</h5>
+                      <h6 class="mb-0">{{ item.habit }}</h6>
                       <p class="text-fade mb-0">{{ item.note }}</p>
                     </div>
                   </div>
@@ -455,11 +467,11 @@
                   </div>
                   <div class="d-flex flex-column">
                     <div class="d-flex flex-row flex-grow-1 pb-3">
-                      <h4 class="mb-0">Chronic Diseases:&nbsp;</h4>
+                      <h6 class="mb-0">Chronic Diseases:&nbsp;</h6>
                       <p class="text-fade mb-0">{{ records.patient.custom_chronic_diseases }}</p>
                     </div>
                     <div class="d-flex flex-row flex-grow-1 pb-3">
-                      <h4 class="mb-0">Genetic Diseases:&nbsp;</h4>
+                      <h6 class="mb-0">Genetic Diseases:&nbsp;</h6>
                       <p class="text-fade mb-0">{{ records.patient.custom_genetic_conditions }}</p>
                     </div>
                   </div>
@@ -477,7 +489,7 @@
                   </div>
                   <div class="py-3" v-for="(risk, index) in records.patient.custom_risk_factors_table" :key="index">
                     <div class="d-flex ">
-                      <h5>{{ risk.type }}</h5>
+                      <h6>{{ risk.type }}</h6>
                       <v-chip label class="ms-auto" :color="getSeverity(risk.severity).color">
                         {{ getSeverity(risk.severity).risk }}
                       </v-chip>

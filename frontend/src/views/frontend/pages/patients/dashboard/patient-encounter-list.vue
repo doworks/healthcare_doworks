@@ -57,6 +57,7 @@
         <template #empty> No Patient Encounters found </template>
         <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
         <Column header="ID" field="name" sortable style="width: 25%"></Column>
+        <Column header="Patient" field="patient_name" sortable style="width: 25%"></Column>
         <Column header="Practitioner" field="practitioner_name" sortable style="width: 25%"></Column>
         <Column header="Status" field="status" sortable style="width: 25%"></Column>
         <Column header="Encounter Date" field="encounter_date" sortable style="width: 25%"></Column>

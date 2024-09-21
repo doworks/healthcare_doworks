@@ -54,7 +54,7 @@ export default {
 
 <style>
 html {
-	font-size: 75% !important;
+	font-size: 70% !important;
 }
 #body-main{
 	background-color: papayawhip;

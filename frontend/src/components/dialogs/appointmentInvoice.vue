@@ -2,43 +2,147 @@
   <v-dialog v-model="dialogVisible" width="1400px" scrollable>
     <v-card rounded="lg">
         <v-card-title class="d-flex justify-space-between align-center">
-          <div class="text-h5 text-medium-emphasis ps-2"><br>{{ patient.patient_name }}</br> Appointment Invoice</div>
+          <div class="text-h5 text-medium-emphasis ps-2"><br>{{ appointment.patient_name }}</br> Appointment Invoice</div>
           <v-btn icon="mdi mdi-close" variant="text" @click="closeDialog"></v-btn>
         </v-card-title>
         <v-divider class="m-0"></v-divider>
         <v-card-text>
           <v-container fluid>
-              <v-row>
-                <v-col cols="12">
-                  <h5>Invoice Items</h5>
-                  <EditableTable :columns="[
-                    {label: 'Item', key: 'item'},
-                    {label: 'Cost', key: 'cost'},
+            <!-- <v-row>
+              <v-col cols="12" md="6">
+                <a-form layout="vertical">
+                  <a-form-item label="Payment Type">
+                    <a-select
+                      class="w-full"
+                      v-model:value="appointment.custom_payment_type"
+                      :options="[{label: '', value: ''}, {label: 'Self Payment', value: 'Self Payment'}, {label: 'Insurance', value: 'Insurance'}]"
+                      @blur="event => {autoSave('Patient Appointment', appointment.name, 'custom_payment_type', event.target.value)}"
+                    ></a-select>
+                  </a-form-item>
+                </a-form>
+              </v-col>
+            </v-row> -->
+            <v-row>
+              <Menubar :model="actions" class="w-full"/>
+              <v-col cols="12">
+                <h5>Invoice Items</h5>
+                <EditableTable :columns="[
+                  {label: 'Item', key: 'item'},
+                  {label: 'Quantity', key: 'quantity'},
+                  {label: 'Rate', key: 'rate'},
+                  {label: 'Amount', key: 'amount'},
+                  ...(appointment.custom_payment_type == 'Insurance' ? [
                     {label: 'Customer Amount', key: 'customer_amount'},
-                    {label: 'Insurance Amount', key: 'insurance_amount'},
-                    {label: 'Invoices', key: 'invoice'},
-                  ]"
-                  :rows="appointment.custom_invoice_items"
-                  @update="(items, row, isNew) => {
-                    if(items && row)
-                      newChildRow({
-                        fieldName: 'custom_invoice_items', 
-                        rules: {item: [{ required: true, message: 'Please choose an item!' }]},
-                        items, row, isNew
-                      })
-                  }"
-                  @delete="rows => {deleteChildRow({fieldName: 'custom_invoice_items', rows})}"
-                  title="Invoice Items"
-                  >
-                  </EditableTable>
-                </v-col>
-              </v-row>
+                    {label: 'Insurance Amount', key: 'insurance_amount'}
+                  ] : []),
+                  {label: appointment.custom_payment_type == 'Insurance' ? 'Customer Invoice' : 'Invoice', key: 'customer_invoice'},
+                  ...(appointment.custom_payment_type == 'Insurance' ? [{label: 'Insurance Invoice', key: 'insurance_invoice'}] : []),
+                ]"
+                :rows="invoiceItems"
+                @update="(items, row, isNew) => {
+                  invoiceItems = items
+                  if(items && row)
+                    newChildRow({
+                      fieldName: 'custom_invoice_items', 
+                      rules: {item: [{ required: true, message: 'Please choose an item!' }]},
+                      items, row, isNew
+                    })
+                }"
+                @delete="rows => {deleteChildRow({fieldName: 'custom_invoice_items', rows})}"
+                title="Invoice Items"
+                >
+                  <template v-slot:dialog="{ row }">
+                    <a-form layout="vertical">
+                      <a-form-item label="Item">
+                        <a-select
+                        v-model:value="row.item"
+                        :options="$resources.items.data?.options"
+                        @change="(value, option) => {
+                          row.item_name = option.item_name;
+                          row.item_uom = option.weight_uom;
+                          row.rate = option.valuation_rate;
+                          row.amount = option.valuation_rate * row.quantity;
+                        }"
+                        :fieldNames="{label: 'item_name', value: 'name'}"
+                        show-search
+                        :loading="$resources.items.list.loading"
+                        @search="(value) => {handleSearch(
+                          value, 
+                          $resources.items, 
+                          {item_name: ['like', `%${value}%`]}, 
+                          {},
+                        )}"
+                        :filterOption="false"
+                        ></a-select>
+                      </a-form-item>
+                      <a-form-item label="Quantity">
+                        <a-input-number class="w-full" :controls="false" v-model:value="row.quantity" @change="(value, option) => {row.amount = value * row.rate}"/>
+                      </a-form-item>
+                      <a-form-item label="Rate">
+                        <a-input-number class="w-full" :controls="false" v-model:value="row.rate" @change="(value, option) => {row.amount = value * row.quantity}"/>
+                      </a-form-item>
+                      <a-form-item label="Amount">
+                        <a-input-number class="w-full" :controls="false" v-model:value="row.amount" disabled/>
+                      </a-form-item>
+                      <a-form-item label="Patient" v-if="appointment.custom_payment_type == 'Insurance'">
+                        <a-input-number class="w-full" :controls="false" v-model:value="row.customer_amount"/>
+                      </a-form-item>
+                      <a-form-item label="Insurance" v-if="appointment.custom_payment_type == 'Insurance'">
+                        <a-input-number class="w-full" :controls="false" v-model:value="row.insurance_amount"/>
+                      </a-form-item>
+                    </a-form>
+                  </template>
+                </EditableTable>
+              </v-col>
+            </v-row>
           </v-container>
         </v-card-text>
         
         <v-divider class="m-0"></v-divider>
+        <v-dialog v-model="modeOfPaymentOpen" width="auto">
+          <v-card
+          rounded="lg"
+          width="auto"
+          prepend-icon="pi pi-wallet"
+          >
+            <v-card-text>
+              <a-select
+              v-model:value="modeOfPayment"
+              :options="$resources.modeOfPayments.data?.options"
+              @change="(value, option) => {paymentType = option.type}"
+              :fieldNames="{label: 'name', value: 'name'}"
+              show-search
+              :loading="$resources.modeOfPayments.list.loading"
+              @search="(value) => {handleSearch(
+                value, 
+                $resources.modeOfPayments, 
+                {item_name: ['like', `%${value}%`]}, 
+                {},
+              )}"
+              :filterOption="false"
+              ></a-select>
+            </v-card-text>
+
+            <v-card-actions class="my-2 d-flex justify-end">
+              <v-btn
+              class="text-none"
+              text="Cancel"
+              @click="modeOfPaymentOpen = false"
+              ></v-btn>
+
+              <v-btn
+              class="text-none"
+              color="blue"
+              
+              text="submit"
+              variant="tonal"
+              @click=""
+              ></v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
         
-        <v-card-actions class="my-2 d-flex justify-end">
+        <!-- <v-card-actions class="my-2 d-flex justify-end">
         <v-btn
         class="text-none"
         text="Cancel"
@@ -52,12 +156,12 @@
         @click="onSubmit()"
         type="submit"
         ></v-btn>
-        </v-card-actions>
+        </v-card-actions> -->
     </v-card>
     <v-overlay
-      :model-value="lodingOverlay"
-      class="align-center justify-center"
-      >
+    :model-value="lodingOverlay"
+    class="align-center justify-center"
+    >
       <v-progress-circular
         color="primary"
         size="64"
@@ -68,6 +172,7 @@
 </template>
 
 <script >
+import { Form } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { VDivider } from 'vuetify/components/VDivider';
@@ -78,23 +183,57 @@ import { VProgressCircular } from 'vuetify/components/VProgressCircular';
 import EditableTable from '../editableTable.vue';
 
 export default {
-inject: ['$call'],
-components: {
-  VDivider, VInfiniteScroll, VItemGroup, VItem, VOverlay, VProgressCircular,
-},
-props: {
-  isOpen: {
-    type: Boolean,
-    required: true,
-    default: false,
+  inject: ['$call'],
+  components: {
+    VDivider, VInfiniteScroll, VItemGroup, VItem, VOverlay, VProgressCircular,
   },
-  appointment: {
-    required: true,
-    default: {
-      name: '',
-    }
+  props: {
+    isOpen: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    appointment: {
+      required: true,
+      default: {
+        name: '',
+      }
+    },
   },
-},
+  resources: {
+    items() { return { 
+      type: 'list', 
+      doctype: 'Item', 
+      fields: ['name', 'item_code', 'item_name', 'valuation_rate', 'weight_uom'], 
+      auto: true,
+      orderBy: 'name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
+    modeOfPayments() { return { 
+      type: 'list', 
+      doctype: 'Item', 
+      fields: ['name', 'type'], 
+      auto: true,
+      orderBy: 'name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
+  },
   computed: {
     dialogVisible: {
       get() {
@@ -105,48 +244,80 @@ props: {
       },
     },
   },
-data() {
-  return {
-    lodingOverlay: false,
-  };
-},
+  data() {
+    return {
+      lodingOverlay: false,
+      modeOfPaymentOpen: false,
+      modeOfPayment: null,
+      paymentType: '',
+      invoiceItems: this.appointment.invoice_items,
+      actions: [
+        {
+          label: 'Create Invoices',
+          icon: 'pi pi-plus',
+          command: () => {
+            this.lodingOverlay = true;
+            const cloneItems = this.invoiceItems.map(value => {
+              value.item_code = value.item
+              value.uom = value.item_uom
+              value.qty = value.quantity
+            })
+            this.$call('healthcare_doworks.api.methods.new_doc', {
+              form: {
+                doctype: 'Sales Invoice',
+                patient: this.appointment.patient,
+                patient_name: this.appointment.patient_name,
+                customer: this.appointment.custom_customer || this.appointment.patient_name,
+                posting_date: dayjs().format('YYYY-MM-DD'),
+                due_date: dayjs().format('YYYY-MM-DD'),
+                service_unit: this.appointment.service_unit
+              },
+              children: {
+                items: this.invoiceItems
+              }
+            })
+            .then(response => {
+              console.log(response)
+              this.lodingOverlay = false;
+              this.invoiceItems.filter(value => !value.customer_invoice).forEach(value => {
+                value.customer_invoice = response.name
+                this.newChildRow({
+                  fieldName: 'custom_invoice_items', 
+                  rules: {item: [{ required: true, message: 'Please choose an item!' }]},
+                  row: value, 
+                  isNew: false
+                })
+              })
+            }).catch(error => {
+              console.error(error);
+              let message = error.message.split('\n');
+              message = message.find(line => line.includes('frappe.exceptions'));
+              if(message){
+                const firstSpaceIndex = message.indexOf(' ');
+                this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+              }
+            });
+          }
+        },
+        {
+          label: 'Make Payment',
+          icon: 'mdi mdi-credit-card-outline',
+          command: () => {this.modeOfPaymentOpen = true}
+        },
+      ],
+    };
+  },
   mounted() {
-    this.allergies = this.patient.custom_allergies_table
-    this.infectedDiseases = this.patient.custom_infected_diseases
-    this.surgicalHistory = this.patient.custom_surgical_history_table.map(sur => {
-      sur.dayDate = dayjs(sur.date)
-      return sur
-    })
-    this.medications = this.patient.custom_medications.map(med => {
-      med.dayDate = dayjs(med.from_date)
-      return med
-    })
-    this.habits = this.patient.custom_habits__social
-    this.riskFactors = this.patient.custom_risk_factors_table
-    this.chronicDiseases = this.patient.custom_chronic_diseases
-    this.geneticDiseases = this.patient.custom_genetic_conditions
+    // console.log(this.appointment)
   },
   watch: {
-    patient: {
-      handler(newValue) {
-        if(newValue){
-          this.allergies = this.patient.custom_allergies_table
-          this.infectedDiseases = this.patient.custom_infected_diseases
-          this.surgicalHistory = this.patient.custom_surgical_history_table.map(sur => {
-            sur.dayDate = dayjs(sur.date)
-            return sur
-          })
-          this.medications = this.patient.custom_medications.map(med => {
-            med.dayDate = dayjs(med.from_date)
-            return med
-          })
-          this.habits = this.patient.custom_habits__social
-          this.riskFactors = this.patient.custom_risk_factors_table
-          this.chronicDiseases = this.patient.custom_chronic_diseases
-          this.geneticDiseases = this.patient.custom_genetic_conditions
+    appointment: {
+			handler(newValue) {
+				if(newValue){
+          this.invoiceItems = newValue.invoice_items
         }
-      }
-    },
+			}
+		},
   },
   methods: {
     updateIsOpen(value) {
@@ -154,6 +325,27 @@ data() {
     },
     closeDialog() {
       this.updateIsOpen(false);
+    },
+    onSubmitPayment() {
+      
+    },
+    autoSave(doctype, name, fieldname, value) {
+      if(this.isNew) return;
+
+      this.$call('frappe.client.set_value', {doctype, name, fieldname, value})
+      .then(response => {
+        this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        }
+        else
+          this.showAlert('Sorry. There is an error!' , 10000)
+      });
     },
     newChildRow({parentDoctype ,prarentDocname, fieldName, rules, items, row, isNew}) {
       const { validate } = Form.useForm(row, rules);
@@ -229,6 +421,34 @@ data() {
           console.log('error', err);
         });
       })
+    },
+    transformData (keys, values) {
+      return values.map(row => {
+        const obj = {};
+        keys.forEach((key, index) => {
+          obj[key] = row[index];  // Map each key to its corresponding value
+        });
+        return obj;
+      });
+    },
+    handleSearch(query, resource, filters, initialFilters, orFilters) {
+      // Clear the previous timeout to avoid spamming requests
+      clearTimeout(this.searchTimeout);
+
+      // Set a new timeout (300ms) for debouncing
+      this.searchTimeout = setTimeout(() => {
+        if (query) {
+          // Update list resource options to fetch matching records from server
+          resource.update({filters, orFilters});
+
+          // Fetch the updated results
+          resource.reload();
+        } else {
+          // If no search query, load initial records
+          resource.update({filters: initialFilters, orFilters});
+          resource.reload();
+        }
+      }, 300);  // Debounce delay of 300ms
     },
   },
 };
