@@ -299,14 +299,6 @@ export default {
     };
   },
   created() {
-    this.$socket.on('patient_appointments_chunk', (chunk) => {
-      this.appointments = [...this.appointments, ...this.adjustAppointments(chunk.data)];
-      if(chunk.total)
-        this.totalRecords = chunk.total;
-      if (this.appointments.length >= this.totalRecords) {
-        this.appointmentsLoading = false;
-      }
-    });
     this.$socket.on('patient_appointments_updated', updatedAppointment => {
       if (updatedAppointment) {
         const appointmentDate = dayjs(updatedAppointment.appointment_date);
@@ -327,10 +319,6 @@ export default {
         }
       }
     })
-    
-    this.$socket.on('connect', () => {
-      this.fetchRecords();  // Call fetchRecords only after the socket is connected
-    });
   },
   computed: {
     updatedAppointments() {
@@ -351,9 +339,19 @@ export default {
     },
     nextAppointmentTime() {
       if(this.appointments[0]){
+        console.log(this.appointments)
         const firstValidAppointment = this.appointments
-        .filter(appointment => appointment.visit_status == 'Scheduled' && appointment.visit_status == 'Arrived' && appointment.visit_status == 'Ready')
-        .sort((a, b) => dayjs(a.appointment_date + ' ' + a.appointment_time) - dayjs(b.appointment_date + ' ' + b.appointment_time))[0];
+        .filter(appointment => 
+          ['Scheduled', 'Arrived', 'Ready'].includes(appointment.visit_status)
+        )
+        .reduce((earliest, current) => {
+          const currentDate = dayjs(`${current.appointment_date} ${current.appointment_time}`);
+          const earliestDate = dayjs(`${earliest.appointment_date} ${earliest.appointment_time}`);
+
+          // If the current appointment is earlier, update the earliest
+          return currentDate.isBefore(earliestDate) ? current : earliest;
+        }, this.appointments[0]); // Initialize with the first appointment in the array
+
         const nextappointment = dayjs(firstValidAppointment.appointment_date + ' ' + firstValidAppointment.appointment_time);
         // const diffInSeconds = this.currentTime.diff(nextappointment, 'second');
         // const hours = Math.floor(diffInSeconds / 3600);
@@ -366,13 +364,7 @@ export default {
     },
   },
   mounted() {
-    if (this.$socket.connected) {
-      this.fetchRecords();  // Fetch appointments if socket is already connected
-    } else {
-      this.$socket.on('connect', () => {
-        this.fetchRecords();  // Fetch records when the socket connects
-      });
-    }
+    this.fetchRecords()
     
     setInterval(() => {
 			this.currentTime = dayjs();
@@ -390,12 +382,19 @@ export default {
       return 'Scheduled'
     },
     fetchRecords() {
-      this.appointments = []
       this.appointmentsLoading = true;
+      const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
-        filters: {appointment_date: ['in', [dayjs().format('YYYY-MM-DD')]]},
-        total_records: true  // Only get the total count once
+        filters: {appointment_date: ['in', [dayjs().format('YYYY-MM-DD')]]}, start: 0, limit: 1000
       })
+      .then(response => {
+        this.appointments = this.adjustAppointments(response.appointments)
+        this.appointmentsLoading = false;
+      })
+      .catch(error => {
+        this.appointmentsLoading = false;
+        console.error('Error fetching records:', error);
+      });
     },
     adjustAppointments(data) {
 			return [...(data || [])].filter(value => {

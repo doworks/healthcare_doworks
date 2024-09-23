@@ -9,15 +9,18 @@
 		filterDisplay="row"
 		resizableColumns
 		:sortOrder="1"
-		:rows="10"
-		:rowsPerPageOptions="[10, 20, 50]"
+		:rows="20"
+		:rowsPerPageOptions="[20, 100, 500, 2500]"
 		:value="updatedAppointments"
 		selectionMode="single" 
 		:metaKeySelection="true" 
 		@row-contextmenu="handleRowContextMenu"
 		:rowClass="rowClass"
+		@page="props => {$emit('table-page-change', props)}"
+		paginatorTemplate="RowsPerPageDropdown"
+		:loading="loading"
 		>
-			<template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
+			<template #empty><v-empty-state v-if="!loading" title="No Appointments"></v-empty-state></template>
 			<template #loading> Loading Appointments data. Please wait.</template>
 			<Column header="Patient" 
 			field="patient_cpr" 
@@ -508,7 +511,6 @@ export default {
 				custom_payment_type: { value: null, matchMode: FilterMatchMode.EQUALS },
 			},
 			statuses: [{label:'Scheduled', value:'Scheduled'}, {label:'Rescheduled', value:'Rescheduled'}, {label:'Walked In', value:'Walked In'}],
-			purposes: [{label:'General', value:'General'}, {label:'Follow-up', value:'Follow-up'}, {label:'Consultation', value:'Consultation'}],
 			selectedRow: null,
 			contextItems: [
 				...(this.$route.name == 'appointments' ? [{
@@ -721,11 +723,14 @@ export default {
 			}, 300);  // Debounce delay of 300ms
 		},
 		rowClass(data) {
-            return [{ 'bg-pink-lighten-5': data.custom_confirmed == 0 && this.tab == 'scheduled' }];
+            return [{ '!bg-rose-50 hover:!bg-rose-100': data.custom_confirmed == 0 && this.tab == 'scheduled' }];
         },
 		updateSeen(data) {
 			data.read = !data.read
 			this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {parent_doctype: 'Patient Appointment', parent_doc_name: this.selectedRow.name, child_table_fieldname: 'custom_visit_notes', filters: {name: data.name}, update_data: data})
+		},
+		pageChanged(props) {
+			console.log(props)
 		},
 		async readIdCard(event) {
             // var xmlHttp = new XMLHttpRequest();

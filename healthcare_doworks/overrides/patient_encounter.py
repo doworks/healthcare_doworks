@@ -5,7 +5,7 @@ from healthcare.healthcare.doctype.patient_encounter.patient_encounter import se
 class CustomPatientEncounter(PatientEncounter):
 	def validate(self):
 		self.set_title()
-		self.validate_medications()
+		# self.validate_medications()
 		self.validate_therapies()
 		self.validate_observations()
 		set_codification_table_from_diagnosis(self)

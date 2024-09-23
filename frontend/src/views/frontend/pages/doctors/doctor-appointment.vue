@@ -100,14 +100,15 @@
 
       <!-- Appointment Tab -->
       <v-tabs v-model="tab" align-tabs="center" color="indigo" bg-color="white" show-arrows>
-        <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key">
+        <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key" @click="() => {
+          if(this.groupedAppointments[key].length <= 0){
+            this.fetchRecords();
+          }
+        }">
           {{ key }}
-          <v-badge :color="getBadgeNumber(key) > 0 ? 'green' : 'indigo'" :content="getBadgeNumber(key)" inline></v-badge>
+          <v-badge :color="totalCount[key] > 0 ? 'green' : 'indigo'" :content="totalCount[key]" inline></v-badge>
         </v-tab>
       </v-tabs>
-      <div v-if="appointmentsLoading">
-        <v-progress-linear v-model="progressValue" color="purple" height="4"></v-progress-linear>
-      </div>
       <div class="tab-content">
         <v-window v-model="tab" disabled>
           <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
@@ -127,6 +128,7 @@
             @service-unit-dialog="serviceUnitDialog"
             @payment-type-dialog="paymentTypeDialog"
             @transfer-practitioner-dialog="transferPractitionerDialog"
+            @table-page-change="pageChanged"
             />
           </v-window-item>
         </v-window>
@@ -257,11 +259,51 @@
         title="Update Payment Type"
       >
         <v-card-text>
-          <a-select
-            v-model:value="appointmentForm.custom_payment_type"
-            :options="[{label: '', value: ''}, {label: 'Self Payment', value: 'Self Payment'}, {label: 'Insurance', value: 'Insurance'}]"
-            style="min-width: 400px; max-width: 600px;"
-          ></a-select>
+          <a-form layout="vertical">
+            <a-form-item label="Payment Type">
+              <a-select
+                v-model:value="appointmentForm.custom_payment_type"
+                :options="[{label: '', value: ''}, {label: 'Self Payment', value: 'Self Payment'}, {label: 'Insurance', value: 'Insurance'}]"
+                style="min-width: 400px; max-width: 600px;"
+              ></a-select>
+            </a-form-item>
+  
+            <div v-if="appointmentForm.custom_payment_type == 'Insurance'">
+              <h4 class="mb-4 font-semibold">Insurance Details</h4>
+              <a-checkbox class="mb-3" v-model:checked="patientInsurance.custom_active">Active</a-checkbox>
+              <a-form-item label="Insurance Company Name">
+                <a-select
+                v-model:value="patientInsurance.custom_insurance_company_name"
+                style="width: 100%;"
+                :options="$resources.customers.data?.options"
+                :fieldNames="{label:'customer_name', value: 'name'}"
+                show-search
+                :loading="$resources.customers.list.loading"
+                @search="(value) => {handleSearch(
+                  value, 
+                  $resources.customers, 
+                  {customer_group: 'Medical Insurance', disabled: 0, customer_name: ['like', `%${value}%`]}, 
+                  {customer_group: 'Medical Insurance', disabled: 0},
+                )}"
+                :filterOption="false"
+                >
+                </a-select>
+              </a-form-item>
+              <a-form-item label="Policy Number">
+                <a-input v-model:value="patientInsurance.custom_policy_number"/>
+              </a-form-item>
+              <a-form-item label="Expiration Date">
+                <a-date-picker 
+                v-model:value="patientInsurance.custom_expiration_date"
+                format="DD MMM YYYY" 
+                style="z-index: 3000; width: 100%"
+                />
+              </a-form-item>
+              <a-form-item label="Copay Amount">
+                <a-input-number class="w-full" :controls="false" v-model:value="patientInsurance.custom_copay_amount"/>
+              </a-form-item>
+            </div>
+          </a-form>
         </v-card-text>
 
         <v-card-actions class="my-2 d-flex justify-end">
@@ -315,6 +357,23 @@ export default {
     AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear,
   },
   resources: {
+    customers() { return { 
+      type: 'list', 
+      doctype: 'Customer', 
+      fields: ['name', 'customer_name'], 
+      filters: {customer_group: 'Medical Insurance', disabled: 0},
+      auto: true, 
+      orderBy: 'customer_name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
     departments() { return { 
       type: 'list', 
       doctype: 'Medical Department', 
@@ -384,27 +443,12 @@ export default {
         return data
       }
     }},
-    patients() { return { 
-      type: 'list', 
-      doctype: 'Patient', 
-      fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
-      filters: {status: 'Active'},
-      auto: true, 
-      orderBy: 'patient_name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
   },
   data() {
     return {
       tab: 'Scheduled',
+      start: 0,
+      limit: {Scheduled: 20, Arrived: 20, Ready: 20, 'In Room': 20, Completed: 20, 'No Show': 20},
       appointments: [],
       groupedAppointments: {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],},
       searchValue: '',
@@ -422,6 +466,7 @@ export default {
       message: '',
       alertVisible: false,
       appointmentForm: {},
+      patientInsurance: {},
       selectedRow: {name: '', patient_details: {id: ''}},
       dateFilterType: 'span',
       selectedSpan: 'today',
@@ -439,21 +484,22 @@ export default {
         {label: 'Next Month',  value: 'next month'},
       ],
       totalRecords: 0,
+      totalCount: {Scheduled: 0, Arrived: 0, Ready: 0, 'In Room': 0, Completed: 0, 'No Show': 0},
       progressValue: 0,
     };
   },
   created() {
-    this.$socket.on('patient_appointments_chunk', (chunk) => {
-      this.appointmentsLoading = true;
-      this.appointments = this.adjustAppointments([...this.appointments, ...chunk.data]);
-      if(chunk.total)
-        this.totalRecords = chunk.total;
-      this.groupAppointmentsByStatus();
-      this.updateProgress();
-      if (this.appointments.length >= this.totalRecords) {
-        this.appointmentsLoading = false;
-      }
-    });
+    // this.$socket.on('patient_appointments_chunk', (chunk) => {
+    //   this.appointmentsLoading = true;
+    //   this.appointments = this.adjustAppointments([...this.appointments, ...chunk.data]);
+    //   if(chunk.total)
+    //     this.totalRecords = chunk.total;
+    //   this.groupAppointmentsByStatus();
+    //   this.updateProgress();
+    //   if (this.appointments.length >= this.totalRecords) {
+    //     this.appointmentsLoading = false;
+    //   }
+    // });
 
     this.$socket.on('patient_appointments_updated', updatedAppointment => {
       if (updatedAppointment) {
@@ -463,6 +509,16 @@ export default {
         const isInDateRange = this.selectedDates.some(date => date.isSame(appointmentDate, 'day'));
 
         if (isInDateRange) {
+          const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
+          this.$call('healthcare_doworks.api.methods.get_tabs_count', {
+            filters: {appointment_date: ['in', dates]}
+          }).then(response => {
+            this.totalCount = response
+          })
+          .catch(error => {
+            console.error('Error fetching records:', error);
+          });
+
           const index = this.appointments.findIndex(app => app.name === updatedAppointment.name);
 
           if (index !== -1) {
@@ -472,7 +528,7 @@ export default {
             // If not in the list, add it
             this.appointments.push(this.adjustAppointments([updatedAppointment])[0]);
           }
-
+          
           this.groupAppointmentsByStatus();  // Re-group appointments by status
         }
       }
@@ -480,13 +536,9 @@ export default {
   },
 
   mounted() {
-    if (this.$socket.connected) {
-      this.fetchRecords();  // Fetch appointments if socket is already connected
-    } else {
-      this.$socket.on('connect', () => {
-        this.fetchRecords();  // Fetch records when the socket connects
-      });
-    }
+    this.selectedDates = ref([dayjs()]),
+    this.selectedRangeDates = [dayjs().startOf('isoWeek').subtract(1, 'day'), dayjs().endOf('isoWeek').subtract(1, 'day')],
+    this.fetchRecords();
   },
   methods: {
     showAlert(message, duration) {
@@ -497,12 +549,29 @@ export default {
       }, duration);
     },
     fetchRecords() {
-      this.appointments = []
-      const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'));
+      this.appointmentsLoading = true;
+      const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
-        filters: {appointment_date: ['in', dates]},
-        total_records: true  // Only get the total count once
+        filters: {appointment_date: ['in', dates], custom_visit_status: this.tab}, start: this.start, limit: this.limit[this.tab]
       })
+      .then(response => {
+        if(response.total_count)
+          this.totalCount = response.total_count
+
+        const combinedAppointments = [...this.appointments, ...this.adjustAppointments(response.appointments)].reduce((acc, obj) => {
+          acc.set(obj.name, obj);
+          return acc;
+        }, new Map());
+
+        this.appointments = Array.from(combinedAppointments.values());
+        // this.appointments = this.adjustAppointments(response.appointments)
+        this.groupAppointmentsByStatus();
+        this.appointmentsLoading = false;
+      })
+      .catch(error => {
+        this.appointmentsLoading = false;
+        console.error('Error fetching records:', error);
+      });
     },
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
@@ -667,7 +736,24 @@ export default {
     paymentTypeDialog(row) {
       this.appointmentForm.name = row.name;
       this.appointmentForm.custom_payment_type = row.custom_payment_type;
-			this.paymentTypeOpen = true
+      this.$call('frappe.client.get', {doctype: 'Patient', name: row.patient}).then((data) => {
+        this.patientInsurance.doctype = 'Patient'
+        this.patientInsurance.name = row.patient
+        this.patientInsurance.custom_active = data.custom_active
+        this.patientInsurance.custom_insurance_company_name = data.custom_insurance_company_name
+        this.patientInsurance.custom_policy_number = data.custom_policy_number
+        if(data.custom_expiration_date)
+          this.patientInsurance.custom_expiration_date = dayjs(data.custom_expiration_date)
+        else
+          this.patientInsurance.custom_expiration_date = undefined
+        this.patientInsurance.custom_copay_amount = data.custom_copay_amount
+        this.paymentTypeOpen = true
+      }).catch(error => {
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        const firstSpaceIndex = message.indexOf(' ');
+        this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+      });
     },
     showSlots() {
       if (this.appointmentForm.appointment_date && this.appointmentForm.practitioner) {
@@ -813,6 +899,21 @@ export default {
     },
     onSubmitPaymentType() {
       this.lodingOverlay = true;
+      if(this.appointmentForm.custom_payment_type == 'Insurance'){
+        let form = {...this.patientInsurance, custom_default_payment_type: this.appointmentForm.custom_payment_type}
+        form.custom_expiration_date = form.custom_expiration_date.format('YYYY-MM-DD')
+        this.$call('healthcare_doworks.api.methods.edit_doc', {form})
+        .catch(error => {
+          console.error(error);
+          let message = error.message.split('\n');
+          message = message.find(line => line.includes('frappe.exceptions'));
+          if(message){
+            const firstSpaceIndex = message.indexOf(' ');
+            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+          }
+        });
+      }
+
       this.$call('frappe.client.set_value', 
         {doctype: 'Patient Appointment', name: this.appointmentForm.name, fieldname: 'custom_payment_type', value: this.appointmentForm.custom_payment_type}
       ).then(response => {
@@ -828,10 +929,15 @@ export default {
         }
       });
     },
-    onPage(event) {
-      const page = event.page + 1;  // PrimeVue pages start from 0, adjust accordingly
-      const limit = event.rows;
-      this.fetchRecords(page, limit);
+    pageChanged(event) {
+      this.start = event.first;
+      const maxed = [20, 100, 500, 2500].some(val => this.groupedAppointments[this.tab].length == val)
+      if(event.rows > this.limit[this.tab] && event.rows >= this.groupedAppointments[this.tab].length && maxed){
+        this.limit[this.tab] = event.rows;
+        this.fetchRecords();
+      }
+      else
+        this.limit[this.tab] = event.rows;
     },
     updateProgress() {
       this.progressValue = (this.appointments.length / this.totalRecords) * 100;

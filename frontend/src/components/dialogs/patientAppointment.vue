@@ -20,6 +20,8 @@
                     :options="$resources.patients.data?.options"
                     :fieldNames="{label: 'patient_name', value: 'name'}"
                     @change="(value, option) => {
+                      appointmentForm.custom_payment_type = option.custom_default_payment_type
+                      
                       appointmentForm.patient = option.name;
                       appointmentForm.patient_sex = option.sex;
                       appointmentForm.patient_mobile = option.mobile
@@ -227,19 +229,19 @@
                 (appointmentForm.appointment_for === 'Service Unit' && appointmentForm.service_unit)
               )"
               >
-                <div v-for="(slotInfo, index) in slots.slot_details" :key="index">
-                  <div class="slot-info">
-                    <span v-if="slots.fee_validity && slots.fee_validity != 'Disabled'" style="color:green">Patient has fee validity till <b>{{ getDate(slots.fee_validity.valid_till) }}</b></span>
-                    <span v-else-if="slots.fee_validity != 'Disabled'" style="color:red">Patient has no fee validity</span><br/>
-                    <span><b>Practitioner Schedule:  </b> {{ slotInfo.slot_name }}
-                      <i v-if="slotInfo.tele_conf && !slotInfo.allow_overlap" class="fa fa-video-camera fa-1x" aria-hidden="true"></i>
-                    </span><br/>
-                    <span><b> Service Unit:  </b> {{slotInfo.service_unit}}</span>
-                    <br v-if="slotInfo.service_unit_capacity"/>
-                    <span v-if="slotInfo.service_unit_capacity"> <b> Maximum Capacity: </b> {{slotInfo.service_unit_capacity}} </span>
-                  </div>
-                  <br/>
-                  <v-item-group selected-class="bg-blue" mandatory>
+                <v-item-group selected-class="bg-blue" mandatory>
+                  <div v-for="(slotInfo, index) in slots.slot_details" :key="index">
+                    <div class="slot-info">
+                      <span v-if="slots.fee_validity && slots.fee_validity != 'Disabled'" style="color:green">Patient has fee validity till <b>{{ getDate(slots.fee_validity.valid_till) }}</b></span>
+                      <span v-else-if="slots.fee_validity != 'Disabled'" style="color:red">Patient has no fee validity</span><br/>
+                      <span><b>Practitioner Schedule:  </b> {{ slotInfo.slot_name }}
+                        <i v-if="slotInfo.tele_conf && !slotInfo.allow_overlap" class="fa fa-video-camera fa-1x" aria-hidden="true"></i>
+                      </span><br/>
+                      <span><b> Service Unit:  </b> {{slotInfo.service_unit}}</span>
+                      <br v-if="slotInfo.service_unit_capacity"/>
+                      <span v-if="slotInfo.service_unit_capacity"> <b> Maximum Capacity: </b> {{slotInfo.service_unit_capacity}} </span>
+                    </div>
+                    <br/>
                     <v-item
                       v-for="(slot, idx) in slotInfo.avail_slot"
                       :key="idx"
@@ -283,11 +285,11 @@
                       </div>
                       </v-btn>
                     </v-item>
-                  </v-item-group>
-                  
-                  <br v-if="slotInfo.service_unit_capacity"/>
-                  <small v-if="slotInfo.service_unit_capacity">Each slot indicates the capacity currently available for booking</small>
-                </div>
+                    
+                    <br v-if="slotInfo.service_unit_capacity"/>
+                    <small v-if="slotInfo.service_unit_capacity">Each slot indicates the capacity currently available for booking</small>
+                  </div>
+                </v-item-group>
               </div>
               <div v-else-if="!appointmentForm.custom_is_walked_in">
                 <b>Appointment date</b> and <b>Healthcare Practitioner</b> are Mandatory
@@ -456,7 +458,10 @@ export default {
     patients() { return { 
       type: 'list', 
       doctype: 'Patient', 
-      fields: ['sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'inpatient_record', 'inpatient_status'], 
+      fields: [
+        'sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 
+        'inpatient_record', 'inpatient_status', 'custom_default_payment_type',
+      ], 
       filters: {status: 'Active'},
       limit_start: 0,
       pageLength: 10, 

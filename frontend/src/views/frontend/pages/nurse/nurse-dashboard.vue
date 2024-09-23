@@ -69,24 +69,27 @@
 
     <!-- Appointment Tab -->
     <div class="mb-4">
-      <v-tabs v-model="tab" class="" align-tabs="center" color="indigo" bg-color="white" show-arrows>
-        <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key">
+      <v-tabs v-model="tab" align-tabs="center" color="indigo" bg-color="white" show-arrows>
+        <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key" @click="() => {
+          if(this.groupedAppointments[key].length <= 0){
+            this.fetchRecords();
+          }
+        }">
           {{ key }}
-          <v-badge color="indigo" :content="getBadgeNumber(key)" inline></v-badge>
+          <v-badge :color="totalCount[key] > 0 ? 'green' : 'indigo'" :content="totalCount[key]" inline></v-badge>
         </v-tab>
       </v-tabs>
-      <div v-if="appointmentsLoading">
-        <v-progress-linear :value="(appointments.length / totalRecords) * 100" height="4"></v-progress-linear>
-      </div>
       <v-window v-model="tab" disabled>
         <v-window-item v-for="(value, key) in groupedAppointments" :key="key" :value="key">
         <AppointmentTab 
         :appointments="value" 
         :tab="key.toLowerCase()"
+        :loading="appointmentsLoading"
         ref="appointmentTabRef"
         @appointment-note-dialog="appointmentNoteDialog"
         @vital-sign-dialog="vitalSignDialog"
         @medical-history-dialog="medicalHistoryDialog"
+        @table-page-change="pageChanged"
         />
         </v-window-item>
       </v-window>
@@ -135,6 +138,7 @@
 </template>
 <script>
 import dayjs from 'dayjs';
+import { ref } from 'vue';
 import relativeTime from 'dayjs/plugin/relativeTime';
 dayjs.extend(relativeTime);
 
@@ -204,21 +208,13 @@ export default {
         custom_genetic_conditions: [],
       },
       totalRecords: 0,
+      start: 0,
+      limit: {Scheduled: 20, Arrived: 20, Ready: 20, 'In Room': 20, Completed: 20, 'No Show': 20},
+      totalCount: {Scheduled: 0, Arrived: 0, Ready: 0, 'In Room': 0, Completed: 0, 'No Show': 0},
       selectedDates: [dayjs()],
     };
   },
   created() {
-    this.$socket.on('patient_appointments_chunk', (chunk) => {
-      this.appointmentsLoading = true;
-      this.appointments = [...this.appointments, ...this.adjustAppointments(chunk.data)];
-      if(chunk.total)
-        this.totalRecords = chunk.total;
-      this.groupAppointmentsByStatus();
-      this.updateProgress();
-      if (this.appointments.length >= this.totalRecords) {
-        this.appointmentsLoading = false;
-      }
-    });
     this.$socket.on('patient_appointments_updated', updatedAppointment => {
       if (updatedAppointment) {
         const appointmentDate = dayjs(updatedAppointment.appointment_date);
@@ -227,6 +223,16 @@ export default {
         const isInDateRange = this.selectedDates.some(date => date.isSame(appointmentDate, 'day'));
 
         if (isInDateRange) {
+          const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
+          this.$call('healthcare_doworks.api.methods.get_tabs_count', {
+            filters: {appointment_date: ['in', dates]}
+          }).then(response => {
+            this.totalCount = response
+          })
+          .catch(error => {
+            console.error('Error fetching records:', error);
+          });
+
           const index = this.appointments.findIndex(app => app.name === updatedAppointment.name);
 
           if (index !== -1) {
@@ -236,14 +242,9 @@ export default {
             // If not in the list, add it
             this.appointments.push(this.adjustAppointments([updatedAppointment])[0]);
           }
-
+          
           this.groupAppointmentsByStatus();  // Re-group appointments by status
         }
-      }
-    })
-    this.$socket.on('service_request', response => {
-      if(response){
-        this.services = this.adjustAppointments(response)
       }
     })
   },
@@ -275,13 +276,9 @@ export default {
     },
   },
   mounted() {
-    if (this.$socket.connected) {
-      this.fetchRecords();  // Fetch appointments if socket is already connected
-    } else {
-      this.$socket.on('connect', () => {
-        this.fetchRecords();  // Fetch records when the socket connects
-      });
-    }
+    this.selectedDates = ref([dayjs()]),
+    this.selectedRangeDates = [dayjs().startOf('isoWeek').subtract(1, 'day'), dayjs().endOf('isoWeek').subtract(1, 'day')],
+    this.fetchRecords();
     
     setInterval(() => {
       this.currentTime = dayjs();
@@ -300,11 +297,29 @@ export default {
       }, duration);
     },
     fetchRecords() {
-      this.appointments = []
+      this.appointmentsLoading = true;
+      const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
-        filters: {appointment_date: ['in', [dayjs().format('YYYY-MM-DD')]]},
-        total_records: true  // Only get the total count once
+        filters: {appointment_date: ['in', dates], custom_visit_status: this.tab}, start: this.start, limit: this.limit[this.tab]
       })
+      .then(response => {
+        if(response.total_count)
+          this.totalCount = response.total_count
+
+        const combinedAppointments = [...this.appointments, ...this.adjustAppointments(response.appointments)].reduce((acc, obj) => {
+          acc.set(obj.name, obj);
+          return acc;
+        }, new Map());
+
+        this.appointments = Array.from(combinedAppointments.values());
+        // this.appointments = this.adjustAppointments(response.appointments)
+        this.groupAppointmentsByStatus();
+        this.appointmentsLoading = false;
+      })
+      .catch(error => {
+        this.appointmentsLoading = false;
+        console.error('Error fetching records:', error);
+      });
     },
     groupAppointmentsByStatus() {
       this.groupedAppointments = {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],}
@@ -400,6 +415,16 @@ export default {
     },
     nextAppointmentTimeDiff() {
       dayjs()
+    },
+    pageChanged(event) {
+      this.start = event.first;
+      const maxed = [20, 100, 500, 2500].some(val => this.groupedAppointments[this.tab].length == val)
+      if(event.rows > this.limit[this.tab] && event.rows >= this.groupedAppointments[this.tab].length && maxed){
+        this.limit[this.tab] = event.rows;
+        this.fetchRecords();
+      }
+      else
+        this.limit[this.tab] = event.rows;
     },
     updateProgress() {
       this.progressValue = (this.appointments.length / this.totalRecords) * 100;

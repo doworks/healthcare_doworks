@@ -27,12 +27,12 @@
               <v-col cols="12">
                 <h5>Invoice Items</h5>
                 <EditableTable :columns="[
-                  {label: 'Item', key: 'item'},
+                  {label: 'Service', key: 'item'},
                   {label: 'Quantity', key: 'quantity'},
                   {label: 'Rate', key: 'rate'},
                   {label: 'Amount', key: 'amount'},
                   ...(appointment.custom_payment_type == 'Insurance' ? [
-                    {label: 'Customer Amount', key: 'customer_amount'},
+                    {label: 'Patient Amount', key: 'customer_amount'},
                     {label: 'Insurance Amount', key: 'insurance_amount'}
                   ] : []),
                   {label: appointment.custom_payment_type == 'Insurance' ? 'Customer Invoice' : 'Invoice', key: 'customer_invoice'},
@@ -53,7 +53,7 @@
                 >
                   <template v-slot:dialog="{ row }">
                     <a-form layout="vertical">
-                      <a-form-item label="Item">
+                      <a-form-item label="Service">
                         <a-select
                         v-model:value="row.item"
                         :options="$resources.items.data?.options"
@@ -61,7 +61,9 @@
                           row.item_name = option.item_name;
                           row.item_uom = option.weight_uom;
                           row.rate = option.valuation_rate;
-                          row.amount = option.valuation_rate * row.quantity;
+                          if(!row.quantity)
+                            row.quantity = 1;
+                          row.amount = parseFloat(option.valuation_rate) * parseFloat(row.quantity);
                         }"
                         :fieldNames="{label: 'item_name', value: 'name'}"
                         show-search
@@ -76,18 +78,30 @@
                         ></a-select>
                       </a-form-item>
                       <a-form-item label="Quantity">
-                        <a-input-number class="w-full" :controls="false" v-model:value="row.quantity" @change="(value, option) => {row.amount = value * row.rate}"/>
+                        <a-input-number 
+                        class="w-full" 
+                        :controls="false" 
+                        :defaultValue="1" 
+                        v-model:value="row.quantity" 
+                        @change="(value, option) => {row.amount = parseFloat(value) * parseFloat(row.rate)}"
+                        />
                       </a-form-item>
                       <a-form-item label="Rate">
-                        <a-input-number class="w-full" :controls="false" v-model:value="row.rate" @change="(value, option) => {row.amount = value * row.quantity}"/>
+                        <a-input-number 
+                        class="w-full" 
+                        :controls="false" 
+                        :defaultValue="0" 
+                        v-model:value="row.rate" 
+                        @change="(value, option) => {row.amount = parseFloat(value) * parseFloat(row.quantity)}"
+                        />
                       </a-form-item>
                       <a-form-item label="Amount">
                         <a-input-number class="w-full" :controls="false" v-model:value="row.amount" disabled/>
                       </a-form-item>
-                      <a-form-item label="Patient" v-if="appointment.custom_payment_type == 'Insurance'">
+                      <a-form-item label="Patient Amount" v-if="appointment.custom_payment_type == 'Insurance'">
                         <a-input-number class="w-full" :controls="false" v-model:value="row.customer_amount"/>
                       </a-form-item>
-                      <a-form-item label="Insurance" v-if="appointment.custom_payment_type == 'Insurance'">
+                      <a-form-item label="Insurance Amount" v-if="appointment.custom_payment_type == 'Insurance'">
                         <a-input-number class="w-full" :controls="false" v-model:value="row.insurance_amount"/>
                       </a-form-item>
                     </a-form>
@@ -103,24 +117,41 @@
           <v-card
           rounded="lg"
           width="auto"
-          prepend-icon="pi pi-wallet"
           >
+          <v-card-title class="d-flex justify-space-between align-center">
+            <div class="text-h5 text-medium-emphasis ps-2">Make Payment</div>
+            <v-btn icon="mdi mdi-close" variant="text" @click="modeOfPaymentOpen = false"></v-btn>
+          </v-card-title>
+          <v-divider class="m-0"></v-divider>
             <v-card-text>
-              <a-select
-              v-model:value="modeOfPayment"
-              :options="$resources.modeOfPayments.data?.options"
-              @change="(value, option) => {paymentType = option.type}"
-              :fieldNames="{label: 'name', value: 'name'}"
-              show-search
-              :loading="$resources.modeOfPayments.list.loading"
-              @search="(value) => {handleSearch(
-                value, 
-                $resources.modeOfPayments, 
-                {item_name: ['like', `%${value}%`]}, 
-                {},
-              )}"
-              :filterOption="false"
-              ></a-select>
+              <a-form layout="vertical">
+                <a-form-item label="Mode of Payment">
+                  <a-select
+                  v-model:value="modeOfPayment"
+                  :options="$resources.modeOfPayments.data?.options"
+                  @change="(value, option) => {paymentType = option.type}"
+                  :fieldNames="{label: 'name', value: 'name'}"
+                  style="min-width: 400px; max-width: 600px;"
+                  show-search
+                  :loading="$resources.modeOfPayments.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.modeOfPayments, 
+                    {item_name: ['like', `%${value}%`]}, 
+                    {},
+                  )}"
+                  :filterOption="false"
+                  ></a-select>
+                </a-form-item>
+
+                <a-form-item label="Cheque/Reference No" v-if="paymentType == 'Bank'">
+                  <a-input v-model:value="referenceNo" style="min-width: 400px; max-width: 600px;"/>
+                </a-form-item>
+
+                <a-form-item label="Cheque/Reference Date" v-if="paymentType == 'Bank'">
+                  <a-input v-model:value="referenceDate" style="min-width: 400px; max-width: 600px;"/>
+                </a-form-item>
+              </a-form>
             </v-card-text>
 
             <v-card-actions class="my-2 d-flex justify-end">
@@ -136,7 +167,7 @@
               
               text="submit"
               variant="tonal"
-              @click=""
+              @click="onSubmitPayment"
               ></v-btn>
             </v-card-actions>
           </v-card>
@@ -205,6 +236,7 @@ export default {
       type: 'list', 
       doctype: 'Item', 
       fields: ['name', 'item_code', 'item_name', 'valuation_rate', 'weight_uom'], 
+      filters: {},
       auto: true,
       orderBy: 'name',
       pageLength: 10,
@@ -219,7 +251,7 @@ export default {
     }},
     modeOfPayments() { return { 
       type: 'list', 
-      doctype: 'Item', 
+      doctype: 'Mode of Payment', 
       fields: ['name', 'type'], 
       auto: true,
       orderBy: 'name',
@@ -250,6 +282,8 @@ export default {
       modeOfPaymentOpen: false,
       modeOfPayment: null,
       paymentType: '',
+      referenceNo: '',
+      referenceDate: '',
       invoiceItems: this.appointment.invoice_items,
       actions: [
         {
@@ -257,37 +291,19 @@ export default {
           icon: 'pi pi-plus',
           command: () => {
             this.lodingOverlay = true;
-            const cloneItems = this.invoiceItems.map(value => {
-              value.item_code = value.item
-              value.uom = value.item_uom
-              value.qty = value.quantity
-            })
-            this.$call('healthcare_doworks.api.methods.new_doc', {
-              form: {
-                doctype: 'Sales Invoice',
-                patient: this.appointment.patient,
-                patient_name: this.appointment.patient_name,
-                customer: this.appointment.custom_customer || this.appointment.patient_name,
-                posting_date: dayjs().format('YYYY-MM-DD'),
-                due_date: dayjs().format('YYYY-MM-DD'),
-                service_unit: this.appointment.service_unit
-              },
-              children: {
-                items: this.invoiceItems
-              }
+            this.$call('healthcare_doworks.api.methods.create_insurance', {
+              appointment: this.appointment.name,
             })
             .then(response => {
-              console.log(response)
               this.lodingOverlay = false;
-              this.invoiceItems.filter(value => !value.customer_invoice).forEach(value => {
-                value.customer_invoice = response.name
-                this.newChildRow({
-                  fieldName: 'custom_invoice_items', 
-                  rules: {item: [{ required: true, message: 'Please choose an item!' }]},
-                  row: value, 
-                  isNew: false
+              if(response)
+                this.invoiceItems = this.invoiceItems.map(value => {
+                  if(!value.customer_invoice)
+                    value.customer_invoice = response.customer_invoice
+                  if(!value.insurance_invoice)
+                    value.insurance_invoice = response.insurance_invoice
+                  return value
                 })
-              })
             }).catch(error => {
               console.error(error);
               let message = error.message.split('\n');
@@ -327,7 +343,25 @@ export default {
       this.updateIsOpen(false);
     },
     onSubmitPayment() {
-      
+      this.lodingOverlay = true;
+      this.$call('healthcare_doworks.api.methods.make_payment', {
+        appointment: this.appointment.name,
+        mode_of_payment: this.modeOfPayment,
+        reference_no: this.referenceNo,
+        reference_date: this.referenceDate
+      })
+      .then(response => {
+        this.lodingOverlay = false;
+        this.modeOfPaymentOpen = false;
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+        }
+      });
     },
     autoSave(doctype, name, fieldname, value) {
       if(this.isNew) return;

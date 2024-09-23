@@ -29,32 +29,43 @@ def fetch_resources():
 
 # Appointments Page
 @frappe.whitelist()
-def fetch_patient_appointments(filters=None, start=0, limit=50, total_records=False):
-	total_count = frappe.db.count('Patient Appointment', filters) if total_records else 0
-	while True:
-		appointments = frappe.get_list(
-			'Patient Appointment',
-			filters=filters,
-			fields=[
-				'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
-				'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner',
-				'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
-				'custom_payment_type', 'patient_age', 'patient', 'custom_confirmed', 'custom_customer'
-			],
-			order_by='appointment_date asc, appointment_time asc',
-			start=start,
-			page_length=limit
-		)
+def get_tabs_count(filters):
+	total_count = {'Scheduled': 0, 'Arrived': 0, 'Ready': 0, 'In Room': 0, 'Completed': 0, 'No Show': 0}
+	for key, value in total_count.items():
+		count_filter = dict(filters)
+		count_filter['custom_visit_status'] = key
+		total_count[key] = frappe.db.count('Patient Appointment', count_filter)
 
-		for appointment in appointments:
-			appointment = get_appointment_details(appointment)
+	return total_count
 
-		frappe.publish_realtime("patient_appointments_chunk", {"data": appointments, "total": total_count})
+@frappe.whitelist()
+def fetch_patient_appointments(filters=None, start=0, limit=50):
+	dic = {}
+	total_count = {'Scheduled': 0, 'Arrived': 0, 'Ready': 0, 'In Room': 0, 'Completed': 0, 'No Show': 0}
+	for key, value in total_count.items():
+		count_filter = dict(filters)
+		count_filter['custom_visit_status'] = key
+		total_count[key] = frappe.db.count('Patient Appointment', count_filter)
+	dic['total_count'] = total_count
 
-		if len(appointments) < limit:
-			break
+	appointments = frappe.get_list(
+		'Patient Appointment',
+		filters=filters,
+		fields=[
+			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
+			'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner',
+			'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
+			'custom_payment_type', 'patient_age', 'patient', 'custom_confirmed', 'custom_customer'
+		],
+		order_by='appointment_date asc, appointment_time asc',
+		start=start,
+		page_length=limit
+	)
+	for appointment in appointments:
+		appointment = get_appointment_details(appointment)
+	dic['appointments'] = appointments
 
-		start += limit
+	return dic
 
 @frappe.whitelist()
 def fetch_nurse_records():
@@ -118,7 +129,8 @@ def patient_encounter_name(appointment_id):
 			new_encounter.patient = patient.name
 			new_encounter.patient_name = patient.patient_name
 			new_encounter.patient_sex = patient.sex
-			new_encounter.patient_age = calculate_age(patient.dob)
+			if patient.dob:
+				new_encounter.patient_age = calculate_age(patient.dob)
 			loggedin_practitioner = frappe.db.get_value('Healthcare Practitioner', {'user_id': frappe.session.user}, ['name', 'practitioner_name'])
 			if loggedin_practitioner is not None:
 				new_encounter.practitioner = loggedin_practitioner[0]
@@ -213,6 +225,16 @@ def patient_encounter_records(encounter_id):
 			'current_encounter': current_encounter,
 			'current_procedure': current_procedure
 		}
+
+@frappe.whitelist()
+def submit_encounter(encounter):
+	doc = frappe.get_doc('Patient Encounter', encounter)
+	doc.submit()
+	procedures = frappe.get_list('Clinical Procedure', filters={'custom_patient_encounter': encounter})
+	for procedure in procedures:
+		procedure_doc = frappe.get_doc('Clinical Procedure', procedure)
+		procedure_doc.submit()
+	return doc
 
 @frappe.whitelist()
 def get_print_html(doctype, docname, print_format=None):
@@ -362,6 +384,134 @@ def save_patient_history(patient='',
 def patient(patient=''):
 	doc = frappe.get_doc('Patient', patient)
 	return {'doc': doc}
+
+@frappe.whitelist()
+def create_insurance(appointment):
+	appointment_doc = frappe.get_doc('Patient Appointment', appointment)
+	patient = frappe.get_doc('Patient', appointment_doc.patient)
+	customer_invoice_row = False
+	insurance_invoice_row = False
+	for invoice_item in appointment_doc.custom_invoice_items:
+		if not invoice_item.customer_invoice:
+			customer_invoice_row = True
+		if not invoice_item.insurance_invoice:
+			insurance_invoice_row = True
+
+	if appointment_doc.custom_payment_type == 'Self Payment' and customer_invoice_row:
+		invoice = frappe.new_doc('Sales Invoice')
+		invoice.patient = patient.name
+		invoice.patient_name = patient.patient_name
+		invoice.customer = patient.customer
+		invoice.posting_date = frappe.utils.now()
+		invoice.due_date = frappe.utils.now()
+		invoice.service_unit = appointment_doc.service_unit
+		for invoice_item in appointment_doc.custom_invoice_items:
+			if not invoice_item.customer_invoice:
+				invoice.append('items', {
+					'item_code': invoice_item.item,
+					'item_name': invoice_item.item_name,
+					'uom': invoice_item.item_uom,
+					'qty': invoice_item.quantity,
+					'rate': invoice_item.rate,
+					'amount': invoice_item.amount,
+				})
+		invoice.save()
+		invoice.submit()
+		for invoice_item in appointment_doc.custom_invoice_items:
+			if not invoice_item.customer_invoice:
+				invoice_item.customer_invoice = invoice.name
+		appointment_doc.save()
+		return {'customer_invoice': invoice.name}
+	elif appointment_doc.custom_payment_type == 'Insurance' and (customer_invoice_row or insurance_invoice_row):
+		if customer_invoice_row:
+			patient_invoice = frappe.new_doc('Sales Invoice')
+			patient_invoice.patient = patient.name
+			patient_invoice.patient_name = patient.patient_name
+			patient_invoice.customer = patient.customer
+			patient_invoice.posting_date = frappe.utils.now()
+			patient_invoice.due_date = frappe.utils.now()
+			patient_invoice.service_unit = appointment_doc.service_unit
+			for invoice_item in appointment_doc.custom_invoice_items:
+				if not invoice_item.customer_invoice:
+					patient_invoice.append('items', {
+						'item_code': invoice_item.item,
+						'item_name': invoice_item.item_name,
+						'uom': invoice_item.item_uom,
+						'qty': invoice_item.quantity,
+						'rate': float(invoice_item.customer_amount) / float(invoice_item.quantity),
+						'amount': invoice_item.customer_amount,
+					})
+			patient_invoice.save()
+			patient_invoice.submit()
+
+		if insurance_invoice_row:
+			insurance_invoice = frappe.new_doc('Sales Invoice')
+			insurance_invoice.patient = patient.name
+			insurance_invoice.patient_name = patient.patient_name
+			insurance_invoice.customer = patient.custom_insurance_company_name
+			insurance_invoice.posting_date = frappe.utils.now()
+			insurance_invoice.due_date = frappe.utils.now()
+			insurance_invoice.service_unit = appointment_doc.service_unit
+			for invoice_item in appointment_doc.custom_invoice_items:
+				if not invoice_item.insurance_invoice:
+					insurance_invoice.append('items', {
+						'item_code': invoice_item.item,
+						'item_name': invoice_item.item_name,
+						'uom': invoice_item.item_uom,
+						'qty': invoice_item.quantity,
+						'rate': float(invoice_item.insurance_amount) / float(invoice_item.quantity),
+						'amount': invoice_item.insurance_amount,
+					})
+			insurance_invoice.save()
+			insurance_invoice.submit()
+
+		for invoice_item in appointment_doc.custom_invoice_items:
+			if not invoice_item.customer_invoice:
+				invoice_item.customer_invoice = patient_invoice.name
+				
+			if not invoice_item.insurance_invoice:
+				invoice_item.insurance_invoice = insurance_invoice.name
+				
+		appointment_doc.save()
+		return {'insurance_invoice': insurance_invoice.name, 'customer_invoice': patient_invoice.name}
+
+@frappe.whitelist()
+def make_payment(appointment, mode_of_payment, reference_no=None, reference_date=None):
+	appointment_doc = frappe.get_doc('Patient Appointment', appointment)
+	invoices = list(d["customer_invoice"] for d in appointment_doc.as_dict()['custom_invoice_items'] if d["customer_invoice"])
+	mop = frappe.get_doc('Mode of Payment', mode_of_payment)
+	
+	for invoice in invoices:
+		invoice_doc = frappe.get_doc('Sales Invoice', invoice)
+		if invoice_doc.status != 'Paid':
+			payment_entry = frappe.new_doc('Payment Entry')
+			payment_entry.mode_of_payment = mode_of_payment
+			payment_entry.party_type = 'Customer'
+			payment_entry.party = invoice_doc.customer
+			payment_entry.party_name = invoice_doc.customer_name
+			payment_entry.paid_amount = invoice_doc.grand_total
+
+			payment_entry.paid_to = mop.accounts[0].default_account
+			payment_entry.received_amount = invoice_doc.grand_total
+			payment_entry.source_exchange_rate = 1
+			payment_entry.target_exchange_rate = 1
+
+			payment_entry.append('references', {
+				'reference_doctype': 'Sales Invoice',
+				'reference_name': invoice,
+				'due_date': invoice_doc.due_date,
+				'total_amount': invoice_doc.grand_total,
+				'outstanding_amount': invoice_doc.outstanding_amount,
+				'allocated_amount': invoice_doc.outstanding_amount
+			})
+			if reference_no:
+				payment_entry.reference_no = reference_no
+			if reference_date:
+				payment_entry.reference_date = reference_date
+
+			payment_entry.save()
+			payment_entry.submit()
+		
 
 @frappe.whitelist()
 def edit_doc(form, submit=False):
