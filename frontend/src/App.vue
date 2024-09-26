@@ -22,7 +22,7 @@ import '@/assets/css/prime.css';
 import { VLayout } from 'vuetify/components/VLayout'
 import { VMain } from 'vuetify/components/VMain'
 export default {
-	inject: ['$auth', '$cardReader'],
+	inject: ['$auth', '$cardReader', '$socket'],
 	components:{
 		VLayout,
 		VMain,
@@ -40,6 +40,10 @@ export default {
 		console.log(this.$cardReader)
 		this.$cardReader.on('card_data', (data) => {
 			console.log('Received card data:', data);
+		});
+
+		this.$socket.on('session_logout', (data) => {
+			window.location.href = '/login';
 		});
 	},
 	data() {

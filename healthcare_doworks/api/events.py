@@ -2,8 +2,7 @@ import frappe
 import datetime
 
 def patient_update(doc, method=None):
-    patients = frappe.db.get_list('Patient', fields=['*'], order_by='name')
-    frappe.publish_realtime("patients_updated", patients)
+    frappe.publish_realtime("patients_updated", doc)
 
 def patient_appointment_inserted(doc, method=None):
     if doc.status == 'Walked In':

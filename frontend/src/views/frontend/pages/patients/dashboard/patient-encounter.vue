@@ -2131,7 +2131,7 @@ export default {
     }},
     departments() { return { 
       type: 'list', 
-      doctype: 'Department', 
+      doctype: 'Medical Department', 
       fields: ['name'], 
       auto: true,
       orderBy: 'name',
@@ -2457,6 +2457,9 @@ export default {
   created() {
     this.isLoading = true;
     this.fetchRecords();
+    this.$socket.on('patients_updated', response => {
+      console.log(response)
+    })
     this.$socket.on('services', response => {
       let thisPatient = false
       this.records.services = response.filter(service => {

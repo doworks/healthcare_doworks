@@ -1,7 +1,4 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "../views/Home.vue";
-import authRoutes from './auth';
-
 
 import PatientEncounter from '@/views/frontend/pages/patients/dashboard/patient-encounter.vue';
 import PatientEncounterList from '@/views/frontend/pages/patients/dashboard/patient-encounter-list.vue';
@@ -54,7 +51,6 @@ const routes = [
     name: 'appointments',
     component: Appointments 
   },
-  ...authRoutes,
 ];
 
 const router = createRouter({

@@ -23,7 +23,7 @@
               </v-col>
             </v-row> -->
             <v-row>
-              <Menubar :model="actions" class="w-full"/>
+              <Menubar v-if="actions.length > 0" :model="actions" class="w-full"/>
               <v-col cols="12">
                 <h5>Invoice Items</h5>
                 <EditableTable :columns="[
@@ -113,6 +113,85 @@
         </v-card-text>
         
         <v-divider class="m-0"></v-divider>
+        <v-dialog v-model="salesInvoiceOpen" width="auto">
+          <v-card
+          rounded="lg"
+          width="auto"
+          >
+          <v-card-title class="d-flex justify-space-between align-center">
+            <div class="text-h5 text-medium-emphasis ps-2">Sales Invoice</div>
+            <v-btn icon="mdi mdi-close" variant="text" @click="salesInvoiceOpen = false"></v-btn>
+          </v-card-title>
+          <v-divider class="m-0"></v-divider>
+            <v-card-text>
+              <a-form layout="vertical">
+                <a-form-item label="POS Profile">
+                  <a-select
+                  v-model:value="posProfile"
+                  :options="$resources.posProfiles.data?.options"
+                  @change="value => {getPaymentMethods(value)}"
+                  :fieldNames="{label: 'name', value: 'name'}"
+                  style="min-width: 400px; max-width: 600px;"
+                  show-search
+                  :loading="$resources.posProfiles.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.posProfiles, 
+                    {item_name: ['like', `%${value}%`]}, 
+                    {},
+                  )}"
+                  :filterOption="false"
+                  ></a-select>
+                </a-form-item>
+
+                <DataTable v-if="paymentMethods.length > 0" :value="paymentMethods" editMode="cell" @cell-edit-complete="onCellEditComplete"
+                  :pt="{
+                    table: { style: 'min-width: 50rem' },
+                    column: {
+                      bodycell: ({ state }) => ({
+                        class: [{ 'pt-0 pb-0': state['d_editing'] }]
+                      })
+                    }
+                  }"
+                >
+                  <Column field="mode_of_payment" header="Mode of Payment">
+                  </Column>
+                  <Column field="amount" header="Amount">
+                    <template #body="{ data, field }">
+                      {{ data[field] ? data[field].toString() : '0' }}
+                    </template>
+                    <template #editor="{ data, field }">
+                      <a-input-number :controls="false" v-model:value="data[field]"/>
+                    </template>
+                  </Column>
+                  <Column field="reference_no" header="Reference No">
+                    <template #editor="{ data, field }">
+                      <a-input v-model:value="data[field]"/>
+                    </template>
+                  </Column>
+                </DataTable>
+              </a-form>
+            </v-card-text>
+
+            <v-card-actions class="my-2 d-flex justify-end">
+              <v-btn
+              class="text-none"
+              text="Cancel"
+              @click="salesInvoiceOpen = false"
+              ></v-btn>
+
+              <v-btn
+              class="text-none"
+              color="blue"
+              
+              text="submit"
+              variant="tonal"
+              @click="onSubmitInvoice"
+              ></v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
         <v-dialog v-model="modeOfPaymentOpen" width="auto">
           <v-card
           rounded="lg"
@@ -265,6 +344,22 @@ export default {
         return data
       }
     }},
+    posProfiles() { return { 
+      type: 'list', 
+      doctype: 'POS Profile', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
   },
   computed: {
     dialogVisible: {
@@ -275,56 +370,68 @@ export default {
         this.$emit('update:isOpen', value);
       },
     },
+    invoiceItems() {
+      return this.appointment.invoice_items;
+    },
+    actions() {
+      return [
+        ...(this.invoiceItems.some(value => !value.customer_invoice) ? [{
+          label: 'Create Invoices',
+          icon: 'pi pi-plus',
+          command: () => {
+            this.posProfile = '';
+            this.paymentMethods = []
+            this.salesInvoiceOpen = true
+          }
+        }] : []),
+        // {
+        //   label: 'Make Payment',
+        //   icon: 'mdi mdi-credit-card-outline',
+        //   command: () => {
+        //     this.paymentType = '';
+        //     this.modeOfPaymentOpen = true
+        //   }
+        // },
+      ]
+    }
   },
   data() {
     return {
       lodingOverlay: false,
       modeOfPaymentOpen: false,
+      salesInvoiceOpen: false,
       modeOfPayment: null,
       paymentType: '',
       referenceNo: '',
       referenceDate: '',
+      posProfile: '',
+      paymentMethods: [],
       invoiceItems: this.appointment.invoice_items,
-      actions: [
-        {
-          label: 'Create Invoices',
-          icon: 'pi pi-plus',
-          command: () => {
-            this.lodingOverlay = true;
-            this.$call('healthcare_doworks.api.methods.create_insurance', {
-              appointment: this.appointment.name,
-            })
-            .then(response => {
-              this.lodingOverlay = false;
-              if(response)
-                this.invoiceItems = this.invoiceItems.map(value => {
-                  if(!value.customer_invoice)
-                    value.customer_invoice = response.customer_invoice
-                  if(!value.insurance_invoice)
-                    value.insurance_invoice = response.insurance_invoice
-                  return value
-                })
-            }).catch(error => {
-              console.error(error);
-              let message = error.message.split('\n');
-              message = message.find(line => line.includes('frappe.exceptions'));
-              if(message){
-                const firstSpaceIndex = message.indexOf(' ');
-                this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-              }
-            });
-          }
-        },
-        {
-          label: 'Make Payment',
-          icon: 'mdi mdi-credit-card-outline',
-          command: () => {this.modeOfPaymentOpen = true}
-        },
-      ],
+      // actions: [
+      //   ...(this.invoiceItems.some(value => !value.customer_invoice) ? [{
+      //     label: 'Create Invoices',
+      //     icon: 'pi pi-plus',
+      //     command: () => {
+      //       this.posProfile = '';
+      //       this.paymentMethods = []
+      //       this.salesInvoiceOpen = true
+      //     }
+      //   }] : []),
+      //   {
+      //     label: 'Make Payment',
+      //     icon: 'mdi mdi-credit-card-outline',
+      //     command: () => {
+      //       this.paymentType = '';
+      //       this.modeOfPaymentOpen = true
+      //     }
+      //   },
+      // ],
     };
   },
   mounted() {
     // console.log(this.appointment)
+    this.posProfile = '';
+    this.paymentType = '';
   },
   watch: {
     appointment: {
@@ -341,6 +448,64 @@ export default {
     },
     closeDialog() {
       this.updateIsOpen(false);
+    },
+    getPaymentMethods(value) {
+      if(value)
+        this.$call('healthcare_doworks.api.methods.pos_payment_method', {
+          pos_profile: value
+        }).then(response => {
+          
+          this.paymentMethods = response.map(value => {
+            if(value.default){
+              value.amount = this.invoiceItems.filter(val => !val.customer_invoice)
+              .reduce((total, val) => total + (parseFloat(val.amount) - (val.invoice_amount ? parseFloat(val.invoice_amount) : 0)), 0)
+            }
+            else
+              value.amount = 0
+            return value
+          })
+          console.log(this.paymentMethods)
+        }).catch(error => {
+          console.error(error);
+          let message = error.message.split('\n');
+          message = message.find(line => line.includes('frappe.exceptions'));
+          if(message){
+            const firstSpaceIndex = message.indexOf(' ');
+            this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+          }
+        });
+    },
+    onCellEditComplete(event) {
+      let { data, newValue, field } = event;
+      data[field] = newValue;
+    },
+    onSubmitInvoice() {
+      this.lodingOverlay = true;
+      this.$call('healthcare_doworks.api.methods.create_invoice', {
+        appointment: this.appointment.name,
+        profile: this.posProfile,
+        payment_methods: this.paymentMethods
+      })
+      .then(response => {
+        this.lodingOverlay = false;
+        this.salesInvoiceOpen = false
+        if(response)
+          this.invoiceItems = this.invoiceItems.map(value => {
+            if(!value.customer_invoice)
+              value.customer_invoice = response.customer_invoice
+            if(!value.insurance_invoice)
+              value.insurance_invoice = response.insurance_invoice
+            return value
+          })
+      }).catch(error => {
+        console.error(error);
+        let message = error.message.split('\n');
+        message = message.find(line => line.includes('frappe.exceptions'));
+        if(message){
+          const firstSpaceIndex = message.indexOf(' ');
+          this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+        }
+      });
     },
     onSubmitPayment() {
       this.lodingOverlay = true;

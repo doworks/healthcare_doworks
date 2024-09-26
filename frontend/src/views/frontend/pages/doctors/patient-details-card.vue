@@ -4,7 +4,7 @@
         <template #content>
             <div class="box-body">
                 <div class="table-image appoint-doctor d-flex" v-if="patient">
-                    <v-avatar>
+                    <v-avatar size="large" class="self-center">
                         <img
                         class="w-20 h-20 rounded-circle"
                         :src="patient.patient_details.image ? patient.patient_details.image :patient.patient_details.gender === 'Male' ? maleImage :femaleImage"
@@ -63,7 +63,7 @@
                             </div>
                         </div>
                         <v-row align="center" justify="center" class="mt-5">
-                            <v-col cols="auto">
+                            <v-col cols="auto" v-if="patient.patient_details.mobile">
                                 <v-btn class="text-blue" prepend-icon="pi pi-phone" elevation="2">{{patient.patient_details.mobile}}</v-btn>
                             </v-col>
                             <v-col cols="auto">
@@ -85,6 +85,7 @@
 
 <script>
 import {VCol, VRow} from 'vuetify/components/VGrid'
+import { VAvatar } from 'vuetify/components';
 
 import maleImage from '@/assets/img/male.png';
 import femaleImage from '@/assets/img/female.png';
@@ -92,7 +93,7 @@ import femaleImage from '@/assets/img/female.png';
 export default {
     inject: ['$call'],
     components: {
-        VCol, VRow,
+        VCol, VRow, VAvatar,
     },
     props: {
         patient: {

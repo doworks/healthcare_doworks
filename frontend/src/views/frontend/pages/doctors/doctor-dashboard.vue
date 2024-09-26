@@ -56,12 +56,38 @@
         </template>
       </Card>
     </div>
+    <div class="columns-1 md:columns-2 mb-2">
+
+      <a-select
+      v-model:value="practitionerFilter"
+      @change="val => {filters.practitioner_name.value = val}"
+      mode="multiple"
+      class="p-column-filter"
+      style="width: 100%; align-items: center;"
+      placeholder="Any Practitioner"
+      max-tag-count="responsive"
+      :options="$resources.practitioners.data?.options"
+      :fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
+      show-search
+      :loading="$resources.practitioners.list.loading"
+      @search="(value) => {handleSearch(
+        value, 
+        $resources.practitioners, 
+        {status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
+        {status: 'Active'},
+      )}"
+      :filterOption="false"
+      >
+      </a-select>
+    </div>
+
     <div class="row row-cols-lg-2 cont mb-3">
-      <Card class="left-col p-0" style="overflow: hidden;">
+      <Card class="pat-det left-col p-0 min-h-[550px]" style="overflow: hidden;">
         <template #title>Upcoming Appintments</template>
         <template #content>
           <div class="table-responsive">
             <DataTable
+            v-model:filters="filters"
             size="small"
             sortField="arriveTime"
             dataKey="id"
@@ -94,6 +120,8 @@
 
                   <!-- </router-link> -->
                 </template>
+              </Column>
+              <Column header="Practitioner" field="practitioner_name" hidden>
               </Column>
               <Column header="Apt Time" sortable field="appointment_time">
                 <template #body="{ data }">
@@ -278,16 +306,38 @@ import bellImage from '@/assets/img/animations/alarm.gif';
 import maleImage from '@/assets/img/male.png';
 import femaleImage from '@/assets/img/female.png';
 
+import { FilterMatchMode } from 'primevue/api';
+
 export default {
   inject: ['$call', '$socket'],
   components: {
     patientDetailsCard, VAvatar, VChip, VListItem, VEmptyState,
+  },
+  resources: {
+    practitioners() { return { 
+      type: 'list', 
+      doctype: 'Healthcare Practitioner', 
+      fields: ['practitioner_name', 'image', 'department', 'name'], 
+      filters: {status: 'Active'},
+      auto: true, 
+      orderBy: 'practitioner_name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
   },
   data() {
     return {
       bellImage:bellImage,
 			maleImage:maleImage,
 			femaleImage:femaleImage,
+      practitionerFilter: undefined,
       walkedInPatients:0,
       appointments: ref([]),
       currentTime: dayjs(),
@@ -296,7 +346,18 @@ export default {
       appointmentsLoading: false,
       totalRecords: 0,
       selectedDates: [dayjs()],
+      filters: {practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN }},
     };
+  },
+  watch: {
+    '$myresources.user': {
+      handler(newValue) {
+        if(this.$myresources.user.practitioner_name){
+          this.filters.practitioner_name.value = [this.$myresources.user.practitioner_name]
+        }
+      },
+      immediate: true,
+    },
   },
   created() {
     this.$socket.on('patient_appointments_updated', updatedAppointment => {
@@ -364,6 +425,10 @@ export default {
     },
   },
   mounted() {
+    if(this.$myresources.user.practitioner_name){
+      this.filters.practitioner_name.value = [this.$myresources.user.practitioner_name]
+    }
+    
     this.fetchRecords()
     
     setInterval(() => {
@@ -450,6 +515,34 @@ export default {
     nextAppointmentTimeDiff() {
       dayjs()
     },
+    transformData (keys, values) {
+      return values.map(row => {
+        const obj = {};
+        keys.forEach((key, index) => {
+          obj[key] = row[index];  // Map each key to its corresponding value
+        });
+        return obj;
+      });
+    },
+    handleSearch(query, resource, filters, initialFilters, orFilters) {
+      // Clear the previous timeout to avoid spamming requests
+      clearTimeout(this.searchTimeout);
+
+      // Set a new timeout (300ms) for debouncing
+      this.searchTimeout = setTimeout(() => {
+        if (query) {
+          // Update list resource options to fetch matching records from server
+          resource.update({filters, orFilters});
+
+          // Fetch the updated results
+          resource.reload();
+        } else {
+          // If no search query, load initial records
+          resource.update({filters: initialFilters, orFilters});
+          resource.reload();
+        }
+      }, 300);  // Debounce delay of 300ms
+    },
   },
   name: "doctor-dashboard",
 };
@@ -459,6 +552,13 @@ export default {
 /* #doctor-dashboard .p-paginator-bottom{
   display: none;
 } */
+.pat-det .p-card-body{
+  height: 100%;
+}
+
+.pat-det .p-card-content{
+  height: 100%;
+}
 </style>
 <style scoped>
 .details-card {

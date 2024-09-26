@@ -143,6 +143,7 @@ def patient_encounter_name(appointment_id):
 			# assign default values for the procedure
 			if appointment.custom_appointment_category == 'Procedure':
 				current_procedure = frappe.new_doc('Clinical Procedure')
+				current_procedure.procedure_template = appointment.custom_procedure_template
 				current_procedure.custom_patient_encounter = new_encounter.name
 				current_procedure.patient = new_encounter.patient
 				current_procedure.patient_name = new_encounter.patient_name
@@ -386,9 +387,18 @@ def patient(patient=''):
 	return {'doc': doc}
 
 @frappe.whitelist()
-def create_insurance(appointment):
+def pos_payment_method(pos_profile):
+	return frappe.get_all('POS Payment Method',
+        fields=['default', 'mode_of_payment'],
+        filters={'parent': pos_profile}
+	)
+
+@frappe.whitelist()
+def create_invoice(appointment, profile, payment_methods):
 	appointment_doc = frappe.get_doc('Patient Appointment', appointment)
 	patient = frappe.get_doc('Patient', appointment_doc.patient)
+	branches = frappe.db.get_all('Branch', order_by='creation', pluck='name')
+	branch = branches[0] if branches else ''
 	customer_invoice_row = False
 	insurance_invoice_row = False
 	for invoice_item in appointment_doc.custom_invoice_items:
@@ -401,10 +411,13 @@ def create_insurance(appointment):
 		invoice = frappe.new_doc('Sales Invoice')
 		invoice.patient = patient.name
 		invoice.patient_name = patient.patient_name
+		invoice.is_pos = 1
+		invoice.pos_profile = profile
 		invoice.customer = patient.customer
 		invoice.posting_date = frappe.utils.now()
 		invoice.due_date = frappe.utils.now()
 		invoice.service_unit = appointment_doc.service_unit
+		invoice.branch = appointment_doc.custom_branch or branch or ''
 		for invoice_item in appointment_doc.custom_invoice_items:
 			if not invoice_item.customer_invoice:
 				invoice.append('items', {
@@ -415,6 +428,13 @@ def create_insurance(appointment):
 					'rate': invoice_item.rate,
 					'amount': invoice_item.amount,
 				})
+		for method in payment_methods:
+			invoice.append('payments', {
+				'default': method.get('default', 0),
+				'mode_of_payment': method.get('mode_of_payment', ''),
+				'amount': method.get('amount', 0),
+				'reference_no': method.get('reference_no', '')
+			})
 		invoice.save()
 		invoice.submit()
 		for invoice_item in appointment_doc.custom_invoice_items:
@@ -427,10 +447,13 @@ def create_insurance(appointment):
 			patient_invoice = frappe.new_doc('Sales Invoice')
 			patient_invoice.patient = patient.name
 			patient_invoice.patient_name = patient.patient_name
+			patient_invoice.is_pos = 1
+			patient_invoice.pos_profile = profile
 			patient_invoice.customer = patient.customer
 			patient_invoice.posting_date = frappe.utils.now()
 			patient_invoice.due_date = frappe.utils.now()
 			patient_invoice.service_unit = appointment_doc.service_unit
+			patient_invoice.branch = appointment_doc.custom_branch or branch or ''
 			for invoice_item in appointment_doc.custom_invoice_items:
 				if not invoice_item.customer_invoice:
 					patient_invoice.append('items', {
@@ -441,6 +464,13 @@ def create_insurance(appointment):
 						'rate': float(invoice_item.customer_amount) / float(invoice_item.quantity),
 						'amount': invoice_item.customer_amount,
 					})
+			for method in payment_methods:
+				patient_invoice.append('payments', {
+					'default': method.default,
+					'mode_of_payment': method.mode_of_payment,
+					'amount': method.amount,
+					'reference_no': method.reference_no
+				})
 			patient_invoice.save()
 			patient_invoice.submit()
 
@@ -448,10 +478,13 @@ def create_insurance(appointment):
 			insurance_invoice = frappe.new_doc('Sales Invoice')
 			insurance_invoice.patient = patient.name
 			insurance_invoice.patient_name = patient.patient_name
+			insurance_invoice.is_pos = 1
+			insurance_invoice.pos_profile = profile
 			insurance_invoice.customer = patient.custom_insurance_company_name
 			insurance_invoice.posting_date = frappe.utils.now()
 			insurance_invoice.due_date = frappe.utils.now()
 			insurance_invoice.service_unit = appointment_doc.service_unit
+			insurance_invoice.branch = appointment_doc.custom_branch or branch or ''
 			for invoice_item in appointment_doc.custom_invoice_items:
 				if not invoice_item.insurance_invoice:
 					insurance_invoice.append('items', {
@@ -462,6 +495,13 @@ def create_insurance(appointment):
 						'rate': float(invoice_item.insurance_amount) / float(invoice_item.quantity),
 						'amount': invoice_item.insurance_amount,
 					})
+			for method in payment_methods:
+				insurance_invoice.append('payments', {
+					'default': method.default,
+					'mode_of_payment': method.mode_of_payment,
+					'amount': method.amount,
+					'reference_no': method.reference_no
+				})
 			insurance_invoice.save()
 			insurance_invoice.submit()
 
@@ -717,8 +757,9 @@ def mark_no_show_appointments():
 			'appointment_time': ['<', add_to_date(current_time, minutes=-15)]  # Appointment is 15 minutes past
 		}, 
 		fields=['name'])
-	print('hi')
-	print(appointments)
 	# Loop through appointments and mark as no-show
 	for appointment in appointments:
 		change_status(appointment.name, 'No Show')
+
+def on_logout():
+	frappe.publish_realtime("session_logout")
