@@ -14,17 +14,88 @@
       <div v-html="message"></div>
     </v-alert>
     <Toast position="bottom-right"/>
-    <ConfirmPopup group="headless">
+    <ConfirmDialog group="headless">
       <template #container="{ message, acceptCallback, rejectCallback }">
         <div class="rounded p-4">
           <span>{{ message.message }}</span>
+          <a-form layout="vertical" 
+          :model="newProcedureForm" 
+          :rules="{procedure_template: [{ required: true, message: 'Please choose a Procedure Template!' }]}"
+          >
+          <a-form-item label="Procedure Template">
+            <a-select
+            v-model:value="newProcedureForm.procedure_template"
+            :options="$resources.clinicalProcedureTemplates.data?.options"
+            :fieldNames="{label: 'name', value: 'name'}"
+            style="width: 100%"
+            show-search
+            :loading="$resources.clinicalProcedureTemplates.list.loading"
+            @search="(value) => {handleSearch(
+              value, 
+              $resources.clinicalProcedureTemplates, 
+              {name: ['like', `%${value}%`]}, 
+              {},
+            )}"
+            :filterOption="false"
+            ></a-select>
+          </a-form-item>
+          </a-form>
           <div class="d-flex align-items-center gap-2 mt-4">
             <v-btn @click="acceptCallback" color="primary" size="small">Save</v-btn>
             <v-btn outlined @click="rejectCallback" size="small" text>Cancel</v-btn>
           </div>
         </div>
       </template>
-    </ConfirmPopup>
+    </ConfirmDialog>
+    <OverlayPanel ref="op">
+      <div class="flex flex-col">
+        <span class="font-medium block mb-2">Procedures</span>
+        <Listbox 
+        :options="[
+          ...procedureForms, 
+          ...(records.current_encounter.status != 'Completed' ? [{name: 'Add Procedure', icon: 'mdi mdi-plus'}] : [])
+        ]" 
+        optionLabel="name" 
+        class="w-full procedures-list"
+        >
+          <template #option="{option, index}">
+            <div 
+            v-if="option.name == 'Add Procedure'"
+            class="flex items-center" 
+            style="padding: 0.5rem 0.75rem" 
+            @click="newProcedure"
+            >
+              <i :class="option.icon"></i>
+              {{ option.name }}
+            </div>
+            <div 
+            v-else
+            class="flex items-center" 
+            :style="selectedProcedure === index ? {padding: '0.5rem 0.75rem', background: '#020617', color: '#ffffff'} :
+              {padding: '0.5rem 0.75rem'}
+            " 
+            @click="() => {selectedProcedure = index}"
+            >
+              {{ index + 1 + '. ' + option.name }}
+            </div>
+          </template>
+        </Listbox>
+
+
+        <!-- <div>
+          <ul class="list-none p-0 m-0 flex flex-col">
+            <li 
+            v-for="(procedure, index) in procedureForms" 
+            :key="index" 
+            class="flex items-center gap-2 px-2 py-3 hover:bg-emphasis cursor-pointer rounded-border" 
+            @click="selectedProcedure(index)"
+            >
+              {{ index + '. ' + procedure.name }}
+            </li>
+          </ul>
+        </div> -->
+      </div>
+    </OverlayPanel>
     <SpeedDial :model="actions" :radius="120" type="quarter-circle" direction="up-left" :style="{ position: 'fixed', right: '10px', bottom: '10px', zIndex: 500 }">
       <template #button="{ toggleCallback }">
         <v-btn icon="mdi mdi-cog-outline" color="amber" @click="toggleCallback">
@@ -281,8 +352,20 @@
         <div class="ps-0 ml-2 col-12 mb-25">
         <Card class="mb-4">
           <template #content>
-            <a-form layout="vertical" :model="procedureForm">
-              <SelectButton v-model="encounterForm.custom_encounter_state" :options="formOptions" class="text-center" :allowEmpty="false" @change="setStepperValue"/>
+            <a-form layout="vertical" :model="procedureForms[selectedProcedure]">
+              <SelectButton 
+              v-model="encounterForm.custom_encounter_state" 
+              :options="formOptions" 
+              optionLabel="label"
+              optionValue="value"
+              class="text-center" 
+              :allowEmpty="false" 
+              @change="setStepperValue"
+              >
+                <template #option="slotProps">
+                  <span class="p-button-label" data-pc-section="label" @click="handleClick">{{ slotProps.option.label }}</span>
+                </template>
+              </SelectButton>
               <Stepper orientation="vertical">
                 <!-- Procedure Panels -->
                 <StepperPanel value="Procedure Info" header="Procedure Info" v-if="encounterForm.custom_encounter_state === 'Procedure'">
@@ -293,12 +376,13 @@
                           <v-col cols="12" md="6">
                             <a-form-item label="Procedure Template">
                               <a-select
-                              v-model:value="procedureForm.procedure_template"
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              v-model:value="procedureForms[selectedProcedure].procedure_template"
                               :options="$resources.clinicalProcedureTemplates.data?.options"
                               :fieldNames="{label: 'name', value: 'name'}"
                               style="width: 100%"
                               @change="value => {
-                                autoSave('Clinical Procedure', procedureForm.name, 'procedure_template', value)
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'procedure_template', value)
                               }"
                               show-search
                               :loading="$resources.clinicalProcedureTemplates.list.loading"
@@ -313,13 +397,14 @@
                             </a-form-item>
                             <a-form-item label="Practitioner">
                               <a-select
-                              v-model:value="procedureForm.practitioner"
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              v-model:value="procedureForms[selectedProcedure].practitioner"
                               :options="$resources.practitioners.data?.options"
                               :fieldNames="{label: 'practitioner_name', value: 'name'}"
                               style="width: 100%"
                               @change="(value, option) => {
-                                procedureForm.medical_department = option.department
-                                autoSave('Clinical Procedure', procedureForm.name, {practitioner: value, medical_department: option.department})
+                                procedureForms[selectedProcedure].medical_department = option.department
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, {practitioner: value, medical_department: option.department})
                               }"
                               show-search
                               :loading="$resources.practitioners.list.loading"
@@ -334,13 +419,14 @@
                             </a-form-item>
                             <a-form-item label="Medical Department">
                               <a-select
+                              :disabled="records.current_encounter.status == 'Completed'"
                               allowClear
-                              v-model:value="procedureForm.medical_department"
+                              v-model:value="procedureForms[selectedProcedure].medical_department"
                               :options="$resources.departments.data?.options"
                               :fieldNames="{label: 'department', value: 'name'}"
                               style="width: 100%"
                               @change="value => {
-                                autoSave('Clinical Procedure', procedureForm.name, 'medical_department', value)
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'medical_department', value)
                               }"
                               show-search
                               :loading="$resources.departments.list.loading"
@@ -355,13 +441,14 @@
                             </a-form-item>
                             <a-form-item label="Service Unit">
                               <a-select
+                              :disabled="records.current_encounter.status == 'Completed'"
                               allowClear
-                              v-model:value="procedureForm.service_unit"
+                              v-model:value="procedureForms[selectedProcedure].service_unit"
                               :options="$resources.serviceUnits.data?.options"
                               :fieldNames="{label: 'name', value: 'name'}"
                               style="width: 100%"
                               @change="value => {
-                                autoSave('Clinical Procedure', procedureForm.name, 'service_unit', value)
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'service_unit', value)
                               }"
                               show-search
                               :loading="$resources.serviceUnits.list.loading"
@@ -378,20 +465,22 @@
                           <v-col cols="12" md="6">
                             <a-form-item label="Start Date">
                               <a-date-picker 
-                                v-model:value="procedureForm.start_date"
+                                :disabled="records.current_encounter.status == 'Completed'"
+                                v-model:value="procedureForms[selectedProcedure].start_date"
                                 format="DD/MM/YYYY" 
                                 style="width: 100%;"
                                 @change="(date, dateString) => {
                                   const day = dateString.split('/')[0]
                                   const month = dateString.split('/')[1]
                                   const year = dateString.split('/')[2]
-                                  autoSave('Clinical Procedure', procedureForm.name, 'start_date', `${year}-${month}-${day}`)
+                                  autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'start_date', `${year}-${month}-${day}`)
                                 }"
                               />
                             </a-form-item>
                             <a-form-item label="Start Time">
                               <a-time-picker 
-                              v-model:value="procedureForm.start_time" 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              v-model:value="procedureForms[selectedProcedure].start_time" 
                               format="h:mm a" 
                               style="width: 100%;" 
                               @change="(date, timeString) => {
@@ -401,12 +490,16 @@
                                   hours = '00';
                                 if (modifier === 'pm')
                                   hours = parseInt(hours, 10) + 12;
-                                autoSave('Clinical Procedure', procedureForm.name, 'start_time', `${hours}:${minutes}`)
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'start_time', `${hours}:${minutes}`)
                               }"/>
                             </a-form-item>
                             <a-form-item label="Notes">
-                              <a-textarea :rows="4" v-model:value="procedureForm.notes" @blur="event => {
-                                autoSave('Clinical Procedure', procedureForm.name, 'notes', event.target.value)
+                              <a-textarea 
+                              :disabled="records.current_encounter.status == 'Completed'" 
+                              :rows="4" 
+                              v-model:value="procedureForms[selectedProcedure].notes" 
+                              @blur="event => {
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'notes', event.target.value)
                               }"/>
                             </a-form-item>
                           </v-col>
@@ -426,13 +519,14 @@
                           <v-col>
                             <a-form-item label="Sample">
                               <a-select
+                              :disabled="records.current_encounter.status == 'Completed'"
                               allowClear
-                              v-model:value="procedureForm.sample"
+                              v-model:value="procedureForms[selectedProcedure].sample"
                               :options="$resources.sampleCollections.data?.options"
                               :fieldNames="{label: 'name', value: 'name'}"
                               style="width: 100%"
                               @change="value => {
-                                autoSave('Clinical Procedure', procedureForm.name, 'sample', value)
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'sample', value)
                               }"
                               show-search
                               :loading="$resources.sampleCollections.list.loading"
@@ -446,8 +540,12 @@
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Pre Operative Diagnosis">
-                              <a-textarea :rows="4" v-model:value="procedureForm.custom_pre_operative_diagnosis" @blur="event => {
-                                autoSave('Clinical Procedure', procedureForm.name, 'custom_pre_operative_diagnosis', event.target.value)
+                              <a-textarea 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              :rows="4" 
+                              v-model:value="procedureForms[selectedProcedure].custom_pre_operative_diagnosis" 
+                              @blur="event => {
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'custom_pre_operative_diagnosis', event.target.value)
                               }"/>
                             </a-form-item>
                             <v-btn 
@@ -459,7 +557,7 @@
                               Consent Form
                             </v-btn>
                             <v-icon
-                            v-if="!!procedureForm.custom_patient_consent_signature"
+                            v-if="!!procedureForms[selectedProcedure].custom_patient_consent_signature"
                             color="green"
                             icon="mdi mdi-check-decagram"
                             size="large"
@@ -485,17 +583,17 @@
                               <v-btn variant="flat" color="orange" disabled>Predefined Areas</v-btn>
                               <v-btn variant="flat" color="orange" disabled>Predefined Annotations</v-btn>
                               <v-btn variant="flat" color="orange" @click="() => {
-                                annotationDoctype = procedureForm.doctype; 
+                                annotationDoctype = procedureForms[selectedProcedure].doctype; 
                                 procedureActive = true
                               }">Free Drawing</v-btn>
                             </div>
                           </v-col>
                         </v-row>
-                        <v-row v-if="procedureForm.custom_annotations.length > 1">
+                        <v-row v-if="procedureForms[selectedProcedure].custom_annotations.length > 1">
                           <v-col>
                             <h3 class="mt-3">Annotations</h3>
                             <Galleria 
-                            :value="procedureForm.custom_annotations" 
+                            :value="procedureForms[selectedProcedure].custom_annotations" 
                             :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
                             :numVisible="5" 
                             :circular="true" 
@@ -522,7 +620,7 @@
                               selected-class="bg-success"
                               show-arrows
                             >
-                              <v-slide-group-item v-for="(doc, index) of procedureForm.custom_annotations" :key="index">
+                              <v-slide-group-item v-for="(doc, index) of procedureForms[selectedProcedure].custom_annotations" :key="index">
                                 <img 
                                 :src="doc.image" 
                                 :alt="doc.name" 
@@ -560,7 +658,7 @@
                               if(items && row)
                                 newChildRow({
                                   parentDoctype: 'Clinical Procedure',
-                                  prarentDocname: procedureForm.name,
+                                  prarentDocname: procedureForms[selectedProcedure].name,
                                   fieldName: 'items', 
                                   rules: {
                                     item_code: [{ required: true, message: 'Please choose an item!' }],
@@ -675,8 +773,12 @@
                         <v-row>
                           <v-col>
                             <a-form-item label="Post Operative Diagnosis">
-                              <a-textarea :rows="4" v-model:value="procedureForm.custom_post_operative_diagnosis" @blur="event => {
-                                autoSave('Clinical Procedure', procedureForm.name, 'custom_post_operative_diagnosis', event.target.value)
+                              <a-textarea 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              :rows="4" 
+                              v-model:value="procedureForms[selectedProcedure].custom_post_operative_diagnosis" 
+                              @blur="event => {
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'custom_post_operative_diagnosis', event.target.value)
                               }"/>
                             </a-form-item>
                           </v-col>
@@ -698,6 +800,7 @@
                           <v-col>
                             <a-form-item label="Symptoms">
                               <a-select
+                              :disabled="records.current_encounter.status == 'Completed'"
                               v-model:value="encounterForm.symptoms"
                               :options="$resources.complaints.data?.options"
                               labelInValue
@@ -733,12 +836,21 @@
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Symptoms Duration">
-                              <a-input-number class="w-full" :min="0" v-model:value="encounterForm.custom_symptoms_duration" @blur="event => {
+                              <a-input-number 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              class="w-full" 
+                              :min="0" 
+                              v-model:value="encounterForm.custom_symptoms_duration" 
+                              @blur="event => {
                                 autoSave('Patient Encounter', encounterForm.name, 'custom_symptoms_duration', parseInt(event.target.value))
                               }"/>
                             </a-form-item>
                             <a-form-item label="Note">
-                              <a-textarea v-model:value="encounterForm.custom_symptoms_notes" :rows="4" @blur="event => {
+                              <a-textarea 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              v-model:value="encounterForm.custom_symptoms_notes" 
+                              :rows="4" 
+                              @blur="event => {
                                 autoSave('Patient Encounter', encounterForm.name, 'custom_symptoms_notes', event.target.value)
                               }"/>
                             </a-form-item>
@@ -758,12 +870,20 @@
                         <v-row>
                           <v-col>
                             <a-form-item label="Physical Examination">
-                              <a-textarea v-model:value="encounterForm.custom_physical_examination" :rows="4" @blur="event => {
+                              <a-textarea 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              v-model:value="encounterForm.custom_physical_examination" 
+                              :rows="4" 
+                              @blur="event => {
                                 autoSave('Patient Encounter', encounterForm.name, 'custom_physical_examination', event.target.value)
                               }"/>
                             </a-form-item>
                             <a-form-item label="Other Examination">
-                              <a-textarea v-model:value="encounterForm.custom_other_examination" :rows="4" @blur="event => {
+                              <a-textarea 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              v-model:value="encounterForm.custom_other_examination" 
+                              :rows="4" 
+                              @blur="event => {
                                 autoSave('Patient Encounter', encounterForm.name, 'custom_other_examination', event.target.value)
                               }"/>
                             </a-form-item>
@@ -891,7 +1011,9 @@
                             </EditableTable>
                             <div class="d-flex gap-2 mt-10">
                               <v-btn variant="flat" color="primary" disabled>Radiology Test</v-btn>
-                              <v-btn variant="flat" color="yellow-darken-1" @click="() => {
+                              <v-btn variant="flat" color="yellow-darken-1" 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              @click="() => {
                                 annotationDoctype = encounterForm.doctype; 
                                 encounterAnnotationType='Investigation'; 
                                 procedureActive = true
@@ -958,7 +1080,11 @@
                       <v-container>
                         <v-row>
                           <v-col>
-                            <a-textarea v-model:value="encounterForm.custom_illness_progression" :rows="4" @blur="event => {
+                            <a-textarea 
+                            :disabled="records.current_encounter.status == 'Completed'"
+                            v-model:value="encounterForm.custom_illness_progression" 
+                            :rows="4" 
+                            @blur="event => {
                               autoSave('Patient Encounter', encounterForm.name, 'custom_illness_progression', event.target.value)
                             }"/>
                           </v-col>
@@ -978,6 +1104,7 @@
                           <v-col>
                             <a-form-item label="Diagnosis">
                               <a-select
+                              :disabled="records.current_encounter.status == 'Completed'"
                               v-model:value="encounterForm.diagnosis"
                               label-in-value
                               :options="$resources.diagnosis?.data.options"
@@ -1014,6 +1141,7 @@
                             </a-form-item>
                             <a-form-item label="Differential Diagnosis">
                               <a-select
+                              :disabled="records.current_encounter.status == 'Completed'"
                               v-model:value="encounterForm.custom_differential_diagnosis"
                               label-in-value
                               :options="$resources.diagnosis.data?.options"
@@ -1049,7 +1177,11 @@
                               ></a-select>
                             </a-form-item>
                             <a-form-item label="Diagnosis Note">
-                              <a-textarea v-model:value="encounterForm.custom_diagnosis_note" :rows="4" @blur="event => {
+                              <a-textarea 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              v-model:value="encounterForm.custom_diagnosis_note" 
+                              :rows="4" 
+                              @blur="event => {
                               autoSave('Patient Encounter', encounterForm.name, 'custom_diagnosis_note', event.target.value)
                             }"/>
                             </a-form-item>
@@ -1539,7 +1671,9 @@
                         <v-row>
                           <v-col>
                             <div class="d-flex gap-2">
-                              <v-btn variant="flat" color="yellow-darken-1" @click="() => {
+                              <v-btn variant="flat" color="yellow-darken-1" 
+                              :disabled="records.current_encounter.status == 'Completed'"
+                              @click="() => {
                                 annotationDoctype = encounterForm.doctype; 
                                 encounterAnnotationType='Investigation'; 
                                 procedureActive = true
@@ -1600,7 +1734,7 @@
                     </div>
                   </template>
                 </StepperPanel>
-                <StepperPanel value="Order" header="Order" v-if="encounterForm.custom_encounter_state === 'Consultation' || encounterForm.custom_encounter_state === 'Follow-up'">
+                <!-- <StepperPanel value="Order" header="Order" v-if="encounterForm.custom_encounter_state === 'Consultation' || encounterForm.custom_encounter_state === 'Follow-up'">
                   <template #content="{ prevCallback }">
                     <v-sheet>
                       <v-container>
@@ -1621,7 +1755,7 @@
                       <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
                     </div>
                   </template>
-                </StepperPanel>
+                </StepperPanel> -->
 
                 <!-- Session Panels -->
 
@@ -1929,7 +2063,7 @@
       @update:isOpen="procedureActive = $event" 
       @show-alert="showAlert" 
       :doctype="annotationDoctype"
-      :docname="annotationDoctype == 'Patient Encounter' ? encounterForm.name : procedureForm.name"
+      :docname="annotationDoctype == 'Patient Encounter' ? encounterForm.name : procedureForms[selectedProcedure].name"
       :encounterType="annotationDoctype == 'Patient Encounter' ? encounterAnnotationType : ''"
       />
       <serviceRequestDialog 
@@ -1950,6 +2084,12 @@
       @update:isOpen="appointmentNoteActive = $event" 
       @show-alert="showAlert" 
       :appointmentId="records.appointment.name"
+      />
+      <appointmentInvoiceDialog 
+      :isOpen="appointmentInvoiceActive" 
+      @update:isOpen="appointmentInvoiceActive = $event" 
+      @show-alert="showAlert" 
+      :appointment="{...this.records.appointment, invoice_items: this.records.appointment.custom_invoice_items}"
       />
       <v-dialog v-model="consentFormDialog" width="auto">
         <v-toolbar color="red-accent-4" :style="{borderTopRightRadius: '12px', borderTopLeftRadius: '12px'}">
@@ -2340,30 +2480,7 @@ export default {
       lungsImage:lungsImage,
       celsiusImage:celsiusImage,
       soundImage:soundImage,
-      actions: [
-        {
-          label: 'Submit',
-          icon: 'mdi mdi-check',
-          command: () => {
-            this.submitEncounter()
-          }
-        },
-        {
-          label: 'Update',
-          icon: 'pi pi-refresh',
-          command: () => {
-            this.$toast.add({ severity: 'success', summary: 'Update', detail: 'Data Updated', life: 3000 });
-          }
-        },
-        {
-          label: 'Note',
-          icon: 'mdi mdi-text',
-          command: () => {
-            this.appointmentNoteActive = true
-          }
-        },
-      ],
-      
+
       isLoading: false,
       consentFormDialog: false,
       showProcedureAnnotations: false,
@@ -2372,6 +2489,7 @@ export default {
       activeIndex: 0,
       consentFormHtml: '',
       currentFormStep: 0,
+      selectedProcedure: 0,
       currentVS: {
         name: '',
         pulse: "-",
@@ -2381,6 +2499,7 @@ export default {
         temperature: "-",
         signs_date: '-',
       },
+      newProcedureForm: {procedure_template: ''},
       records: ref(encounterRecords),
       isAffixed:false,
       pastVisitEditRow: '',
@@ -2394,9 +2513,15 @@ export default {
       procedureActive: false,
       medicalHistoryActive: false,
       appointmentNoteActive: false,
+      appointmentInvoiceActive: false,
       message: '',
       alertVisible: false,
-      formOptions: ['Consultation', 'Procedure', 'Follow-up', 'Session'],
+      formOptions: [
+        {label:'Consultation', value:'Consultation'}, 
+        {label:'Procedure', value:'Procedure'}, 
+        {label:'Follow-up', value:'Follow-up'}, 
+        {label:'Session', value:'Session'}
+      ],
       previousState: '',
       annotationDoctype: '',
       encounterAnnotationType: '',
@@ -2427,13 +2552,13 @@ export default {
         custom_illness_progression: '',
 			}),
 
-      procedureForm: reactive({
+      procedureForms: reactive([{
         doctype: 'Clinical Procedure',
         name: '',
         custom_patient_consent_signature: '',
 
         custom_patient_encounter: '',
-        procedure_template: 'Botox Injection',
+        procedure_template: '',
         
         patient: '',
         patient_name: '',
@@ -2451,15 +2576,66 @@ export default {
 
         custom_pre_operative_diagnosis: '',
         custom_post_operative_diagnosis: '',
-			}),
+			}]),
     };
+  },
+  computed: {
+    actions() {
+      return [
+        ...(this.records.current_encounter?.status != 'Completed' ? [{
+          label: 'Submit',
+          icon: 'mdi mdi-check',
+          command: () => {
+            this.submitEncounter()
+          }
+        }] : []),
+        {
+          label: 'Invoice',
+          icon: 'mdi mdi-invoice-text-outline',
+          command: () => {
+            this.appointmentInvoiceActive = true
+          }
+        },
+        {
+          label: 'Note',
+          icon: 'mdi mdi-text',
+          command: () => {
+            this.appointmentNoteActive = true
+          }
+        },
+      ]
+    },
   },
   created() {
     this.isLoading = true;
     this.fetchRecords();
-    this.$socket.on('patients_updated', response => {
-      console.log(response)
+    this.$socket.on('patient_updated', doc => {
+      if(doc.name == this.records.patient.name){
+        doc.dob = dayjs(doc.dob).format('DD/MM/YYYY')
+        doc.age = ' (' + dayjs().diff(doc.dob, 'y') + 'yrs), '
+        this.records.patient = doc
+      }
     })
+
+    this.$socket.on('patient_encounter_updated', doc => {
+      if(doc.name == this.$route.params.encounterId){
+        doc.custom_encounter_start_time = dayjs(doc.custom_encounter_start_time)
+        doc.diagnosis = doc.diagnosis.map(value => {
+          value.label = value.diagnosis
+          value.value = value.diagnosis
+          return value
+        })
+        doc.symptoms = doc.symptoms.map(value => {
+          value.label = value.complaint
+          value.value = value.complaint
+          return value
+        })
+        this.encounterForm = {...this.encounterForm, ...doc}
+        this.previousState = this.encounterForm.custom_encounter_state
+        this.records.current_encounter = doc
+      }
+    })
+
     this.$socket.on('services', response => {
       let thisPatient = false
       this.records.services = response.filter(service => {
@@ -2489,11 +2665,14 @@ export default {
       .then(response => {
         console.log(response)
         response.current_encounter.custom_encounter_start_time = dayjs(response.current_encounter.custom_encounter_start_time)
-        if(response.current_procedure){
-          response.current_procedure.start_time = dayjs(response.current_procedure.start_date + ' ' + response.current_procedure.start_time)
-          response.current_procedure.start_date = dayjs(response.current_procedure.start_date)
-          this.procedureForm = {...this.procedureForm, ...response.current_procedure}
+        if(response.procedures.length > 0 ){
+          this.procedureForms = response.procedures.map(value => {
+            value.start_time = dayjs(value.start_date + ' ' + value.start_time)
+            value.start_date = dayjs(value.start_date)
+            return value
+          })
         }
+
         response.current_encounter.diagnosis = response.current_encounter.diagnosis.map(value => {
           value.label = value.diagnosis
           value.value = value.diagnosis
@@ -2505,6 +2684,7 @@ export default {
           return value
         })
         this.encounterForm = {...this.encounterForm, ...response.current_encounter}
+        this.previousState = this.encounterForm.custom_encounter_state
         response.patient.dob = dayjs(response.patient.dob).format('DD/MM/YYYY')
         response.patient.age = ' (' + dayjs().diff(response.patient.dob, 'y') + 'yrs), '
         response.encounters = response.encounters.map((encounter, index) => {
@@ -2659,43 +2839,71 @@ export default {
       this.pastVisitEditRow = row.data;
       this.pastVisitsActive = true;
     },
-    setStepperValue({event, value}) {
-      if(value === 'Procedure' && !this.procedureForm.name){
-        this.requireConfirmation(event, value)
-        this.encounterForm.custom_encounter_state = this.previousState
-        return;
+    handleClick(event) {
+      if (
+        event.target.innerText === 'Procedure' &&
+        this.encounterForm.custom_encounter_state === 'Procedure' &&
+        this.procedureForms[0].name
+      ) {
+        this.$refs.op.toggle(event); // Correct event passed for positioning
       }
-      this.previousState = value;
-      this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', value)
     },
-    requireConfirmation(event) {
+    setStepperValue({event, value}) {
+      // console.log(event)
+      if(value === 'Procedure' && !this.procedureForms[this.selectedProcedure].name){
+        if(this.records.current_encounter.status != 'Completed'){
+          this.encounterForm.custom_encounter_state = this.previousState
+          this.newProcedure(event)
+          return;
+        }
+        else{
+          this.encounterForm.custom_encounter_state = this.previousState
+          this.showAlert('This encounter is submitted and has no procedures' , 10000)
+        }
+      }
+      // else if(value === 'Procedure' && this.encounterForm.custom_encounter_state == 'Procedure'){
+      //   this.$refs.op.toggle(event);
+      // }
+      this.previousState = value;
+      if(this.records.current_encounter.status != 'Completed')
+        this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', value)
+    },
+    newProcedure(event) {
       this.$confirm.require({
         target: event.currentTarget,
         group: 'headless',
-        message: 'Do you want to create a clinical procedure?',
+        message: 'Do you want to create a new clinical procedure?',
         accept: () => {
+          this.previousState = 'Procedure';
+          this.encounterForm.custom_encounter_state = 'Procedure'
           this.createProcedure()
         },
       });
     },
     createProcedure(){
-      let formClone = {...this.procedureForm}
-      formClone.start_date = dayjs().format('YYYY-MM-DD')
-      formClone.start_time = dayjs().format('HH:mm')
-      formClone.custom_patient_encounter = this.encounterForm.name
-      formClone.patient = this.encounterForm.patient
-      formClone.patient_sex = this.encounterForm.patient_sex
-      formClone.patient_age = this.encounterForm.patient_age
-      formClone.practitioner = this.encounterForm.practitioner
-      formClone.practitioner_name = this.encounterForm.practitioner_name
-      formClone.medical_department = this.encounterForm.medical_department
-      formClone.service_unit = this.records.appointment.service_unit
+      let formClone = {
+        doctype: 'Clinical Procedure',
+
+        custom_patient_encounter: this.encounterForm.name,
+        procedure_template: this.newProcedureForm.procedure_template,
+        
+        patient: this.encounterForm.patient,
+        patient_name: '',
+        patient_sex: this.encounterForm.patient_sex,
+        patient_age: this.encounterForm.patient_age,
+        practitioner: this.encounterForm.practitioner,
+        practitioner_name: this.encounterForm.practitioner_name,
+        medical_department: this.encounterForm.medical_department,
+        service_unit: this.records.appointment.service_unit,
+        start_date: dayjs().format('YYYY-MM-DD'),
+        start_time: dayjs().format('HH:mm'),
+			}
       
       this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone})
       .then(response => {
         response.start_time = dayjs(response.start_date + ' ' + response.start_time)
         response.start_date = dayjs(response.start_date)
-        this.procedureForm = response
+        this.procedureForms.push(response)
         this.encounterForm.custom_encounter_state = 'Procedure'
         this.$toast.add({ severity: 'success', summary: 'Success', detail: 'A new Clinical Procedure has been created', life: 2000 });
       }).catch(error => {
@@ -2712,7 +2920,7 @@ export default {
     },
     showConsentForm() {
       this.$call('healthcare_doworks.api.methods.get_print_html', 
-      {doctype: 'Clinical Procedure', docname: this.procedureForm.name, print_format: 'Consent Form'})
+      {doctype: 'Clinical Procedure', docname: this.procedureForms[this.selectedProcedure].name, print_format: 'Consent Form'})
       .then(response => {
         this.consentFormHtml = response
         this.consentFormDialog = true
@@ -2733,10 +2941,10 @@ export default {
       const signature = this.$refs.consentFrom.saveSignature();
 
       this.$call('healthcare_doworks.api.methods.upload_signature', 
-        {docname: this.procedureForm.name, doctype: 'Clinical Procedure', file_data: signature}
+        {docname: this.procedureForms[this.selectedProcedure].name, doctype: 'Clinical Procedure', file_data: signature}
       )
       .then(response => {
-        this.procedureForm.custom_patient_consent_signature = true
+        this.procedureForms[this.selectedProcedure].custom_patient_consent_signature = true
         this.consentFormDialog = false
         this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
       }).catch(error => {
@@ -2787,6 +2995,10 @@ export default {
 </script>
 
 <style>
+
+.procedures-list .p-listbox-item{
+  padding: 0 !important
+}
 
 #patient-bar .p-card-content{
   display: flex;

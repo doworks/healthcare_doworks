@@ -142,18 +142,18 @@ def patient_encounter_name(appointment_id):
 		
 			# assign default values for the procedure
 			if appointment.custom_appointment_category == 'Procedure':
-				current_procedure = frappe.new_doc('Clinical Procedure')
-				current_procedure.procedure_template = appointment.custom_procedure_template
-				current_procedure.custom_patient_encounter = new_encounter.name
-				current_procedure.patient = new_encounter.patient
-				current_procedure.patient_name = new_encounter.patient_name
-				current_procedure.patient_sex = new_encounter.patient_sex
-				current_procedure.patient_age = new_encounter.patient_age
-				current_procedure.practitioner = new_encounter.practitioner
-				current_procedure.practitioner_name = new_encounter.practitioner_name
-				current_procedure.medical_department = new_encounter.medical_department
-				current_procedure.service_unit = appointment.service_unit
-				current_procedure.insert()
+				procedure = frappe.new_doc('Clinical Procedure')
+				procedure.procedure_template = appointment.custom_procedure_template
+				procedure.custom_patient_encounter = new_encounter.name
+				procedure.patient = new_encounter.patient
+				procedure.patient_name = new_encounter.patient_name
+				procedure.patient_sex = new_encounter.patient_sex
+				procedure.patient_age = new_encounter.patient_age
+				procedure.practitioner = new_encounter.practitioner
+				procedure.practitioner_name = new_encounter.practitioner_name
+				procedure.medical_department = new_encounter.medical_department
+				procedure.service_unit = appointment.service_unit
+				procedure.insert()
 			return new_encounter.name
 @frappe.whitelist()
 def patient_encounter_records(encounter_id):
@@ -162,10 +162,11 @@ def patient_encounter_records(encounter_id):
 		appointment = frappe.get_doc('Patient Appointment', current_encounter.appointment)
 		patient = frappe.get_doc('Patient', appointment.patient)
 		practitioner = frappe.get_doc('Healthcare Practitioner', appointment.practitioner)
-		current_procedure = None
+		procedures = []
 		if frappe.db.exists('Clinical Procedure', {"custom_patient_encounter": current_encounter.name}):
-			procedures = frappe.db.get_list('Clinical Procedure', filters={"custom_patient_encounter": current_encounter.name}, pluck='name')
-			current_procedure = frappe.get_doc('Clinical Procedure', procedures[-1])
+			procedures_list = frappe.db.get_list('Clinical Procedure', filters={"custom_patient_encounter": current_encounter.name}, pluck='name')
+			for procedure in procedures_list:
+				procedures.append(frappe.get_doc('Clinical Procedure', procedure))
 
 		vital_signs = frappe.db.get_list('Vital Signs',
 			filters={'patient': appointment.patient},
@@ -224,7 +225,7 @@ def patient_encounter_records(encounter_id):
 			'attachments': attachments,
 			'services': services,
 			'current_encounter': current_encounter,
-			'current_procedure': current_procedure
+			'procedures': procedures
 		}
 
 @frappe.whitelist()

@@ -370,9 +370,6 @@ export default {
         this.$emit('update:isOpen', value);
       },
     },
-    invoiceItems() {
-      return this.appointment.invoice_items;
-    },
     actions() {
       return [
         ...(this.invoiceItems.some(value => !value.customer_invoice) ? [{
@@ -406,7 +403,7 @@ export default {
       referenceDate: '',
       posProfile: '',
       paymentMethods: [],
-      invoiceItems: this.appointment.invoice_items,
+      invoiceItems: this.appointment.invoice_items || [],
       // actions: [
       //   ...(this.invoiceItems.some(value => !value.customer_invoice) ? [{
       //     label: 'Create Invoices',

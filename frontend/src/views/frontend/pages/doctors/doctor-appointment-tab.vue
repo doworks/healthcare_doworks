@@ -404,7 +404,6 @@
 import dayjs from 'dayjs';
 import colors from '@/assets/json/colors.json';
 import { FilterMatchMode } from 'primevue/api';
-import axios from 'axios';
 
 import { VAvatar } from 'vuetify/components/VAvatar';
 import { VChip } from 'vuetify/components/VChip';
@@ -547,14 +546,14 @@ export default {
 					command: () => {this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)}
 				}] : []),
 				...(this.$route.name == 'appointments' ? [{
-					label: 'Appointment Invoice Items',
+					label: 'Billing Items',
 					icon: 'mdi mdi-invoice-text-outline',
 					command: () => {this.$emit('appointment-invoice-dialog', this.selectedRow)}
 				}] : []),
 				{
 					label: 'ID Card Reading',
 					icon: 'mdi mdi-card-account-details-outline',
-					command: () => {this.readIdCard()}
+					command: () => {this.$emit('read-card', this.selectedRow)}
 				},
 				{
 					label: 'Vital Signs',
@@ -731,163 +730,6 @@ export default {
 		},
 		pageChanged(props) {
 			console.log(props)
-		},
-		async readIdCard(event) {
-            // var xmlHttp = new XMLHttpRequest();
-            // xmlHttp.open( "GET", "http://localhost:5000/card", false ); // false for synchronous request
-            // xmlHttp.send( null );
-            //xmlHttp.setRequestHeader("Authorization", "Basic "+"o6py7d5i5r53ogoac7yhn38n6rw5vcm7qfd8hqdhdms39qphvjhrehw9h94wqexufhkzykkuce7wbcto");
-            const response = await axios.get('http://localhost:5000/card');
-			// this.cardData = response.data;
-			console.log(response)
-            
-            // cur_frm.set_value("full_name",xmlHttp.responseText)
-            
-//  			let data_string=xmlHttp.responseText;
-//  			// console.info(data_string);
-//  			var data = JSON.parse(data_string);
-// 			if(!data){
-				this.$emit('show-alert', 'Please Inser A Card!', 10000)
-// 				return
-// 			}
- 			
-//  			console.log ("Hello " + data['first_name'] + " " +data['middle_name1'] +" "+ data['middle_name2']+" "+ data['middle_name3'] +" "+ data['middle_name4'] +" "+ data['last_name'])
-//  			// Full name English
-// 			let first_name = data['first_name']
-// 			let middle_name = ''
-// 			let last_name = ''
-			
-// 			if (data['middle_name1'])
-// 				middle_name = data['middle_name1']
-// 			if (data['middle_name2'])
-// 				middle_name += " " + data['middle_name2']
-// 			if (data['middle_name3'])
-// 				middle_name += " " + data['middle_name3']
-// 			if (data['middle_name4'])
-// 				middle_name += " " + data['middle_name4']
-// 			if (data['last_name'])
-// 				last_name = data['last_name']
-
-// 			let patient_name = (first_name + " " + middle_name + " " + last_name).trim()
-			
-// 			// Full name Arabic
-
-// 			let first_name_ar = data['first_name_ar']
-// 			let custom_middle_name_ar = ''
-// 			let custom_last_name_ar = ''
-			
-// 			if (data['middle_name1_ar'])
-// 				custom_middle_name_ar = data['middle_name1_ar']
-// 			if (data['middle_name2_ar'])
-// 				custom_middle_name_ar += " " + data['middle_name2_ar']
-// 			if (data['middle_name3_ar'])
-// 				custom_middle_name_ar += " " + data['middle_name3_ar']
-// 			if (data['middle_name4_ar'])
-// 				custom_middle_name_ar += " " + data['middle_name4_ar']
-// 			if (data['last_name_ar'])
-// 				custom_last_name_ar = data['last_name_ar']
-
-// 			let patient_name_ar = (first_name_ar + " " + custom_middle_name_ar + " " + custom_last_name_ar).trim()
-		
-			
-// 			// gender
-// 			let sex = ''
-// 			if (data['gender'] == "M")
-// 				sex = 'Male'
-// 			if (data['gender'] == "F")
-// 				sex = 'Female'
-			
-// 			// nationality
-// 			let custom_nationality = ''
-// 			if(data['nationality'])
-// 				custom_nationality = data['nationality']
-			
-// 			// occupation_description
-// 			let custom_occupation_description = ''
-// 			if (data['occupation_description'])
-// 				custom_occupation_description = data['occupation_description']
-			
-// 			//cpr
-// 			let custom_cpr = ''
-// 			if (data['cpr'])
-// 			{
-// 				custom_cpr = data['cpr'].toString()
-// 				if(custom_cpr.length == 9)
-// 					custom_cpr = "0" + custom_cpr
-
-// 			}
-			
-// 			// email
-// 			let email = ''
-// 			if (data['email'])
-// 				email = data['email']
-			
-// 			// employer
-// 			let custom_employer = ''
-// 			if (data['employer'])
-// 				custom_employer = data['employer']
-			
-// 			//birthdate
-// 			let dob = ''
-// 			if (data['birthdate'])
-// 				var birthdate = data['birthdate'].toString().substr(0,4) + "-" + data['birthdate'].toString().substr(4,2) + "-" + data['birthdate'].toString().substr(6,2)
-// 				dob = birthdate
-// 				// console.log(birthdate)
-// 			// mobile number
-// 			let mobile = ''
-// 			if (data['contact_no'])
-// 				mobile = "+" + data['contact_no']
-			
-// 			// address
-// 			let address_cpr = ""
-// 			if (data['building_no'])
-// 				address_cpr += "Building " +data['building_no'] + " "
-// 			if (data['flat_no'])
-// 				address_cpr +=  ",Flat " +data['flat_no'] + " "
-// 			if (data['road_no'])
-// 				address_cpr += ",Road " + data['road_no'] + " "
-// 			if (data['block_no'])
-// 				address_cpr += ",Block "+ data['block_no'] + " "
-// 			if (data['block_name'])
-// 				address_cpr += data['block_name'] + " "
-// 				let address = address_cpr
-			
-			
-//  		    xmlHttp = new XMLHttpRequest();
-//             xmlHttp.open( "GET", "http://localhost:5000/card_photo", false ); // false for synchronous request
-//             xmlHttp.send( null );
-            
-            
-//             // cur_frm.set_value("full_name",xmlHttp.responseText)
-//             console.info(xmlHttp.responseText)
-            
-//  			data_string=xmlHttp.responseText;
- 			
-// //  			data_string=data_string.replace("[","");
-// //  			data_string=data_string.replace("]","");
-//  			data_string = data_string.replaceAll("'",'"')
-//  			data_string = data_string.replaceAll('A"ALI',"A'ALI")
-//  			data_string = data_string.replaceAll(': b"',': "')
-//  			data_string = data_string.replaceAll("\\x00",'')
-//  			data_string = data_string.slice(1,-2);
-//  			console.info("Before parse:" + data_string)
-// 			data = JSON.parse(data_string);
-			
-// 			// upload images
-// 			let custom_personal_picture = ''
-// 			if (data['image'])
-// 				custom_personal_picture = "+" + data['image']
-			
-// 			// upload signature
-// 			let signature_picture = ''
-// 			if (data['signature'])
-// 				signature_picture = "+" +data['signature']
- 		
-//  			// console.info(xmlHttp.responseText);
- 			
-//  			// console.info(data['first_name']);
-//  			// cur_frm.set_value("full_name",data['first_name'])
-			    
 		},
 	},
 };

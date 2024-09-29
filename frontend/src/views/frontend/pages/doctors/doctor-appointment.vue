@@ -129,6 +129,7 @@
             @payment-type-dialog="paymentTypeDialog"
             @transfer-practitioner-dialog="transferPractitionerDialog"
             @table-page-change="pageChanged"
+            @read-card="readIdCard"
             />
           </v-window-item>
         </v-window>
@@ -343,6 +344,7 @@ import { ref } from 'vue';
 import moment from "moment";
 import dayjs from 'dayjs';
 import Clock from '@/components/clock/Clock.vue';
+import axios from 'axios';
 
 import { VIcon } from 'vuetify/components/VIcon';
 import { VToolbar, VToolbarItems } from 'vuetify/components/VToolbar';
@@ -942,6 +944,166 @@ export default {
     updateProgress() {
       this.progressValue = (this.appointments.length / this.totalRecords) * 100;
     },
+    async readIdCard(row) {
+      try {
+        this.lodingOverlay = true;
+        const response = await axios.get('http://localhost:5000/card', {timeout: 3000});
+        console.log(response.data);
+        const data = response.data;
+        let form = {doctype: 'Patient', name: row.patient}
+
+        let first_name = data['first_name']
+  			let middle_name = ''
+  			let last_name = ''
+        
+  			if (data['middle_name1'])
+  				middle_name = data['middle_name1']
+  			if (data['middle_name2'])
+  				middle_name += " " + data['middle_name2']
+  			if (data['middle_name3'])
+  				middle_name += " " + data['middle_name3']
+  			if (data['middle_name4'])
+  				middle_name += " " + data['middle_name4']
+  			if (data['last_name'])
+  				last_name = data['last_name']
+        
+        form.first_name = first_name
+        if(middle_name)
+          form.middle_name = middle_name
+        if(last_name)
+          form.last_name = last_name
+        form.patient_name = (first_name ? first_name : '' ) + (middle_name ? ' ' + middle_name : '') + (last_name ? ' ' + last_name : '')
+        
+  			// Full name Arabic
+
+  			let custom_first_name_ar = data['first_name_ar']
+  			let custom_middle_name_ar = ''
+  			let custom_last_name_ar = ''
+        
+  			if (data['middle_name1_ar'])
+  				custom_middle_name_ar = data['middle_name1_ar']
+  			if (data['middle_name2_ar'])
+  				custom_middle_name_ar += " " + data['middle_name2_ar']
+  			if (data['middle_name3_ar'])
+  				custom_middle_name_ar += " " + data['middle_name3_ar']
+  			if (data['middle_name4_ar'])
+  				custom_middle_name_ar += " " + data['middle_name4_ar']
+  			if (data['last_name_ar'])
+  				custom_last_name_ar = data['last_name_ar']
+
+        if(custom_first_name_ar)
+          form.custom_first_name_ar = custom_first_name_ar
+        if(custom_middle_name_ar)
+          form.custom_middle_name_ar = custom_middle_name_ar
+        if(custom_last_name_ar)
+          form.custom_last_name_ar = custom_last_name_ar
+        form.patient_name_ar = (custom_first_name_ar ? custom_first_name_ar : '' ) + 
+          (custom_middle_name_ar ? ' ' + custom_middle_name_ar : '') + 
+          (custom_last_name_ar ? ' ' + custom_last_name_ar : '')
+      
+        
+  			// gender
+  			let sex = ''
+  			if (data['gender'] == "M")
+  				sex = 'Male'
+  			if (data['gender'] == "F")
+  				sex = 'Female'
+        form.sex = sex
+        
+  			// nationality
+  			if(data['nationality'])
+          form.custom_nationality = data['nationality']
+        
+  			// occupation_description
+  			if (data['occupation_description'])
+          form.custom_occupation_description = data['occupation_description']
+        
+  			//cpr
+  			let custom_cpr = ''
+  			if (data['cpr']){
+  				custom_cpr = data['cpr'].toString()
+  				if(custom_cpr.length == 9)
+  					custom_cpr = "0" + custom_cpr
+          form.custom_cpr = custom_cpr
+  			}
+        
+  			// email
+  			if (data['email'])
+  				form.email = data['email']
+        
+  			// employer
+  			if (data['employer'])
+  				form.custom_employer = data['employer']
+        
+  			//birthdate
+  			if (data['birthdate'])
+          form.dob = data['birthdate'].toString().substr(0,4) + "-" + data['birthdate'].toString().substr(4,2) + "-" + data['birthdate'].toString().substr(6,2)
+  				// console.log(birthdate)
+  			// mobile number
+  			let mobile = ''
+  			if (data['contact_no'])
+  				form.mobile = "+" + data['contact_no']
+        
+  			// address
+  			let address_cpr = ""
+  			if (data['building_no'])
+  				address_cpr += "Building " +data['building_no'] + " "
+  			if (data['flat_no'])
+  				address_cpr +=  ",Flat " +data['flat_no'] + " "
+  			if (data['road_no'])
+  				address_cpr += ",Road " + data['road_no'] + " "
+  			if (data['block_no'])
+  				address_cpr += ",Block "+ data['block_no'] + " "
+  			if (data['block_name'])
+  				address_cpr += data['block_name'] + " "
+        form.address = address_cpr
+        
+        let xmlHttp = new XMLHttpRequest();
+        xmlHttp.open( "GET", "http://localhost:5000/card_photo", false ); // false for synchronous request
+        xmlHttp.send( null );
+        
+        
+        // cur_frm.set_value("full_name",xmlHttp.responseText)
+        console.info(xmlHttp.responseText)
+              
+   			let data_string=xmlHttp.responseText;
+        
+  //  			data_string=data_string.replace("[","");
+  //  			data_string=data_string.replace("]","");
+   			data_string = data_string.replaceAll("'",'"')
+   			data_string = data_string.replaceAll('A"ALI',"A'ALI")
+   			data_string = data_string.replaceAll(': b"',': "')
+   			data_string = data_string.replaceAll("\\x00",'')
+   			data_string = data_string.slice(1,-2);
+   			console.info("Before parse:" + data_string)
+  			let imageDate = JSON.parse(data_string);
+        
+  			// upload images
+  			if (imageDate['image'])
+  				form.custom_personal_picture = "+" + imageDate['image']
+        
+  			// upload signature
+  			if (imageDate['signature'])
+  				form.custom_signature_picture = "+" +imageDate['signature']
+      
+        this.$call('healthcare_doworks.api.methods.edit_doc', {form})
+        .then(response => {
+          this.lodingOverlay = false;
+          window.open('/patient' + response.name, '_blank');
+        }).catch(error => {
+          console.error(error);
+          let message = error.message.split('\n');
+          message = message.find(line => line.includes('frappe.exceptions'));
+          if(message){
+            const firstSpaceIndex = message.indexOf(' ');
+            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+          }
+        });
+      } catch (error) {
+        this.lodingOverlay = false;
+        this.showAlert('Please Insert A Card!', 10000)
+      }
+		},
     transformData (keys, values) {
       return values.map(row => {
         const obj = {};

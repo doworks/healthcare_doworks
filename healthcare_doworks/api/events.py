@@ -2,7 +2,7 @@ import frappe
 import datetime
 
 def patient_update(doc, method=None):
-    frappe.publish_realtime("patients_updated", doc)
+    frappe.publish_realtime("patient_updated", doc)
 
 def patient_appointment_inserted(doc, method=None):
     if doc.status == 'Walked In':
@@ -24,8 +24,7 @@ def patient_encounter_inserted(doc, method=None):
         appointment.save()
 
 def patient_encounter_update(doc, method=None):
-    encounters = frappe.db.get_list('Patient Encounter', fields=['*'], order_by='name')
-    frappe.publish_realtime("patient_encounters_updated", encounters)
+    frappe.publish_realtime("patient_encounter_updated", doc)
 
 def patient_encounter_submit(doc, method=None):
     if doc.appointment:
@@ -36,3 +35,4 @@ def patient_encounter_submit(doc, method=None):
             "time": datetime.datetime.now()
         })
         appointment.save()
+    frappe.publish_realtime("patient_encounter_updated", doc)
