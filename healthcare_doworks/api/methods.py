@@ -421,6 +421,7 @@ def create_invoice(appointment, profile, payment_methods):
 		invoice.due_date = frappe.utils.now()
 		invoice.service_unit = appointment_doc.service_unit
 		invoice.branch = appointment_doc.custom_branch or branch or ''
+		invoice.selling_price_list = 'Standard Selling'
 		for invoice_item in appointment_doc.custom_invoice_items:
 			if not invoice_item.customer_invoice:
 				invoice.append('items', {
@@ -457,6 +458,7 @@ def create_invoice(appointment, profile, payment_methods):
 			patient_invoice.due_date = frappe.utils.now()
 			patient_invoice.service_unit = appointment_doc.service_unit
 			patient_invoice.branch = appointment_doc.custom_branch or branch or ''
+			patient_invoice.selling_price_list = 'Insurance Price' or 'Standard Selling'
 			for invoice_item in appointment_doc.custom_invoice_items:
 				if not invoice_item.customer_invoice:
 					patient_invoice.append('items', {
@@ -469,10 +471,10 @@ def create_invoice(appointment, profile, payment_methods):
 					})
 			for method in payment_methods:
 				patient_invoice.append('payments', {
-					'default': method.default,
-					'mode_of_payment': method.mode_of_payment,
-					'amount': method.amount,
-					'reference_no': method.reference_no
+					'default': method.get('default', 0),
+					'mode_of_payment': method.get('mode_of_payment', ''),
+					'amount': method.get('amount', 0),
+					'reference_no': method.get('reference_no', '')
 				})
 			patient_invoice.save()
 			patient_invoice.submit()
@@ -487,6 +489,7 @@ def create_invoice(appointment, profile, payment_methods):
 			insurance_invoice.due_date = frappe.utils.now()
 			insurance_invoice.service_unit = appointment_doc.service_unit
 			insurance_invoice.branch = appointment_doc.custom_branch or branch or ''
+			insurance_invoice.selling_price_list = 'Insurance Price' or 'Standard Selling'
 			for invoice_item in appointment_doc.custom_invoice_items:
 				if not invoice_item.insurance_invoice:
 					insurance_invoice.append('items', {
@@ -546,7 +549,13 @@ def make_payment(appointment, mode_of_payment, reference_no=None, reference_date
 
 			payment_entry.save()
 			payment_entry.submit()
-		
+
+@frappe.whitelist()
+def get_invoice_items(**args):
+	items = frappe.get_list(args['doctype'], fields=args['fields'], filters=args['filters'], order_by=args['order_by'], limit=args['limit'])
+	for item in items:
+		item.item_price = frappe.get_list('Item Price', fields=['price_list', 'price_list_rate'], filters={'item_code': item.name})
+	return items
 
 @frappe.whitelist()
 def edit_doc(form, submit=False):

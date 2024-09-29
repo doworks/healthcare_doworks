@@ -56,14 +56,25 @@
                       <a-form-item label="Service">
                         <a-select
                         v-model:value="row.item"
-                        :options="$resources.items.data?.options"
+                        :options="$resources.items.data"
                         @change="(value, option) => {
                           row.item_name = option.item_name;
                           row.item_uom = option.weight_uom;
-                          row.rate = option.valuation_rate;
+                          row.rate = parseFloat(option.item_price.filter(value => value.price_list == 'Standard Selling')[0].price_list_rate);
+                          if(appointment.custom_payment_type == 'Insurance' && option.item_price.some(value => value.price_list == 'Insurance Price')){
+                            row.rate = option.item_price.filter(value => value.price_list == 'Insurance Price')[0].price_list_rate;
+                          }
                           if(!row.quantity)
                             row.quantity = 1;
-                          row.amount = parseFloat(option.valuation_rate) * parseFloat(row.quantity);
+                          row.amount = parseFloat(row.rate) * parseFloat(row.quantity);
+                          if(appointment.custom_payment_type == 'Insurance'){
+                            row.customer_amount = 0;
+                            row.insurance_amount = row.amount;
+                          }
+                          else{
+                            row.customer_amount = row.amount;
+                            row.insurance_amount = 0
+                          }
                         }"
                         :fieldNames="{label: 'item_name', value: 'name'}"
                         show-search
@@ -83,7 +94,13 @@
                         :controls="false" 
                         :defaultValue="1" 
                         v-model:value="row.quantity" 
-                        @change="(value, option) => {row.amount = parseFloat(value) * parseFloat(row.rate)}"
+                        @change="(value, option) => {
+                          row.amount = parseFloat(value) * parseFloat(row.rate)
+                          if(appointment.custom_payment_type == 'Insurance')
+                            row.insurance_amount = row.amount - parseFloat(row.customer_amount);
+                          else
+                            row.customer_amount = row.amount;
+                        }"
                         />
                       </a-form-item>
                       <a-form-item label="Rate">
@@ -91,18 +108,41 @@
                         class="w-full" 
                         :controls="false" 
                         :defaultValue="0" 
+                        :min="0"
                         v-model:value="row.rate" 
-                        @change="(value, option) => {row.amount = parseFloat(value) * parseFloat(row.quantity)}"
+                        @change="(value, option) => {
+                          row.amount = parseFloat(value) * parseFloat(row.quantity)
+                          if(appointment.custom_payment_type == 'Insurance')
+                            row.insurance_amount = row.amount - parseFloat(row.customer_amount);
+                          else
+                            row.customer_amount = row.amount;
+                        }"
                         />
                       </a-form-item>
                       <a-form-item label="Amount">
                         <a-input-number class="w-full" :controls="false" v-model:value="row.amount" disabled/>
                       </a-form-item>
                       <a-form-item label="Patient Amount" v-if="appointment.custom_payment_type == 'Insurance'">
-                        <a-input-number class="w-full" :controls="false" v-model:value="row.customer_amount"/>
+                        <a-input-number 
+                        class="w-full" 
+                        :controls="false" 
+                        :defaultValue="0" 
+                        :min="0"
+                        :max="row.amount"
+                        v-model:value="row.customer_amount"
+                        @change="(value, option) => {row.insurance_amount = parseFloat(row.amount) - value}"
+                        />
                       </a-form-item>
                       <a-form-item label="Insurance Amount" v-if="appointment.custom_payment_type == 'Insurance'">
-                        <a-input-number class="w-full" :controls="false" v-model:value="row.insurance_amount"/>
+                        <a-input-number 
+                        class="w-full" 
+                        :controls="false" 
+                        :defaultValue="0" 
+                        :min="0"
+                        :max="row.amount"
+                        v-model:value="row.insurance_amount"
+                        @change="(value, option) => {row.customer_amount = parseFloat(row.amount) - value}"
+                        />
                       </a-form-item>
                     </a-form>
                   </template>
@@ -143,16 +183,26 @@
                   :filterOption="false"
                   ></a-select>
                 </a-form-item>
-
-                <DataTable v-if="paymentMethods.length > 0" :value="paymentMethods" editMode="cell" @cell-edit-complete="onCellEditComplete"
-                  :pt="{
-                    table: { style: 'min-width: 50rem' },
-                    column: {
-                      bodycell: ({ state }) => ({
-                        class: [{ 'pt-0 pb-0': state['d_editing'] }]
-                      })
-                    }
-                  }"
+                <a-form-item label="Amount" v-if="paymentMethods.length > 0" >
+                  <a-input-number 
+                  class="w-full" 
+                  :controls="false" 
+                  disabled
+                  v-model:value="paymentAmount"
+                  />
+                </a-form-item>
+                <DataTable 
+                v-if="paymentMethods.length > 0" 
+                :value="paymentMethods" editMode="cell" 
+                @cell-edit-complete="onCellEditComplete"
+                :pt="{
+                  table: { style: 'min-width: 50rem' },
+                  column: {
+                    bodycell: ({ state }) => ({
+                      class: [{ 'pt-0 pb-0': state['d_editing'] }]
+                    })
+                  }
+                }"
                 >
                   <Column field="mode_of_payment" header="Mode of Payment">
                   </Column>
@@ -161,7 +211,11 @@
                       {{ data[field] ? data[field].toString() : '0' }}
                     </template>
                     <template #editor="{ data, field }">
-                      <a-input-number :controls="false" v-model:value="data[field]"/>
+                      <a-input-number 
+                      :min="0"
+                      :max="paymentAmount - paymentMethods.reduce((total, value) => total + value.amount, 0)" 
+                      :controls="false" v-model:value="data[field]"
+                      />
                     </template>
                   </Column>
                   <Column field="reference_no" header="Reference No">
@@ -314,19 +368,12 @@ export default {
     items() { return { 
       type: 'list', 
       doctype: 'Item', 
-      fields: ['name', 'item_code', 'item_name', 'valuation_rate', 'weight_uom'], 
+      fields: ['name', 'item_code', 'item_name', 'weight_uom'], 
       filters: {},
       auto: true,
       orderBy: 'name',
       pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
+      url: 'healthcare_doworks.api.methods.get_invoice_items', 
     }},
     modeOfPayments() { return { 
       type: 'list', 
@@ -403,6 +450,7 @@ export default {
       referenceDate: '',
       posProfile: '',
       paymentMethods: [],
+      paymentAmount: 0,
       invoiceItems: this.appointment.invoice_items || [],
       // actions: [
       //   ...(this.invoiceItems.some(value => !value.customer_invoice) ? [{
@@ -455,13 +503,13 @@ export default {
           this.paymentMethods = response.map(value => {
             if(value.default){
               value.amount = this.invoiceItems.filter(val => !val.customer_invoice)
-              .reduce((total, val) => total + (parseFloat(val.amount) - (val.invoice_amount ? parseFloat(val.invoice_amount) : 0)), 0)
+              .reduce((total, val) => total + (parseFloat(val.amount) - (val.insurance_amount ? parseFloat(val.insurance_amount) : 0)), 0)
+              this.paymentAmount = value.amount
             }
             else
               value.amount = 0
             return value
           })
-          console.log(this.paymentMethods)
         }).catch(error => {
           console.error(error);
           let message = error.message.split('\n');
