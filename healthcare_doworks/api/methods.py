@@ -1,7 +1,9 @@
 import frappe
 from frappe import _
 import datetime
-from frappe.utils import nowdate, now_datetime, add_to_date
+import frappe.query_builder
+import frappe.query_builder.functions
+from frappe.utils import add_to_date, get_datetime, get_datetime_str
 from frappe.utils.file_manager import save_file
 # from healthcare.healthcare.doctype.patient_appointment.patient_appointment import update_status
 from frappe.utils.pdf import get_pdf
@@ -479,8 +481,7 @@ def create_invoice(appointment, profile, payment_methods):
 			insurance_invoice = frappe.new_doc('Sales Invoice')
 			insurance_invoice.patient = patient.name
 			insurance_invoice.patient_name = patient.patient_name
-			insurance_invoice.is_pos = 1
-			insurance_invoice.pos_profile = profile
+			insurance_invoice.is_pos = 0
 			insurance_invoice.customer = patient.custom_insurance_company_name
 			insurance_invoice.posting_date = frappe.utils.now()
 			insurance_invoice.due_date = frappe.utils.now()
@@ -496,13 +497,6 @@ def create_invoice(appointment, profile, payment_methods):
 						'rate': float(invoice_item.insurance_amount) / float(invoice_item.quantity),
 						'amount': invoice_item.insurance_amount,
 					})
-			for method in payment_methods:
-				insurance_invoice.append('payments', {
-					'default': method.default,
-					'mode_of_payment': method.mode_of_payment,
-					'amount': method.amount,
-					'reference_no': method.reference_no
-				})
 			insurance_invoice.save()
 			insurance_invoice.submit()
 
@@ -748,19 +742,16 @@ def check_app_permission():
 	return True
 
 def mark_no_show_appointments():
-	# Get current time
-	current_time = now_datetime()
+    # mark appointmens as no-show if the appointment time has passed 15 minutes
+	appointments = frappe.db.sql("""
+		SELECT name FROM `tabPatient Appointment`
+		WHERE custom_visit_status = 'Scheduled'
+		AND CAST((CONCAT(CAST(appointment_date as DATE), ' ', CAST(appointment_time as TIME))) as DATETIME) >= CAST(%(datetime_str)s as DATETIME)
+	""", {'datetime_str': get_datetime_str(add_to_date(get_datetime(), minutes=-15))}, as_dict=True)
 
-	# Fetch appointments where the visit status is 'Scheduled'
-	appointments = frappe.get_all('Patient Appointment', 
-		filters={
-			'custom_visit_status': 'Scheduled',
-			'appointment_time': ['<', add_to_date(current_time, minutes=-15)]  # Appointment is 15 minutes past
-		}, 
-		fields=['name'])
 	# Loop through appointments and mark as no-show
 	for appointment in appointments:
 		change_status(appointment.name, 'No Show')
 
-def on_logout():
+def on_logout(): 
 	frappe.publish_realtime("session_logout")
