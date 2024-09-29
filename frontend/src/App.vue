@@ -37,10 +37,10 @@ export default {
 	},
 	mounted(){
 		// console.log(this.$auth)
-		console.log(this.$cardReader)
-		this.$cardReader.on('card_data', (data) => {
-			console.log('Received card data:', data);
-		});
+		// console.log(this.$cardReader)
+		// this.$cardReader.on('card_data', (data) => {
+		// 	console.log('Received card data:', data);
+		// });
 
 		this.$socket.on('session_logout', (data) => {
 			window.location.href = '/login';
