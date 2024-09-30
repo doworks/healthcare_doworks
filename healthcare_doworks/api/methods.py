@@ -405,9 +405,9 @@ def create_invoice(appointment, profile, payment_methods):
 	customer_invoice_row = False
 	insurance_invoice_row = False
 	for invoice_item in appointment_doc.custom_invoice_items:
-		if not invoice_item.customer_invoice:
+		if not invoice_item.customer_invoice and float(invoice_item.customer_amount) > 0:
 			customer_invoice_row = True
-		if not invoice_item.insurance_invoice:
+		if not invoice_item.insurance_invoice and float(invoice_item.customer_amount) > 0:
 			insurance_invoice_row = True
 
 	if appointment_doc.custom_payment_type == 'Self Payment' and customer_invoice_row:
@@ -460,7 +460,7 @@ def create_invoice(appointment, profile, payment_methods):
 			patient_invoice.branch = appointment_doc.custom_branch or branch or ''
 			patient_invoice.selling_price_list = 'Insurance Price' or 'Standard Selling'
 			for invoice_item in appointment_doc.custom_invoice_items:
-				if not invoice_item.customer_invoice and invoice_item.customer_amount > 0:
+				if not invoice_item.customer_invoice:
 					patient_invoice.append('items', {
 						'item_code': invoice_item.item,
 						'item_name': invoice_item.item_name,
