@@ -702,9 +702,9 @@ export default {
 				this.appointmentForm.service_unit = row.service_unit;
         this.appointmentForm.notes = row.notes;
         this.appointmentForm.appointment_date = dayjs(row.appointment_date)
-        this.appointmentForm.appointment_time = undefined;
+        this.appointmentForm.appointment_time = row.appointment_time;
+        this.showSlots()
 			}
-      this.showSlots()
       this.appointmentForm.doctype = 'Patient Appointment';
       // this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
 			this.appointmentForm.type = formType

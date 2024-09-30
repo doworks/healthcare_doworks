@@ -1360,11 +1360,10 @@
                           <v-col>
                             <h5>Medications</h5>
                             <EditableTable :columns="[
-                              {label: 'Medication', key: 'medication'},
-                              {label: 'Drug Code', key: 'drug_code'},
-                              {label: 'Dosage', key: 'dosage'},
-                              {label: 'Period', key: 'period'},
-                              {label: 'Dosage Form', key: 'dosage_form'},
+                              {label: 'Medicine', key: 'medication'},
+                              {label: 'Frequency', key: 'dosage'},
+                              {label: 'Duration', key: 'period'},
+                              {label: 'Note', key: 'comment'},
                             ]"
                             :rows="encounterForm.drug_prescription"
                             @update="(items, row, isNew) => {
@@ -1372,7 +1371,7 @@
                                 newChildRow({
                                   fieldName: 'drug_prescription', 
                                   rules: {
-                                    medication: [{ required: true, message: 'Please choose a medication!' }],
+                                    medication: [{ required: true, message: 'Please choose a medicine!' }],
                                     drug_code: [{ required: true, message: 'Please choose a drug code!' }],
                                     dosage_form: [{ required: true, message: 'Please choose a dosage form!' }],
                                     dosage: [{ required: !row.dosage_by_interval, message: 'Please choose a dosage!' }],
@@ -1391,16 +1390,16 @@
                                 <a-form layout="vertical">
                                   <v-container>
                                     <v-row>
-                                      <v-col cols="12" lg="6">
-                                        <a-form-item label="Medication">
+                                      <v-col cols="12">
+                                        <a-form-item label="Medicine">
                                           <a-select
                                           v-model:value="row.medication"
                                           :options="$resources.medications.data?.options"
                                           :fieldNames="{label: 'name', value: 'name'}"
                                           @change="(value, option) => {
-                                            row.strength = option.strength
-                                            row.strength_uom = option.strength_uom
-                                            row.dosage_form = option.dosage_form
+                                            // row.strength = option.strength
+                                            // row.strength_uom = option.strength_uom
+                                            // row.dosage_form = option.dosage_form
                                             row.dosage = option.default_prescription_dosage
                                             row.period = option.default_prescription_duration
                                           }"
@@ -1415,7 +1414,7 @@
                                           :filterOption="false"
                                           ></a-select>
                                         </a-form-item>
-                                        <a-form-item label="Drug Code">
+                                        <!-- <a-form-item label="Drug Code">
                                           <a-select
                                           v-model:value="row.drug_code"
                                           :options="$resources.items.data?.options.filter(item => item.name = row.medication)"
@@ -1430,17 +1429,17 @@
                                           )}"
                                           :filterOption="false"
                                           ></a-select>
-                                        </a-form-item>
-                                        <a-form-item label="Drug Name / Description">
+                                        </a-form-item> -->
+                                        <!-- <a-form-item label="Drug Name / Description">
                                           <a-input v-model:value="row.drug_name" disabled/>
-                                        </a-form-item>
-                                        <a-form-item label="Strength">
+                                        </a-form-item> -->
+                                        <!-- <a-form-item label="Strength">
                                           <a-input v-model:value="row.strength" disabled/>
-                                        </a-form-item>
-                                        <a-form-item label="Strength UOM">
+                                        </a-form-item> -->
+                                        <!-- <a-form-item label="Strength UOM">
                                           <a-input v-model:value="row.strength_uom" disabled/>
-                                        </a-form-item>
-                                        <a-form-item label="Dosage Form">
+                                        </a-form-item> -->
+                                        <!-- <a-form-item label="Dosage Form">
                                           <a-select
                                           v-model:value="row.dosage_form"
                                           :options="$resources.dosageForms.data?.options"
@@ -1455,11 +1454,9 @@
                                           )}"
                                           :filterOption="false"
                                           ></a-select>
-                                        </a-form-item>
-                                      </v-col>
-                                      <v-col cols="12" lg="6">
-                                        <a-checkbox v-model:checked="row.dosage_by_interval">Dosage by Time Interval</a-checkbox>
-                                        <a-form-item label="Dosage" v-if="!row.dosage_by_interval">
+                                        </a-form-item> -->
+                                        <!-- <a-checkbox v-model:checked="row.dosage_by_interval">Dosage by Time Interval</a-checkbox> -->
+                                        <a-form-item label="Frequency">
                                           <a-select
                                           v-model:value="row.dosage"
                                           :options="$resources.dosages.data?.options"
@@ -1475,7 +1472,7 @@
                                           :filterOption="false"
                                           ></a-select>
                                         </a-form-item>
-                                        <a-form-item label="Interval" v-if="row.dosage_by_interval">
+                                        <!-- <a-form-item label="Interval" v-if="row.dosage_by_interval">
                                           <a-input v-model:value="row.interval"/>
                                         </a-form-item>
                                         <a-form-item label="Interval UOM" v-if="row.dosage_by_interval">
@@ -1483,8 +1480,8 @@
                                           v-model:value="row.interval_uom"
                                           :options="[{label: '', value: ''}, {label: 'Hour', value: 'Hour'}, {label: 'Day', value: 'Day'}]"
                                           ></a-select>
-                                        </a-form-item>
-                                        <a-form-item label="Period">
+                                        </a-form-item> -->
+                                        <a-form-item label="Duration">
                                           <a-select
                                           v-model:value="row.period"
                                           :options="$resources.prescriptionDurations.data?.options"
@@ -1500,12 +1497,12 @@
                                           :filterOption="false"
                                           ></a-select>
                                         </a-form-item>
-                                        <a-form-item label="Number Of Repeats Allowed">
+                                        <!-- <a-form-item label="Number Of Repeats Allowed">
                                           <a-input v-model:value="row.number_of_repeats_allowed"/>
-                                        </a-form-item>
+                                        </a-form-item> -->
                                       </v-col>
                                     </v-row>
-                                    <v-divider></v-divider>
+                                    <!-- <v-divider></v-divider>
                                     <v-row>
                                       <v-col cols="12" lg="6">
                                         <a-form-item label="Intent">
@@ -1544,11 +1541,11 @@
                                           <a-input v-model:value="row.medication_request" disabled/>
                                         </a-form-item>
                                       </v-col>
-                                    </v-row>
+                                    </v-row> -->
                                     <v-divider></v-divider>
                                     <v-row>
                                       <v-col>
-                                        <a-form-item label="Comment">
+                                        <a-form-item label="Note">
                                           <a-textarea v-model:value="row.comment" :rows="4"/>
                                         </a-form-item>
                                       </v-col>

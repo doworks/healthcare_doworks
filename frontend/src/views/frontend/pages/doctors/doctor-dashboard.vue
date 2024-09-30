@@ -10,8 +10,19 @@
               <span class="text-surface-500 dark:text-surface-400 text-sm">Today Appointments</span>
               <!-- <span class="font-bold text-lg">{{ val.value }}%</span>
               <h6 >Today Appointments</h6> -->
-              <div class="d-flex">
-                <span class="text-info font-bold text-lg">{{appointments.length - updatedAppointments.length}}</span>
+              <div class="d-flex" v-if="practitionerFilter.length > 0">
+                <span class="text-info font-bold text-lg">
+                  {{
+                    appointments.filter(value => practitionerFilter.includes(value.practitioner_name)).length - 
+                    appointments.filter(value => practitionerFilter.includes(value.practitioner_name)).length
+                  }}
+                </span>
+                <span class="font-bold text-lg">
+                  /{{appointments.filter(value => practitionerFilter.includes(value.practitioner_name)).length}}
+                </span>
+              </div>
+              <div class="d-flex" v-else>
+                <span class="text-info font-bold text-lg">{{appointments.length - appointments.length}}</span>
                 <span class="font-bold text-lg">/{{appointments.length}}</span>
               </div>
             </div>
@@ -29,7 +40,12 @@
               <!-- <span class="font-bold text-lg">{{ val.value }}%</span>
               <h6 >Today Appointments</h6> -->
               <div class="d-flex">
-                <span class="text-green font-bold text-lg">{{appointments.filter(val => val.status == 'Walked In').length}}</span>
+                <span class="text-green font-bold text-lg">
+                  {{
+                    appointments.filter(val => val.status == 'Walked In' && (this.practitionerFilter.length == 0 || 
+                      this.practitionerFilter.includes(val.practitioner_name))).length
+                  }}
+                </span>
               </div>
             </div>
             <span class="w-8 h-8 rounded-full inline-flex justify-center items-center text-center bg-green">
@@ -56,13 +72,12 @@
         </template>
       </Card>
     </div>
-    <div class="columns-1 md:columns-2 mb-2">
-
+    <div class="columns-1 md:columns-2">
       <a-select
       v-model:value="practitionerFilter"
       @change="val => {filters.practitioner_name.value = val}"
       mode="multiple"
-      class="p-column-filter"
+      class="p-column-filter mb-2"
       style="width: 100%; align-items: center;"
       placeholder="Any Practitioner"
       max-tag-count="responsive"
@@ -78,12 +93,24 @@
       )}"
       :filterOption="false"
       >
-      </a-select>
-    </div>
+    </a-select>
+      
 
+    </div>
     <div class="row row-cols-lg-2 cont mb-3">
       <Card class="pat-det left-col p-0 min-h-[550px]" style="overflow: hidden;">
-        <template #title>Upcoming Appintments</template>
+        <template #title>
+          <ToggleButton 
+          v-model="showCompleted" 
+          onLabel="Completed" 
+          offLabel="Upcoming" 
+          onIcon="mdi mdi-check-all" 
+          offIcon="mdi mdi-clock-outline" 
+          class="mb-2 w-full" 
+          aria-label="Show Completed" 
+          />
+          {{showCompleted ? 'Completed' : 'Upcoming'}} Appintments
+        </template>
         <template #content>
           <div class="table-responsive">
             <DataTable
@@ -92,6 +119,7 @@
             sortField="arriveTime"
             dataKey="id"
             :sortOrder="-1"
+            :rowClass="rowClass"
             paginator
             :rows="5"
             :value="updatedAppointments"
@@ -163,7 +191,7 @@
                     <v-btn v-else
                     icon="mdi mdi-bell-plus-outline" 
                     variant="text" 
-                    @click="$emit('appointment-note-dialog', data)"
+                    @click="() => {appointmentNoteDialog(data)}"
                     >
                     </v-btn>
                   </div>
@@ -179,7 +207,7 @@
                 <v-btn
                 icon="mdi mdi-plus" 
                 variant="text" 
-                @click="$emit('appointment-note-dialog', selectedRow)"
+                @click="() => {appointmentNoteDialog(selectedRow)}"
                 >
                 </v-btn>
                 <div v-if="selectedRow.visit_notes.length > 0">
@@ -210,9 +238,9 @@
                     <Column>
                       <template #body="{ data }">
                         <div>
-                          <v-btn v-if="data.read" size="small" variant="text" icon="mdi mdi-eye" @click="() => { data.read = 0 }">
+                          <v-btn v-if="data.read" size="small" variant="text" icon="mdi mdi-eye" @click="() => { updateSeen(data) }">
                           </v-btn>
-                          <v-btn v-else-if="!data.read" size="small" variant="text" icon="mdi mdi-eye-off" @click="() => { data.read = 1 }">
+                          <v-btn v-else-if="!data.read" size="small" variant="text" icon="mdi mdi-eye-off" @click="() => { updateSeen(data) }">
                           </v-btn>
                         </div>
                       </template>
@@ -238,8 +266,10 @@
         </template>
         <template #footer>
           <div class="d-flex mt-auto">
-            <Button label="See All" link href="/appointments" severity="warn"/>
-            <!-- <a href="/appointments">See All</a> -->
+            <!-- <Button label="See All" link href="/appointments" severity="warn"/> -->
+            <a :href="$router.resolve({ name: 'appointments' }).href" style="text-decoration: unset">
+              See All
+            </a>
           </div>
         </template>
       </Card>
@@ -285,6 +315,14 @@
         </template>
       </Card> -->
     </div>
+    
+    <!-- Dialogs -->
+    <appointmentNoteDialog 
+    :isOpen="appointmentNoteOpen" 
+    @update:isOpen="appointmentNoteOpen = $event" 
+    @show-alert="showAlert" 
+    :appointmentId="selectedRow.name"
+    />
   </div>    
   <!-- /Page Content -->
   <!-- /Main Wrapper -->
@@ -337,7 +375,7 @@ export default {
       bellImage:bellImage,
 			maleImage:maleImage,
 			femaleImage:femaleImage,
-      practitionerFilter: undefined,
+      practitionerFilter: ref([]),
       walkedInPatients:0,
       appointments: ref([]),
       currentTime: dayjs(),
@@ -347,6 +385,9 @@ export default {
       totalRecords: 0,
       selectedDates: [dayjs()],
       filters: {practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN }},
+      selectedRow: {},
+      appointmentNoteOpen: false,
+      showCompleted: false,
     };
   },
   watch: {
@@ -383,8 +424,11 @@ export default {
   },
   computed: {
     updatedAppointments() {
-      return this.appointments.filter(val => val.visit_status !== 'Completed' && val.visit_status !== 'No Show' && val.visit_status !== 'Cancelled')
-      .map(appointment => {
+      let filteredAppointments = this.appointments.filter(val => val.custom_visit_status !== 'Completed' && val.custom_visit_status !== 'Cancelled')
+      if(this.showCompleted)
+        filteredAppointments = this.appointments.filter(val => val.custom_visit_status == 'Completed')
+
+      return filteredAppointments.map(appointment => {
         const arrivalTime = dayjs(appointment.arriveTime);
         const diffInSeconds = this.currentTime.diff(arrivalTime, 'second');
         const hours = Math.floor(diffInSeconds / 3600);
@@ -400,26 +444,30 @@ export default {
     },
     nextAppointmentTime() {
       if(this.appointments[0]){
-        console.log(this.appointments)
-        const firstValidAppointment = this.appointments
-        .filter(appointment => 
-          ['Scheduled', 'Arrived', 'Ready'].includes(appointment.visit_status)
-        )
-        .reduce((earliest, current) => {
+        let validAppointments = this.appointments.filter(appointment => 
+          ['Scheduled', 'Arrived', 'Ready'].includes(appointment.custom_visit_status) &&
+          (this.practitionerFilter.length == 0 || 
+          this.practitionerFilter.includes(appointment.practitioner_name))
+        );
+
+        // Reduce to find the earliest valid appointment
+        let firstValidAppointment = validAppointments.reduce((earliest, current) => {
           const currentDate = dayjs(`${current.appointment_date} ${current.appointment_time}`);
           const earliestDate = dayjs(`${earliest.appointment_date} ${earliest.appointment_time}`);
 
-          // If the current appointment is earlier, update the earliest
+          // Compare dates and return the earliest appointment
           return currentDate.isBefore(earliestDate) ? current : earliest;
-        }, this.appointments[0]); // Initialize with the first appointment in the array
+        }, validAppointments[0]); // Initialize with the first valid appointment
 
-        const nextappointment = dayjs(firstValidAppointment.appointment_date + ' ' + firstValidAppointment.appointment_time);
-        // const diffInSeconds = this.currentTime.diff(nextappointment, 'second');
-        // const hours = Math.floor(diffInSeconds / 3600);
-        // const minutes = Math.floor((diffInSeconds % 3600) / 60);
-        // const seconds = diffInSeconds % 60;
-        // return `${hours}:${minutes}:${seconds}`
-        return dayjs(this.currentTime).to(nextappointment)
+        if(firstValidAppointment){
+          let nextappointment = dayjs(firstValidAppointment.appointment_date + ' ' + firstValidAppointment.appointment_time);
+          // const diffInSeconds = this.currentTime.diff(nextappointment, 'second');
+          // const hours = Math.floor(diffInSeconds / 3600);
+          // const minutes = Math.floor((diffInSeconds % 3600) / 60);
+          // const seconds = diffInSeconds % 60;
+          // return `${hours}:${minutes}:${seconds}`
+          return dayjs(this.currentTime).to(nextappointment)
+        }
       }
       return ''
     },
@@ -437,6 +485,13 @@ export default {
     this.adjustContainerHeight();
   },
   methods: {
+    showAlert(message, duration) {
+      this.message = message;
+      this.alertVisible = true;
+      setTimeout(() => {
+        this.alertVisible = false;
+      }, duration);
+    },
     getPercentage: (num1, num2) => {
       return num1 / num2 * 100
     },
@@ -453,8 +508,10 @@ export default {
         filters: {appointment_date: ['in', [dayjs().format('YYYY-MM-DD')]]}, start: 0, limit: 1000
       })
       .then(response => {
-        this.appointments = this.adjustAppointments(response.appointments)
-        this.appointmentsLoading = false;
+        if(response){
+          this.appointments = this.adjustAppointments(response.appointments)
+          this.appointmentsLoading = false;
+        }
       })
       .catch(error => {
         this.appointmentsLoading = false;
@@ -470,7 +527,8 @@ export default {
         d.arriveTime = null
 
         d.visit_notes = d.visit_notes.map(note => {
-          note.creation = dayjs(note.creation).format('h:mm A DD/MM/YYYY')
+          note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
+          note.dayTime = dayjs(note.time).format('h:mm A')
           return note
         })
 
@@ -484,6 +542,14 @@ export default {
         return d;
 			});
 		},
+    updateSeen(data) {
+			data.read = !data.read
+			this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {parent_doctype: 'Patient Appointment', parent_doc_name: this.selectedRow.name, child_table_fieldname: 'custom_visit_notes', filters: {name: data.name}, update_data: data})
+		},
+    appointmentNoteDialog(row) {
+      this.selectedRow = row
+      this.appointmentNoteOpen = true
+    },
     onPatientDetails(row) {
       this.isFlipped = !this.isFlipped;
       setTimeout(() => {
@@ -514,6 +580,9 @@ export default {
 		},
     nextAppointmentTimeDiff() {
       dayjs()
+    },
+    rowClass(data) {
+      return [{ '!bg-green-50 hover:!bg-green-100': data.status == 'Walked In' }];
     },
     transformData (keys, values) {
       return values.map(row => {

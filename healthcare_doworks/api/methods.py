@@ -460,7 +460,7 @@ def create_invoice(appointment, profile, payment_methods):
 			patient_invoice.branch = appointment_doc.custom_branch or branch or ''
 			patient_invoice.selling_price_list = 'Insurance Price' or 'Standard Selling'
 			for invoice_item in appointment_doc.custom_invoice_items:
-				if not invoice_item.customer_invoice:
+				if not invoice_item.customer_invoice and invoice_item.customer_amount > 0:
 					patient_invoice.append('items', {
 						'item_code': invoice_item.item,
 						'item_name': invoice_item.item_name,

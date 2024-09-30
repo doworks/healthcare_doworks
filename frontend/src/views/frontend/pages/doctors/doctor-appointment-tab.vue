@@ -15,6 +15,7 @@
 		selectionMode="single" 
 		:metaKeySelection="true" 
 		@row-contextmenu="handleRowContextMenu"
+		@row-click="({data}) => {$emit('appointment-dialog', 'Edit Appointment', false, data)}"
 		:rowClass="rowClass"
 		@page="props => {$emit('table-page-change', props)}"
 		paginatorTemplate="RowsPerPageDropdown"
@@ -276,7 +277,8 @@
 						variant="text" 
 						color="blue"
 						icon="mdi mdi-pulse" 
-						@click="() => { 
+						@click="(event) => { 
+							event.stopPropagation()
 							$emit('vital-sign-dialog', data)
 						}">
 						</v-btn>
@@ -285,7 +287,8 @@
 						variant="text" 
 						color="green"
 						icon="mdi mdi-arrow-right-bold-outline" 
-						@click="() => { 
+						@click="(event) => { 
+							event.stopPropagation()
 							selectedRow = data
 							let next = ''
 							if(tab == 'scheduled') next = 'Arrived'
@@ -298,7 +301,8 @@
 						variant="text" 
 						color="blue"
 						icon="mdi mdi-bandage" 
-						@click="() => { 
+						@click="(event) => { 
+							event.stopPropagation()
 							selectedRow = data
 							goToEncounter()
 						}">
@@ -309,6 +313,7 @@
 							variant="text" 
 							icon
 							@click="e => {
+								e.stopPropagation()
 								selectedRow = data
 								toggleOP(e)
 							}"
@@ -325,7 +330,10 @@
 						<v-btn v-else
 						icon="mdi mdi-bell-plus-outline" 
 						variant="text" 
-						@click="$emit('appointment-note-dialog', data)"
+						@click="event => {
+							event.stopPropagation()
+							$emit('appointment-note-dialog', data)
+						}"
 						>
 						</v-btn>
 					</div>

@@ -250,7 +250,7 @@ export default {
   },
   computed: {
     updatedAppointments() {
-      return this.appointments.filter(value => value.visit_status !== 'Completed' && value.visit_status !== 'No Show').map(appointment => {
+      return this.appointments.filter(value => value.custom_visit_status !== 'Completed' && value.custom_visit_status !== 'No Show').map(appointment => {
         const arrivalTime = dayjs(appointment.arriveTime);
         const diffInSeconds = this.currentTime.diff(arrivalTime, 'second');
         const hours = Math.floor(diffInSeconds / 3600);
@@ -267,7 +267,7 @@ export default {
     nextAppointmentTime() {
       if(this.appointments[0]){
         const firstValidAppointment = this.appointments
-        .filter(appointment => appointment.visit_status !== 'Completed' && appointment.visit_status !== 'No Show')
+        .filter(appointment => appointment.custom_visit_status !== 'Completed' && appointment.custom_visit_status !== 'No Show')
         .sort((a, b) => dayjs(a.appointment_date + ' ' + a.appointment_time) - dayjs(b.appointment_date + ' ' + b.appointment_time))[0];
         const nextappointment = dayjs(firstValidAppointment.appointment_date + ' ' + firstValidAppointment.appointment_time);
         return dayjs(this.currentTime).to(nextappointment)

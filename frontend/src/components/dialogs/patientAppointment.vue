@@ -114,6 +114,7 @@
                     {},
                   )}"
                   :filterOption="false"
+                  :disabled="appointmentForm.type == 'Edit Appointment'"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
@@ -201,7 +202,11 @@
                   :filterOption="false"
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Appointment Date" name="appointment_date" v-if="!appointmentForm.custom_is_walked_in">
+                <a-form-item 
+                label="Appointment Date" 
+                name="appointment_date" 
+                v-if="!appointmentForm.custom_is_walked_in"
+                >
                   <a-date-picker 
                   v-model:value="appointmentForm.appointment_date"
                   :disabled-date="disabledDate"
@@ -210,20 +215,32 @@
                   style="z-index: 3000; width: 100%"
                   :presets="datePresets"
                   :showToday="false"
+                  :disabled="appointmentForm.type == 'Edit Appointment'"
                   />
                 </a-form-item>
-                <a-checkbox class="mb-3" v-model:checked="appointmentForm.custom_is_walked_in" @change="walkedIn">Walked In?</a-checkbox>
+                <a-form-item label="Appointment Time" v-if="appointmentForm.type == 'Edit Appointment'">
+                  <a-input v-model:value="appointmentForm.appointment_time" disabled/>
+                </a-form-item>
+                <a-checkbox 
+                v-if="appointmentForm.type != 'Edit Appointment'"
+                class="mb-3" 
+                v-model:checked="appointmentForm.custom_is_walked_in" 
+                @change="walkedIn"
+                >
+                  Walked In?
+                </a-checkbox>
                 <a-form-item label="Notes">
                   <a-textarea v-model:value="appointmentForm.notes" placeholder="Notes" :rows="4" />
                 </a-form-item>
               </v-col>
             </v-row>
-            <v-divider v-if="!appointmentForm.custom_is_walked_in" class="mt-2 mb-8"></v-divider>
-            <v-row>
+            <v-divider v-if="!appointmentForm.custom_is_walked_in && appointmentForm.type != 'Edit Appointment'" class="mt-2 mb-8"></v-divider>
+            <v-row v-if="appointmentForm.type != 'Edit Appointment'">
               <div 
               class="text-center mb-0" 
               ref="appointmentSlots" 
-              v-if="appointmentForm.appointment_date && !appointmentForm.custom_is_walked_in && (
+              v-if="appointmentForm.appointment_date && !appointmentForm.custom_is_walked_in &&
+              (
                 (appointmentForm.appointment_for === 'Practitioner' && appointmentForm.practitioner) ||
                 (appointmentForm.appointment_for === 'Department' && appointmentForm.department) ||
                 (appointmentForm.appointment_for === 'Service Unit' && appointmentForm.service_unit)
@@ -554,6 +571,9 @@ export default {
       ]),
 		};
 	},
+  mounted() {
+    
+  },
 	methods: {
     updateIsOpen(value) {
       this.$emit('update:isOpen', value);
@@ -583,6 +603,21 @@ export default {
         if(form.type === 'New Appointment'){
           delete form['name'];
           this.$call('healthcare_doworks.api.methods.new_doc', {form})
+          .then(response => {
+            this.lodingOverlay = false;
+            this.closeDialog()
+          }).catch(error => {
+            console.error(error);
+            let message = error.message.split('\n');
+            message = message.find(line => line.includes('frappe.exceptions'));
+            if(message){
+              const firstSpaceIndex = message.indexOf(' ');
+              this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
+            }
+          });
+        }
+        if(form.type === 'Edit Appointment'){
+          this.$call('healthcare_doworks.api.methods.edit_doc', {form})
           .then(response => {
             this.lodingOverlay = false;
             this.closeDialog()
