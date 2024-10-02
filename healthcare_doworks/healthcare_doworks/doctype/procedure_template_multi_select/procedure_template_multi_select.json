@@ -1,0 +1,31 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-10-01 13:37:18.149303",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_eezh"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_eezh",
+   "fieldtype": "Link",
+   "label": "Template",
+   "options": "Clinical Procedure Template"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-10-01 13:38:01.004244",
+ "modified_by": "Administrator",
+ "module": "Healthcare Doworks",
+ "name": "Procedure Template Multi-select",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

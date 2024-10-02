@@ -132,6 +132,11 @@
               <Column header="Patient" field="patient">
                 <template #body="{ data }">
                   <!-- <router-link to="patient-profile"> -->
+                  <a 
+                  :href="$router.resolve({ name: 'patient', params: { patientId: data.patient_details.id } }).href" 
+                  target="_blank" 
+                  style="color: unset; text-decoration: unset"
+                  >
                     <div class="d-flex align-items-center gap-2">
                       <v-avatar>
                         <img
@@ -141,11 +146,11 @@
                         <!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
                       </v-avatar>
                       <div style="padding: 10px 15px; vertical-align: middle; padding-right: 0;">
-                        <h6 style="font-size: 16px; font-weight: 500; margin-bottom: 0">{{ data.patient_name }}</h6>
-                        <span style="color: rgba(51, 52, 72, 0.5); font-size: 16px; font-weight: 500">{{ data.service_unit }}</span>
+                        <h6 style="margin-bottom: 0">{{ data.patient_name }}</h6>
+                        <span style="color: rgba(51, 52, 72, 0.5);">{{ data.service_unit }}</span>
                       </div><br/>
                     </div>
-
+                  </a>
                   <!-- </router-link> -->
                 </template>
               </Column>

@@ -3,7 +3,7 @@
 		<DataTable
 		v-model:filters="filters"
 		size="small"
-		:sortField="tab == 'arrived' ? 'arriveTime' : 'appointment_time'"
+		:sortField="tab == 'arrived' ? 'arriveTime' : 'appointment_datetime'"
 		paginator
 		dataKey="id"
 		filterDisplay="row"
@@ -15,7 +15,6 @@
 		selectionMode="single" 
 		:metaKeySelection="true" 
 		@row-contextmenu="handleRowContextMenu"
-		@row-click="({data}) => {$emit('appointment-dialog', 'Edit Appointment', false, data)}"
 		:rowClass="rowClass"
 		@page="props => {$emit('table-page-change', props)}"
 		paginatorTemplate="RowsPerPageDropdown"
@@ -30,11 +29,11 @@
 			style="width: 20%"
 			>
 				<template #body="{ data }">
-					<a 
+					<!-- <a 
 					:href="$router.resolve({ name: 'patient', params: { patientId: data.patient_details.id } }).href" 
 					target="_blank" 
 					style="color: unset; text-decoration: unset"
-					>
+					> -->
 						<div class="flex align-items-center gap-2">
 							<v-avatar>
 								<img
@@ -50,7 +49,7 @@
 								<span class="fw-light text-teal ms-3" style="font-size: smaller">{{ data.patient_details.cpr }}</span>
 							</div><br/>
 						</div>
-					</a>
+					<!-- </a> -->
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-input 
@@ -70,11 +69,13 @@
 			style="width: 10%"
 			>
 				<template #body="{ data }">
-					<div class="text-center">
-						{{ data.appointment_date_moment }}
-					</div>
-					<div class="text-center">
-						{{ data.appointment_time_moment }}
+					<div @click="() => {$emit('appointment-dialog', 'Edit Appointment', false, data)}">
+						<div class="text-center">
+							{{ data.appointment_date_moment }}
+						</div>
+						<div class="text-center">
+							{{ data.appointment_time_moment }}
+						</div>
 					</div>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
@@ -96,6 +97,8 @@
 				<template #body="{ data }">
 					{{ data.timeSinceArrived }}
 				</template>
+			</Column>
+			<Column field="appointment_datetime" hidden :showFilterMenu="false" :showClearButton="false">
 			</Column>
 			<Column header="Status" 
 			field="status" 
@@ -231,6 +234,11 @@
 			:showFilterMenu="false" 
 			:showClearButton="false" 
 			style="width: 10%"
+			:pt="{
+				bodycell: ({instance}) => ({
+					onClick: () => {$emit('service-unit-dialog', instance.rowData)}
+				})
+			}"
 			>
 				<template #body="{ data }">
 					<v-chip class="ma-2" label size="small">{{ data.service_unit }}</v-chip>
@@ -266,8 +274,12 @@
 			:showFilterMenu="false" 
 			:showClearButton="false" 
 			style="width: 10%"
+			:pt="{
+				bodycell: ({instance}) => ({
+					onClick: () => {$emit('payment-type-dialog', instance.rowData)}
+				})
+			}"
 			>
-
 			</Column>
 			<Column style="width: 5%">
 				<template #body="{ data }">
@@ -297,7 +309,7 @@
 						}">
 						</v-btn>
 						<v-btn 
-						v-if="tab == 'ready'" 
+						v-if="tab == 'ready' || tab == 'in room' || tab == 'completed'" 
 						variant="text" 
 						color="blue"
 						icon="mdi mdi-bandage" 

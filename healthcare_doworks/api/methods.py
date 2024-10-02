@@ -55,7 +55,7 @@ def fetch_patient_appointments(filters=None, start=0, limit=50):
 		filters=filters,
 		fields=[
 			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
-			'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner',
+			'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner', 'appointment_datetime',
 			'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
 			'custom_payment_type', 'patient_age', 'patient', 'custom_confirmed', 'custom_customer'
 		],
@@ -559,21 +559,26 @@ def get_invoice_items(**args):
 
 @frappe.whitelist()
 def edit_doc(form, submit=False):
+	# Fetch the document using the doctype and name
 	doc = frappe.get_doc(form['doctype'], form['name'])
-	del form['doctype']
-	del form['name']
-	
+
+	# Remove the 'doctype' and 'name' from the form data
+	form.pop('doctype', None)
+	form.pop('name', None)
+
+	# Assign form values to the document fields
 	for key, value in form.items():
-		# Assign the value to the corresponding field in the document
-		if (key == 'diagnosis' or key == 'symptoms'):
-			for item in value:
-				if not item['modified']:
-					doc.append(key, item)
-					continue
-		setattr(doc, key, value)
+		# Only set fields that exist in the document's schema
+		if hasattr(doc, key):
+			setattr(doc, key, value)
+
+	# Save the changes to the existing document
 	doc.save()
-	if(submit):
+
+	# Optionally submit the document
+	if submit:
 		doc.submit()
+
 	return doc
 
 @frappe.whitelist()
@@ -692,6 +697,13 @@ def get_appointment_details(appointment):
 	)
 	if last_visit:
 		appointment['last_visit'] = last_visit[0]['encounter_date']
+
+	# Get procedure templates
+	procedure_templates = frappe.get_all('Procedure Template Multi-select',
+		filters={'parent': appointment['name']},
+		fields=['name', 'template']
+	)
+	appointment['procedure_templates'] = procedure_templates
 
 	# Get visit notes
 	to_options = ['', frappe.session.user, frappe.session.full_name]

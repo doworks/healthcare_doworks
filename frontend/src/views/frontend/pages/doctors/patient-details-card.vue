@@ -4,36 +4,42 @@
         <template #content>
             <div class="box-body">
                 <div class="table-image appoint-doctor d-flex" v-if="patient">
-                    <v-avatar size="large" class="self-center">
-                        <img
-                        class="w-20 h-20 rounded-circle"
-                        :src="patient.patient_details.image ? patient.patient_details.image :patient.patient_details.gender === 'Male' ? maleImage :femaleImage"
-                        />
-                        <!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
-                    </v-avatar>
-                    <div style="padding: 10px 15px; align-self: center;">
-                        <h2 style="font-size: 18px; font-weight: 500; margin-bottom: 0">{{ patient.patient_name }}</h2>
-                        <span style="color: rgba(51, 52, 72, 0.5); font-size: 18px; font-weight: 500">{{ patient.service_unit }}</span>
-                    </div>
+                    <a 
+                    :href="$router.resolve({ name: 'patient', params: { patientId: data.patient_details.id } }).href" 
+                    target="_blank" 
+                    style="color: unset; text-decoration: unset"
+                    >
+                        <v-avatar size="large" class="self-center">
+                            <img
+                            class="w-20 h-20 rounded-circle"
+                            :src="patient.patient_details.image ? patient.patient_details.image :patient.patient_details.gender === 'Male' ? maleImage :femaleImage"
+                            />
+                            <!-- <span v-if="!data.patient_details.image" class="text-h6">{{ getInitials(data.patient_name) }}</span> -->
+                        </v-avatar>
+                        <div style="padding: 10px 15px; align-self: center;">
+                            <h4 style="margin-bottom: 0">{{ patient.patient_name }}</h4>
+                            <span style="color: rgba(51, 52, 72, 0.5)">{{ patient.service_unit }}</span>
+                        </div>
+                    </a>
                 </div>
                 <div class="row">						
                     <div class="col-12">
                         <div class="row py-5">							
                             <div class="col-4">							  
                                 <div>
-                                    <h5 class="mb-0"><strong>D.O.B</strong></h5>
+                                    <h6 class="mb-0"><strong>D.O.B</strong></h6>
                                     <p class="mb-0"><small>{{patient.patient_details.date_of_birth}}</small></p> 
                                 </div>
                             </div>							
                             <div class="col-4">							  
                                 <div>
-                                    <h5 class=" mb-0"><strong>Gender</strong></h5>
+                                    <h6 class=" mb-0"><strong>Gender</strong></h6>
                                     <p class="mb-0"><small>{{patient.patient_details.gender}}</small></p> 
                                 </div>
                             </div>							
                             <div class="col-4">							  
                                 <div>
-                                    <h5 class="mb-0"><strong>Last Visit</strong></h5>
+                                    <h6 class="mb-0"><strong>Last Visit</strong></h6>
                                     <p class="mb-0"><small>{{ patient.patient_details.last_visit }}</small></p> 
                                 </div>
                             </div>
@@ -42,21 +48,21 @@
                             <div class="col-4">							  
                                 <img class="img-fluid float-start det-img" src="@/assets/img/weight.png" alt="">
                                 <div>
-                                    <h5 class="mb-0"><strong>Weight</strong></h5>
+                                    <h6 class="mb-0"><strong>Weight</strong></h6>
                                     <p class="mb-0"><small>{{patient.patient_details.weight || '--'}}</small></p> 
                                 </div>
                             </div>							
                             <div class="col-4" style="border-left: 1px solid #f3f6f9; border-right: 1px solid #f3f6f9">							  
                                 <img class="img-fluid float-start det-img" src="@/assets/img/human.png" alt="">
                                 <div>
-                                    <h5 class=" mb-0"><strong>Height</strong></h5>
+                                    <h6 class=" mb-0"><strong>Height</strong></h6>
                                     <p class="mb-0"><small>{{patient.patient_details.height || '--'}}</small></p> 
                                 </div>
                             </div>							
                             <div class="col-4">							  
                                 <img class="img-fluid float-start det-img" src="@/assets/img/bmi.png" alt="">
                                 <div>
-                                    <h5 class="mb-0"><strong>BMI</strong></h5>
+                                    <h6 class="mb-0"><strong>BMI</strong></h6>
                                     <p class="mb-0"><small>{{patient.patient_details.bmi || '--'}}</small></p> 
                                     <p class="mb-0"><small><strong>{{patient.patient_details.nutrition_note || '--'}}</strong></small></p> 
                                 </div>

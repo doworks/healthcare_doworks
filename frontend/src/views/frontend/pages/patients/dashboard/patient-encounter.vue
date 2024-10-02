@@ -47,6 +47,7 @@
         </div>
       </template>
     </ConfirmDialog>
+    <ConfirmPopup></ConfirmPopup>
     <OverlayPanel ref="op">
       <div class="flex flex-col">
         <span class="font-medium block mb-2">Procedures</span>
@@ -76,7 +77,7 @@
             " 
             @click="() => {selectedProcedure = index}"
             >
-              {{ index + 1 + '. ' + option.name }}
+              {{ index + 1 + '. ' + option.procedure_template }}
             </div>
           </template>
         </Listbox>
@@ -363,9 +364,34 @@
               @change="setStepperValue"
               >
                 <template #option="slotProps">
-                  <span class="p-button-label" data-pc-section="label" @click="handleClick">{{ slotProps.option.label }}</span>
+                  <span class="p-button-label" data-pc-section="label" :label="slotProps.option.label" @click="stateButtomClick">
+                    {{ slotProps.option.label }} 
+                    <v-badge 
+                    v-if="slotProps.option.label == 'Procedure'" 
+                    :label="slotProps.option.label" 
+                    :content="procedureForms.filter(value => value.name).length" 
+                    inline
+                    >
+                    </v-badge>
+                  </span>
                 </template>
               </SelectButton>
+              <div class="flex">
+                <h5 class="font-bold ml-2" v-if="encounterForm.custom_encounter_state == 'Procedure'">
+                  {{ procedureForms[selectedProcedure].name }}
+                </h5>
+                <v-btn 
+                v-if="records.current_encounter.status != 'Completed' && encounterForm.custom_encounter_state == 'Procedure'"
+                class="!flex ml-auto mr-6" 
+                density="compact" 
+                size="large" 
+                color="danger" 
+                rounded="lg" 
+                icon="mdi mdi-delete-outline"
+                @click="confirmDelete"
+                >
+                </v-btn>
+              </div>
               <Stepper orientation="vertical">
                 <!-- Procedure Panels -->
                 <StepperPanel value="Procedure Info" header="Procedure Info" v-if="encounterForm.custom_encounter_state === 'Procedure'">
@@ -404,7 +430,10 @@
                               style="width: 100%"
                               @change="(value, option) => {
                                 procedureForms[selectedProcedure].medical_department = option.department
-                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, {practitioner: value, medical_department: option.department})
+                                autoSave('Clinical Procedure', 
+                                  procedureForms[selectedProcedure].name, 
+                                  {practitioner: value, practitioner_name: option.practitioner_name, medical_department: option.department}
+                                )
                               }"
                               show-search
                               :loading="$resources.practitioners.list.loading"
@@ -589,7 +618,7 @@
                             </div>
                           </v-col>
                         </v-row>
-                        <v-row v-if="procedureForms[selectedProcedure].custom_annotations.length > 1">
+                        <v-row v-if="procedureForms[selectedProcedure].custom_annotations?.length > 1">
                           <v-col>
                             <h3 class="mt-3">Annotations</h3>
                             <Galleria 
@@ -2836,17 +2865,67 @@ export default {
       this.pastVisitEditRow = row.data;
       this.pastVisitsActive = true;
     },
-    handleClick(event) {
+    confirmDelete(event) {
+      this.$confirm.require({
+        target: event.currentTarget,
+        message: 'Are you sure you want to delete this procedure?',
+        icon: 'pi pi-info-circle',
+        acceptLabel: 'Delete',
+        rejectLabel: 'Cancel',
+        accept: () => {
+          if(this.procedureForms.length == 1){
+            if(this.encounterForm.custom_appointment_category == 'Procedure' || this.encounterForm.custom_appointment_category == 'First Time'){
+              this.previousState = 'Consultation'
+              this.encounterForm.custom_encounter_state = 'Consultation'
+            }
+            else{
+              this.previousState = this.encounterForm.custom_appointment_category
+              this.encounterForm.custom_encounter_state = this.encounterForm.custom_appointment_category
+            }
+            this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', this.encounterForm.custom_encounter_state)
+          }
+
+          this.$call('frappe.client.delete', {doctype: 'Clinical Procedure', name: this.procedureForms[this.selectedProcedure].name})
+          .then(response => {
+            this.procedureForms.splice(this.selectedProcedure, 1)
+
+            this.$toast.add({ 
+              severity: 'success', 
+              summary: 'Deleted', 
+              detail: 'Procedure: ' + this.procedureForms[this.selectedProcedure].name + ' was deleted successfully', 
+              life: 2000 
+            });
+            this.selectedProcedure = 0
+            this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', this.encounterForm.custom_encounter_state)
+          }).catch(error => {
+            console.error(error);
+            let message = error.message.split('\n');
+            message = message.find(line => line.includes('frappe.exceptions'));
+            if(message){
+              const firstSpaceIndex = message.indexOf(' ');
+              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+            }
+            else
+              this.showAlert('Sorry. There is an error!' , 10000)
+          })
+          .catch(err => {
+            console.log('error', err);
+          });
+        },
+      });
+    },
+    stateButtomClick(event) {
       if (
-        event.target.innerText === 'Procedure' &&
-        this.encounterForm.custom_encounter_state === 'Procedure' &&
-        this.procedureForms[0].name
+        (
+          event.target.getAttribute('label') === 'Procedure' || 
+          event.target.getAttribute('aria-label') === 'Procedure' || 
+          event.target.localName != 'span'
+        ) && this.encounterForm.custom_encounter_state === 'Procedure' && this.procedureForms[0].name
       ) {
         this.$refs.op.toggle(event); // Correct event passed for positioning
       }
     },
     setStepperValue({event, value}) {
-      // console.log(event)
       if(value === 'Procedure' && !this.procedureForms[this.selectedProcedure].name){
         if(this.records.current_encounter.status != 'Completed'){
           this.encounterForm.custom_encounter_state = this.previousState
@@ -2858,9 +2937,6 @@ export default {
           this.showAlert('This encounter is submitted and has no procedures' , 10000)
         }
       }
-      // else if(value === 'Procedure' && this.encounterForm.custom_encounter_state == 'Procedure'){
-      //   this.$refs.op.toggle(event);
-      // }
       this.previousState = value;
       if(this.records.current_encounter.status != 'Completed')
         this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', value)
@@ -2872,7 +2948,6 @@ export default {
         message: 'Do you want to create a new clinical procedure?',
         accept: () => {
           this.previousState = 'Procedure';
-          this.encounterForm.custom_encounter_state = 'Procedure'
           this.createProcedure()
         },
       });
@@ -2902,6 +2977,8 @@ export default {
         response.start_date = dayjs(response.start_date)
         this.procedureForms.push(response)
         this.encounterForm.custom_encounter_state = 'Procedure'
+        this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', 'Procedure')
+        this.selectedProcedure = this.procedureForms.length - 1
         this.$toast.add({ severity: 'success', summary: 'Success', detail: 'A new Clinical Procedure has been created', life: 2000 });
       }).catch(error => {
         console.error(error);

@@ -122,7 +122,13 @@
                 </a-form-item>
                 
                 <a-form-item v-if="appointmentForm.appointment_type" label="Appointment Duration">
-                  <a-input v-model:value="appointmentForm.duration" />
+                  <a-input-number 
+                  :controls="false" 
+                  :min="0" 
+                  :step="1" 
+                  :parser="value => value.replace(/\.\d*/g, '')" 
+                  v-model:value="appointmentForm.duration" 
+                  />
                 </a-form-item>
               </v-col>
               <v-col cols="12" md="6">
@@ -616,7 +622,9 @@ export default {
             }
           });
         }
-        if(form.type === 'Edit Appointment'){
+        else if(form.type === 'Edit Appointment'){
+          this.lodingOverlay = true;
+          console.log(form)
           this.$call('healthcare_doworks.api.methods.edit_doc', {form})
           .then(response => {
             this.lodingOverlay = false;
@@ -631,7 +639,7 @@ export default {
             }
           });
         }
-        if(form.type === 'Reschedule Appointment'){
+        else if(form.type === 'Reschedule Appointment'){
           this.$call('healthcare_doworks.api.methods.reschedule_appointment', {form})
           .then(response => {
             this.lodingOverlay = false;

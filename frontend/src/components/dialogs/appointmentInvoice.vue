@@ -419,7 +419,9 @@ export default {
     },
     actions() {
       return [
-        ...(this.invoiceItems.some(value => !value.customer_invoice) ? [{
+        ...(this.invoiceItems.some(value => 
+          (!value.customer_invoice && value.customer_amount != 0) || (this.appointment.custom_payment_type == 'Insurance' && !value.insurance_invoice)
+        ) ? [{
           label: 'Create Invoices',
           icon: 'pi pi-plus',
           command: () => {
