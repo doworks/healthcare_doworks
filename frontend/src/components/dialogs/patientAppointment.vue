@@ -72,12 +72,13 @@
                   ></a-select>
                 </a-form-item>
                 <a-form-item 
-                label="Procedure Template" 
-                name="custom_procedure_template" 
+                label="Procedure Templates" 
+                name="procedure_templates" 
                 v-if="appointmentForm.custom_appointment_category == 'Procedure'"
                 >
                   <a-select
-                  v-model:value="appointmentForm.custom_procedure_template"
+                  v-model:value="appointmentForm.procedure_templates"
+                  mode="multiple"
                   :options="$resources.clinicalProcedureTemplates.data?.options"
                   :fieldNames="{label: 'name', value: 'name'}"
                   show-search
@@ -372,7 +373,7 @@ export default {
 				appointment_for: '',
 				duration: '',
 				custom_appointment_category: 'First Time',
-        custom_procedure_template: '',
+        procedure_templates: [],
         custom_payment_type: '',
 				practitioner: '',
         practitioner_name: '',
@@ -539,7 +540,7 @@ export default {
         }],
         appointment_date: [{ required: true, message: 'Please choose a date!' }],
         appointment_time: [{ required: !this.appointmentForm.custom_is_walked_in, message: 'Please choose a time!' }],
-        custom_procedure_template: [{ 
+        procedure_templates: [{ 
           required: this.appointmentForm.custom_appointment_category == 'Procedure', 
           message: 'Please choose a procedure template!' 
         }],
@@ -602,13 +603,14 @@ export default {
         this.lodingOverlay = true;
         let form = {...this.appointmentForm}
         form.appointment_date = dayjs(form.appointment_date).format('YYYY-MM-DD')
+        const children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value}))}
         if(form.custom_is_walked_in){
           form.appointment_time = dayjs().format('HH:mm')
           form.status = 'Walked In'
         }
         if(form.type === 'New Appointment'){
           delete form['name'];
-          this.$call('healthcare_doworks.api.methods.new_doc', {form})
+          this.$call('healthcare_doworks.api.methods.new_doc', {form, children})
           .then(response => {
             this.lodingOverlay = false;
             this.closeDialog()
@@ -624,8 +626,7 @@ export default {
         }
         else if(form.type === 'Edit Appointment'){
           this.lodingOverlay = true;
-          console.log(form)
-          this.$call('healthcare_doworks.api.methods.edit_doc', {form})
+          this.$call('healthcare_doworks.api.methods.edit_doc', {form, children})
           .then(response => {
             this.lodingOverlay = false;
             this.closeDialog()
@@ -640,7 +641,7 @@ export default {
           });
         }
         else if(form.type === 'Reschedule Appointment'){
-          this.$call('healthcare_doworks.api.methods.reschedule_appointment', {form})
+          this.$call('healthcare_doworks.api.methods.reschedule_appointment', {form, children})
           .then(response => {
             this.lodingOverlay = false;
             this.closeDialog()

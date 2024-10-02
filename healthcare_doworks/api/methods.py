@@ -144,18 +144,19 @@ def patient_encounter_name(appointment_id):
 		
 			# assign default values for the procedure
 			if appointment.custom_appointment_category == 'Procedure':
-				procedure = frappe.new_doc('Clinical Procedure')
-				procedure.procedure_template = appointment.custom_procedure_template
-				procedure.custom_patient_encounter = new_encounter.name
-				procedure.patient = new_encounter.patient
-				procedure.patient_name = new_encounter.patient_name
-				procedure.patient_sex = new_encounter.patient_sex
-				procedure.patient_age = new_encounter.patient_age
-				procedure.practitioner = new_encounter.practitioner
-				procedure.practitioner_name = new_encounter.practitioner_name
-				procedure.medical_department = new_encounter.medical_department
-				procedure.service_unit = appointment.service_unit
-				procedure.insert()
+				for prd in appointment.custom_procedure_templates:
+					procedure = frappe.new_doc('Clinical Procedure')
+					procedure.procedure_template = prd.template
+					procedure.custom_patient_encounter = new_encounter.name
+					procedure.patient = new_encounter.patient
+					procedure.patient_name = new_encounter.patient_name
+					procedure.patient_sex = new_encounter.patient_sex
+					procedure.patient_age = new_encounter.patient_age
+					procedure.practitioner = new_encounter.practitioner
+					procedure.practitioner_name = new_encounter.practitioner_name
+					procedure.medical_department = new_encounter.medical_department
+					procedure.service_unit = appointment.service_unit
+					procedure.insert()
 			return new_encounter.name
 @frappe.whitelist()
 def patient_encounter_records(encounter_id):
