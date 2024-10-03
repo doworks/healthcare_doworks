@@ -612,47 +612,47 @@ export default {
           delete form['name'];
           this.$call('healthcare_doworks.api.methods.new_doc', {form, children})
           .then(response => {
+            this.$toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Appointment booked successfully',
+              life: 3000 // Duration in ms
+            });
             this.lodingOverlay = false;
             this.closeDialog()
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-            }
+            this.$emit('show-alert', error.message, 'error')
           });
         }
         else if(form.type === 'Edit Appointment'){
           this.lodingOverlay = true;
           this.$call('healthcare_doworks.api.methods.edit_doc', {form, children})
           .then(response => {
+            this.$toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Appointment saved',
+              life: 3000 // Duration in ms
+            });
             this.lodingOverlay = false;
             this.closeDialog()
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-            }
+            this.$emit('show-alert', error.message, 'error')
           });
         }
         else if(form.type === 'Reschedule Appointment'){
           this.$call('healthcare_doworks.api.methods.reschedule_appointment', {form, children})
           .then(response => {
+            this.$toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Appointment rescheduled successfully',
+              life: 3000 // Duration in ms
+            });
             this.lodingOverlay = false;
             this.closeDialog()
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-            }
+            this.$emit('show-alert', error.message, 'error')
           });
         }
       })
@@ -672,13 +672,7 @@ export default {
           this.appointmentForm.billing_item = data.message.service_item
         }
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-        }
+        this.$emit('show-alert', error.message, 'error')
       });
     },
     calculateAge(dob) {
@@ -709,6 +703,12 @@ export default {
     patientSubmitted(doc) {
       this.$call('healthcare_doworks.api.methods.new_doc', {form: doc})
       .then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'New Patient created',
+          life: 3000 // Duration in ms
+        });
         this.$resources.patients.reload()
         this.appointmentForm.patient = response.name
         this.appointmentForm.patient_name = response.patient_name
@@ -717,13 +717,7 @@ export default {
         this.appointmentForm.patient_age = this.calculateAge(response.dob)
         this.newPatientOpen = false
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-        }
+        this.$emit('show-alert', error.message, 'error')
       });
     },
     transformData (keys, values) {

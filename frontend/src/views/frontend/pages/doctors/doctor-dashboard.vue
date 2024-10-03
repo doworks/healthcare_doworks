@@ -1,6 +1,22 @@
 <template>
   <!-- Main Wrapper -->
   <div class="main-wrapper mr-3" id="doctor-dashboard" style="margin-right: -10px;">
+    <v-alert
+      v-if="alertActive && alertType === 'error'"
+      type="error"
+      position="absolute"
+      location="top center"
+      color="red-lighten-3"
+      style="z-index: 3000; margin-top: 15px"
+      closable
+      @click:close="() => {
+        alertActive = false
+        alertType = ''
+        alertMessage = ''
+      }"
+    >
+      <div v-html="alertMessage"></div>
+    </v-alert>
     <!-- Page Content -->
     <div class="flex flex-wrap gap-4 pb-4">
       <Card class="flex-1 border border-surface shadow-none">
@@ -393,6 +409,10 @@ export default {
       selectedRow: {},
       appointmentNoteOpen: false,
       showCompleted: false,
+
+      alertMessage: '',
+      alertType: '', // 'success' or 'error'
+      alertActive: false,
     };
   },
   watch: {
@@ -490,12 +510,10 @@ export default {
     this.adjustContainerHeight();
   },
   methods: {
-    showAlert(message, duration) {
-      this.message = message;
-      this.alertVisible = true;
-      setTimeout(() => {
-        this.alertVisible = false;
-      }, duration);
+    showAlert(message, type) {
+      this.alertMessage = message;
+      this.alertType = type;
+      this.alertActive = true;
     },
     getPercentage: (num1, num2) => {
       return num1 / num2 * 100
@@ -520,6 +538,7 @@ export default {
       })
       .catch(error => {
         this.appointmentsLoading = false;
+        this.showAlert(error.message, 'error')
         console.error('Error fetching records:', error);
       });
     },
@@ -549,7 +568,11 @@ export default {
 		},
     updateSeen(data) {
 			data.read = !data.read
-			this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {parent_doctype: 'Patient Appointment', parent_doc_name: this.selectedRow.name, child_table_fieldname: 'custom_visit_notes', filters: {name: data.name}, update_data: data})
+			this.$call('healthcare_doworks.api.general_methods.modify_child_entry', 
+        {parent_doctype: 'Patient Appointment', parent_doc_name: this.selectedRow.name, child_table_fieldname: 'custom_visit_notes', filters: {name: data.name}, update_data: data}
+      ).catch(error => {
+        this.showAlert(error.message, 'error')
+      });
 		},
     appointmentNoteDialog(row) {
       this.selectedRow = row

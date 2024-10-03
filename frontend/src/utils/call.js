@@ -1,6 +1,4 @@
-// Author: Gavin D'souza <gavin@frappe.io>
-
-import router from '@/router';
+import router from "/src/router/index.js?t=1727939243028";
 
 export default async function call(method, args) {
 	if (!args) {
@@ -39,6 +37,7 @@ export default async function call(method, args) {
 			error = JSON.parse(response);
 			// eslint-disable-next-line no-empty
 		} catch (e) {}
+
 		let errorParts = [
 			[method, error.exc_type, error._error_message].filter(Boolean).join(' ')
 		];
@@ -68,15 +67,18 @@ export default async function call(method, args) {
 		if (!e.messages.length) {
 			e.messages = error._error_message ? [error._error_message] : ['Internal Server Error'];
 		}
+
+		// Handle error response
 		updateState(this, null, e.messages.join('\n'));
 
-		if (
-			[401, 403].includes(res.status) &&
-			router.currentRoute.name !== 'Login'
-		) {
+		if ([401, 403].includes(res.status) && router.currentRoute.name !== 'Login') {
 			router.push('/login');
 		}
-		throw e;
+
+		throw { 
+			success: false, 
+			message: e.messages.join('\n') 
+		};
 	}
 
 	function updateState(vm, state, errorMessage) {

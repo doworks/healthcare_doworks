@@ -537,6 +537,13 @@ export default {
         this.lodingOverlay = false;
         this.salesInvoiceOpen = false
         if(response)
+          this.$toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Invoice created successfully',
+            life: 3000 // Duration in ms
+          });
+          
           this.invoiceItems = this.invoiceItems.map(value => {
             if(!value.customer_invoice)
               value.customer_invoice = response.customer_invoice
@@ -545,13 +552,7 @@ export default {
             return value
           })
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-        }
+        this.$emit('show-alert', error.message, 'error')
       });
     },
     onSubmitPayment() {
@@ -565,14 +566,14 @@ export default {
       .then(response => {
         this.lodingOverlay = false;
         this.modeOfPaymentOpen = false;
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Payment created successfully',
+          life: 3000 // Duration in ms
+        });
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-        }
+        this.$emit('show-alert', error.message, 'error')
       });
     },
     autoSave(doctype, name, fieldname, value) {
@@ -582,15 +583,7 @@ export default {
       .then(response => {
         this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
-        else
-          this.showAlert('Sorry. There is an error!' , 10000)
+        this.$emit('show-alert', error.message, 'error')
       });
     },
     newChildRow({parentDoctype ,prarentDocname, fieldName, rules, items, row, isNew}) {
@@ -607,16 +600,14 @@ export default {
             child_table_fieldname: fieldName, 
             child_data: formClone
           }).then(response => {
+            this.$toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Item row added',
+              life: 3000 // Duration in ms
+            });
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-            }
-            else
-              this.showAlert('Sorry. There is an error!' , 10000)
+            this.$emit('show-alert', error.message, 'error')
           });
         }
         else{
@@ -627,16 +618,14 @@ export default {
             filters: {name: row.name}, 
             update_data: formClone
           }).then(response => {
+            this.$toast.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Item row saved',
+              life: 3000 // Duration in ms
+            });
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-            }
-            else
-              this.showAlert('Sorry. There is an error!' , 10000)
+            this.$emit('show-alert', error.message, 'error')
           });
         }
       })
@@ -652,16 +641,14 @@ export default {
           child_table_fieldname: fieldName, 
           filters: {[filterField || 'name']: row}
         }).then(response => {
+          this.$toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Item row deleted',
+            life: 3000 // Duration in ms
+          });
         }).catch(error => {
-          console.error(error);
-          let message = error.message.split('\n');
-          message = message.find(line => line.includes('frappe.exceptions'));
-          if(message){
-            const firstSpaceIndex = message.indexOf(' ');
-            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-          }
-          else
-            this.showAlert('Sorry. There is an error!' , 10000)
+          this.$emit('show-alert', error.message, 'error')
         })
         .catch(err => {
           console.log('error', err);

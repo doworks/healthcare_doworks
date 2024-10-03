@@ -2,15 +2,20 @@
   <!-- Main Wrapper -->
   <div class="main-wrapper mr-3" id="nurse-dashboard" style="margin-right: -10px;">
     <v-alert
-      v-if="alertVisible"
+      v-if="alertActive && alertType === 'error'"
+      type="error"
       position="absolute"
       location="top center"
       color="red-lighten-3"
-      icon="$error"
       style="z-index: 3000; margin-top: 15px"
       closable
+      @click:close="() => {
+        alertActive = false
+        alertType = ''
+        alertMessage = ''
+      }"
     >
-      <div v-html="message"></div>
+      <div v-html="alertMessage"></div>
     </v-alert>
     <!-- Page Content -->
     <div class="flex flex-wrap gap-4 pb-4">
@@ -194,7 +199,6 @@ export default {
       vitalSignsOpen: false,
       medicalHistoryActive: false,
       appointmentNoteOpen: false,
-      alertVisible: false,
       services: [],
       selectedRow: {patient: ''},
       patient: {
@@ -212,6 +216,10 @@ export default {
       limit: {Scheduled: 20, Arrived: 20, Ready: 20, 'In Room': 20, Completed: 20, 'No Show': 20},
       totalCount: {Scheduled: 0, Arrived: 0, Ready: 0, 'In Room': 0, Completed: 0, 'No Show': 0},
       selectedDates: [dayjs()],
+
+      alertMessage: '',
+      alertType: '', // 'success' or 'error'
+      alertActive: false,
     };
   },
   created() {
@@ -230,6 +238,7 @@ export default {
             this.totalCount = response
           })
           .catch(error => {
+            this.showAlert(error.message, 'error')
             console.error('Error fetching records:', error);
           });
 
@@ -289,12 +298,10 @@ export default {
     getPercentage: (num1, num2) => {
       return num1 / num2 * 100
     },
-    showAlert(message, duration) {
-      this.message = message;
-      this.alertVisible = true;
-      setTimeout(() => {
-        this.alertVisible = false;
-      }, duration);
+    showAlert(message, type) {
+      this.alertMessage = message;
+      this.alertType = type;
+      this.alertActive = true;
     },
     fetchRecords() {
       this.appointmentsLoading = true;
@@ -318,6 +325,7 @@ export default {
       })
       .catch(error => {
         this.appointmentsLoading = false;
+        this.showAlert(error.message, 'error')
         console.error('Error fetching records:', error);
       });
     },
@@ -341,11 +349,18 @@ export default {
     medicalHistoryDialog(row) {
       this.$call('frappe.client.get', {doctype: 'Patient', name: row.patient_details.id})
       .then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Patient medical history updated',
+          life: 3000 // Duration in ms
+        });
         this.patient = response
         this.medicalHistoryActive = true;
       })
       .catch(error => {
         this.appointmentsLoading = false;
+        this.showAlert(error.message, 'error')
         console.error('Error fetching records:', error);
       });
     },
@@ -355,19 +370,18 @@ export default {
         const date = dayjs().isSame(dayjs(value.appointment_date), 'day')
         return date
       }).map((d) => {
-
         d.visit_notes = d.visit_notes.map(note => {
-          note.creation = dayjs(note.creation).format('h:mm A DD/MM/YYYY')
+          note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
+          note.dayTime = dayjs(note.time).format('h:mm A')
           return note
         })
-        
         d.arriveTime = '-'
         d.status_log.forEach(value => {
           if(value.status == 'Arrived')
           d.arriveTime = dayjs(value.time)
         })
-
-        d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
+        d.appointment_date_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('D/MM/YYYY');
+				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
         d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
         return d;
 

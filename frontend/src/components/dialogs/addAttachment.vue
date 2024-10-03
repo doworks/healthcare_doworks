@@ -8,7 +8,6 @@
                 </v-card-title>
                 <!-- <v-divider class="m-0"></v-divider> -->
                 <v-card-text>
-                    <Toast />
                     <FileUpload 
                     name="file" 
                     :auto="true" 
@@ -249,37 +248,36 @@ export default {
                     attachment: this.file_url,
                     attachment_name: this.fileName
                 }
-                console.log(doc)
                 this.$call('frappe.client.insert', {doc})
                 .then(response => {
+                    this.$toast.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Attachment added successfully',
+                        life: 3000 // Duration in ms
+                    });
                     this.closeDialog()
                 }).catch(error => {
-                    console.error(error);
-                    let message = error.message.split('\n');
-                    message = message.find(line => line.includes('frappe.exceptions'));
-                    if(message){
-                        const firstSpaceIndex = message.indexOf(' ');
-                        this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-                    }
+                    this.$emit('show-alert', error.message, 'error')
                 });
             }
             else{
                 const form = {
                     doctype: this.doctype, 
                     docname: this.docname, 
-                    [this.fieldName]: 'hi', 
+                    [this.fieldName]: this.file_url, 
                 }
                 this.$call('healthcare_doworks.api.methods.edit_doc', {form})
                 .then(response => {
+                    this.$toast.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Attachment added successfully',
+                        life: 3000 // Duration in ms
+                    });
                     this.closeDialog()
                 }).catch(error => {
-                    console.error(error);
-                    let message = error.message.split('\n');
-                    message = message.find(line => line.includes('frappe.exceptions'));
-                    if(message){
-                        const firstSpaceIndex = message.indexOf(' ');
-                        this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-                    }
+                    this.$emit('show-alert', error.message, 'error')
                 });
             }
         }

@@ -2,17 +2,21 @@
   <!-- Main Wrapper -->
   <div class="patient-profile main-wrapper mr-3 h-full overflow-hidden">
     <v-alert
-    v-if="alertVisible"
-    position="absolute"
-    location="top center"
-    color="red-lighten-3"
-    icon="$error"
-    style="z-index: 3000; margin-top: 15px"
-    closable
+      v-if="alertActive && alertType === 'error'"
+      type="error"
+      position="absolute"
+      location="top center"
+      color="red-lighten-3"
+      style="z-index: 3000; margin-top: 15px"
+      closable
+      @click:close="() => {
+        alertActive = false
+        alertType = ''
+        alertMessage = ''
+      }"
     >
-      <div v-html="message"></div>
+      <div v-html="alertMessage"></div>
     </v-alert>
-    <Toast position="bottom-right"/>
     <!-- Page Content -->
     <div class="card p-4 m-4" style="height: calc(100% - 50px);">
       <div class="flex">
@@ -634,7 +638,10 @@ export default {
   },
   data() {
     return {
-      alertVisible: false,
+      alertMessage: '',
+      alertType: '', // 'success' or 'error'
+      alertActive: false,
+
       loadingOverlay: false,
       isNew: false,
       tab: null,
@@ -684,12 +691,10 @@ export default {
   mounted() {
   },
   methods: {
-    showAlert(message, duration) {
-      this.message = message;
-      this.alertVisible = true;
-      setTimeout(() => {
-        this.alertVisible = false;
-      }, duration);
+    showAlert(message, type) {
+      this.alertMessage = message;
+      this.alertType = type;
+      this.alertActive = true;
     },
     fetchRecords() {
       this.loadingOverlay = true;
@@ -702,6 +707,7 @@ export default {
       })
       .catch(error => {
         this.loadingOverlay = false;
+        this.showAlert(error.message, 'error')
         console.error('Error fetching records:', error);
       });
     },
@@ -751,18 +757,16 @@ export default {
       this.$call('healthcare_doworks.api.methods.new_doc', {form: formClone})
       .then(response => {
         this.isNew = false
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Patient saved',
+          life: 3000 // Duration in ms
+        });
         this.$router.push({ name: 'patient', params: { patientId: response.name } });
         fetchRecords()
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
-        else
-          this.showAlert('Sorry. There is an error!' , 10000)
+        this.showAlert(error.message, 'error')
       });
     },
     autoSave(doctype, name, fieldname, value) {
@@ -772,15 +776,7 @@ export default {
       .then(response => {
         this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
-        else
-          this.showAlert('Sorry. There is an error!' , 10000)
+        this.showAlert(error.message, 'error')
       });
     },
     newChildRow({parentDoctype ,fieldName, rules, items, row, isNew}) {
@@ -800,15 +796,7 @@ export default {
           }).then(response => {
             this.lodingOverlay = false;
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-            }
-            else
-              this.showAlert('Sorry. There is an error!' , 10000)
+            this.showAlert(error.message, 'error')
           });
         }
         else{
@@ -821,15 +809,7 @@ export default {
           }).then(response => {
             this.lodingOverlay = false;
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-            }
-            else
-              this.showAlert('Sorry. There is an error!' , 10000)
+            this.showAlert(error.message, 'error')
           });
         }
       })
@@ -847,15 +827,7 @@ export default {
         }).then(response => {
           this.lodingOverlay = false;
         }).catch(error => {
-          console.error(error);
-          let message = error.message.split('\n');
-          message = message.find(line => line.includes('frappe.exceptions'));
-          if(message){
-            const firstSpaceIndex = message.indexOf(' ');
-            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-          }
-          else
-            this.showAlert('Sorry. There is an error!' , 10000)
+          this.showAlert(error.message, 'error')
         })
         .catch(err => {
           console.log('error', err);

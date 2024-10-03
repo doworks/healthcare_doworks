@@ -7,6 +7,7 @@
 		<v-layout style="min-height: 100vh" v-if="$auth.isLoggedIn">
 			<doctorsidebar/>
 			<v-main class="pt-0 pt-sm-2 bg-gradient ps-20 overflow-hidden" id="body-main">
+				<Toast position="bottom-right"/>
 				<router-view />
 			</v-main>
 		</v-layout>

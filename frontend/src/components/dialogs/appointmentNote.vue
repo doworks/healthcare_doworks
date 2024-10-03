@@ -142,16 +142,16 @@ export default {
         note: this.form.note, 
         read: 0, 
       }}).then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Visit note added',
+          life: 3000 // Duration in ms
+        });
         this.lodingOverlay = false;
         this.closeDialog()
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
+        this.$emit('show-alert', error.message, 'error')
       });
     },
     transformData (keys, values) {

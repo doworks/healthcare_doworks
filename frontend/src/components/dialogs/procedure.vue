@@ -105,8 +105,16 @@ export default {
               file_data: base64Image,
               jsonText: data.jsonText,
             }).then(response => {
+              this.$toast.add({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'Annotation saved',
+                life: 3000 // Duration in ms
+              });
               this.closeDialog()
-            })
+            }).catch(error => {
+              this.$emit('show-alert', error.message, 'error')
+            });
           }
         }
       });

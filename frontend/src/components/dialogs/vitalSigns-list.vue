@@ -152,14 +152,7 @@ export default {
                 })
                 this.lodingOverlay = false;
             }).catch(error => {
-                console.error(error);
-                let message = error.message.split('\n');
-                message = message.find(line => line.includes('frappe.exceptions'));
-                if(message){
-                    const firstSpaceIndex = message.indexOf(' ');
-                    this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-                }
-                this.lodingOverlay = false;
+                this.$emit('show-alert', error.message, 'error')
             });
         },
         openVitalSigns(isNew = false) {

@@ -1,19 +1,22 @@
 <template>
   <div class="main-wrapper encounter-page">
     <v-alert
-      v-if="alertVisible"
-      position="fixed"
+      v-if="alertActive && alertType === 'error'"
+      type="error"
+      position="absolute"
       location="top center"
       color="red-lighten-3"
-      icon="$error"
       style="z-index: 3000; margin-top: 15px"
       border="start"
       closable
-      @click:close="()=>{alertVisible = false}"
+      @click:close="() => {
+        alertActive = false
+        alertType = ''
+        alertMessage = ''
+      }"
     >
-      <div v-html="message"></div>
+      <div v-html="alertMessage"></div>
     </v-alert>
-    <Toast position="bottom-right"/>
     <ConfirmDialog group="headless">
       <template #container="{ message, acceptCallback, rejectCallback }">
         <div class="rounded p-4">
@@ -842,7 +845,7 @@
                                   row: {complaint: option.name}, 
                                   isNew: true
                                 })
-                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 3000 });
                               }"
                               @deselect="(value, option) => {
                                 deleteChildRow({
@@ -851,7 +854,7 @@
                                   rows: [option.name], 
                                   filterField: 'complaint'
                                 })
-                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 3000 });
                               }"
                               show-search
                               :loading="$resources.complaints.list.loading"
@@ -1146,7 +1149,7 @@
                                   row: {diagnosis: option.name}, 
                                   isNew: true
                                 })
-                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 3000 });
                               }"
                               @deselect="(value, option) => {
                                 deleteChildRow({
@@ -1155,7 +1158,7 @@
                                   rows: [option.name], 
                                   filterField: 'diagnosis'
                                 })
-                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 3000 });
                               }"
                               show-search
                               :loading="$resources.diagnosis.list.loading"
@@ -1183,7 +1186,7 @@
                                   row: {diagnosis: option.name}, 
                                   isNew: true
                                 })
-                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 3000 });
                               }"
                               @deselect="(value, option) => {
                                 deleteChildRow({
@@ -1192,7 +1195,7 @@
                                   rows: [option.name], 
                                   filterField: 'diagnosis'
                                 })
-                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+                                this.$toast.add({ severity: 'success', summary: 'Saved', life: 3000 });
                               }"
                               show-search
                               :loading="$resources.diagnosis.list.loading"
@@ -2540,8 +2543,11 @@ export default {
       medicalHistoryActive: false,
       appointmentNoteActive: false,
       appointmentInvoiceActive: false,
-      message: '',
-      alertVisible: false,
+
+      alertMessage: '',
+      alertType: '', // 'success' or 'error'
+      alertActive: false,
+
       formOptions: [
         {label:'Consultation', value:'Consultation'}, 
         {label:'Procedure', value:'Procedure'}, 
@@ -2669,7 +2675,7 @@ export default {
         return service.patient == this.encounterForm.patient
       })
       if(thisPatient) 
-        this.$toast.add({ severity: 'success', summary: 'Update', detail: 'Service Requests have been updated', life: 2000 });
+        this.$toast.add({ severity: 'success', summary: 'Update', detail: 'Service Request updated', life: 3000 });
     })
   },
   mounted(){
@@ -2689,7 +2695,6 @@ export default {
     fetchRecords(){
       this.$call('healthcare_doworks.api.methods.patient_encounter_records', {encounter_id: this.$route.params.encounterId})
       .then(response => {
-        console.log(response)
         response.current_encounter.custom_encounter_start_time = dayjs(response.current_encounter.custom_encounter_start_time)
         if(response.procedures.length > 0 ){
           this.procedureForms = response.procedures.map(value => {
@@ -2742,47 +2747,35 @@ export default {
         this.isLoading = false;
       })
       .catch(error => {
+        this.showAlert(error.message, 'error')
         console.error('Error fetching records:', error);
       });
     },
-    showAlert(message, duration) {
-      this.message = message;
-      this.alertVisible = true;
-      // setTimeout(() => {
-      //   this.alertVisible = false;
-      // }, duration);
+    showAlert(message, type) {
+      this.alertMessage = message;
+      this.alertType = type;
+      this.alertActive = true;
     },
     submitEncounter() {
       this.$call('healthcare_doworks.api.methods.submit_encounter', {encounter: this.$route.params.encounterId})
       .then(response => {
-        this.$toast.add({ severity: 'success', summary: 'Encounter Submited', life: 2000 });
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Encounter submitted',
+          life: 3000 // Duration in ms
+        });
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
-        else
-          this.showAlert('Sorry. There is an error!' , 10000)
+        this.showAlert(error.message, 'error')
       });
     },
     autoSave(doctype, name, fieldname, value) {
       
       this.$call('frappe.client.set_value', {doctype, name, fieldname, value})
       .then(response => {
-        this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+        this.$toast.add({ severity: 'success', summary: 'Saved', life: 3000 });
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
-        else
-          this.showAlert('Sorry. There is an error!' , 10000)
+        this.showAlert(error.message, 'error')
       });
     },
     newChildRow({parentDoctype ,prarentDocname, fieldName, rules, items, row, isNew}) {
@@ -2801,15 +2794,7 @@ export default {
             child_data: formClone
           }).then(response => {
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-            }
-            else
-              this.showAlert('Sorry. There is an error!' , 10000)
+            this.showAlert(error.message, 'error')
           });
         }
         else{
@@ -2821,15 +2806,7 @@ export default {
             update_data: formClone
           }).then(response => {
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-            }
-            else
-              this.showAlert('Sorry. There is an error!' , 10000)
+            this.showAlert(error.message, 'error')
           });
         }
       })
@@ -2846,19 +2823,8 @@ export default {
           filters: {[filterField || 'name']: row}
         }).then(response => {
         }).catch(error => {
-          console.error(error);
-          let message = error.message.split('\n');
-          message = message.find(line => line.includes('frappe.exceptions'));
-          if(message){
-            const firstSpaceIndex = message.indexOf(' ');
-            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-          }
-          else
-            this.showAlert('Sorry. There is an error!' , 10000)
+          this.showAlert(error.message, 'error')
         })
-        .catch(err => {
-          console.log('error', err);
-        });
       })
     },
     visitLogSelect(row) {
@@ -2893,24 +2859,13 @@ export default {
               severity: 'success', 
               summary: 'Deleted', 
               detail: 'Procedure: ' + this.procedureForms[this.selectedProcedure].name + ' was deleted successfully', 
-              life: 2000 
+              life: 3000 
             });
             this.selectedProcedure = 0
             this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', this.encounterForm.custom_encounter_state)
           }).catch(error => {
-            console.error(error);
-            let message = error.message.split('\n');
-            message = message.find(line => line.includes('frappe.exceptions'));
-            if(message){
-              const firstSpaceIndex = message.indexOf(' ');
-              this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-            }
-            else
-              this.showAlert('Sorry. There is an error!' , 10000)
+            this.showAlert(error.message, 'error')
           })
-          .catch(err => {
-            console.log('error', err);
-          });
         },
       });
     },
@@ -2979,17 +2934,9 @@ export default {
         this.encounterForm.custom_encounter_state = 'Procedure'
         this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', 'Procedure')
         this.selectedProcedure = this.procedureForms.length - 1
-        this.$toast.add({ severity: 'success', summary: 'Success', detail: 'A new Clinical Procedure has been created', life: 2000 });
+        this.$toast.add({ severity: 'success', summary: 'Success', detail: 'Clinical Procedure created', life: 3000 });
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
-        else
-          this.showAlert('Sorry. There is an error!' , 10000)
+        this.showAlert(error.message, 'error')
       });
     },
     showConsentForm() {
@@ -2998,17 +2945,8 @@ export default {
       .then(response => {
         this.consentFormHtml = response
         this.consentFormDialog = true
-
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
-        else
-          this.showAlert('Sorry. There is an error!' , 10000)
+        this.showAlert(error.message, 'error')
       });
     },
     saveSignature() {
@@ -3020,17 +2958,14 @@ export default {
       .then(response => {
         this.procedureForms[this.selectedProcedure].custom_patient_consent_signature = true
         this.consentFormDialog = false
-        this.$toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Signature saved',
+          life: 3000 // Duration in ms
+        });
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
-        else
-          this.showAlert('Sorry. There is an error!' , 10000)
+        this.showAlert(error.message, 'error')
       });
     },
     openNewWindow(href) {

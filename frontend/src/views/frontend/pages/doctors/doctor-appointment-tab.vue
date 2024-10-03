@@ -147,7 +147,7 @@
 			</Column>
 			<Column header="Practitioner" 
 			field="practitioner_name" 
-			filterField="practitioner_name" 
+			filterField="practitioner" 
 			:showFilterMenu="false" 
 			:showClearButton="false" 
 			style="width: 20%"
@@ -175,7 +175,7 @@
 					placeholder="Any Practitioner"
 					max-tag-count="responsive"
 					:options="$resources.practitioners.data?.options"
-					:fieldNames="{label: 'practitioner_name', value: 'practitioner_name'}"
+					:fieldNames="{label: 'practitioner_name', value: 'name'}"
 					show-search
                     :loading="$resources.practitioners.list.loading"
                     @search="(value) => {handleSearch(
@@ -380,6 +380,7 @@
 					</ul> -->
 					<DataTable 
 					:value="selectedRow.visit_notes" 
+					size="small"
 					selectionMode="single" 
 					:metaKeySelection="true" 
 					dataKey="name" 
@@ -520,6 +521,7 @@ export default {
 				'patient_details.cpr': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				department: { value: null, matchMode: FilterMatchMode.IN },
 				patient_cpr: { value: null, matchMode: FilterMatchMode.CONTAINS },
+				practitioner: { value: undefined, matchMode: FilterMatchMode.IN },
 				practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN },
 				appointment_time: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				appointment_time_moment: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
@@ -692,13 +694,22 @@ export default {
 			.then(response => {
 				this.$router.push({ name: 'patient-encounter', params: { encounterId: response } });
 			}).catch(error => {
-				console.error(error);
+				this.$emit('show-alert', error.message, 'error')
 			});
 		},
 		updateStatus(item) {
 			this.$call('healthcare_doworks.api.methods.change_status',
 				{docname: this.selectedRow.name, status: item.label}
-			)
+			).then(response => {
+				this.$toast.add({
+					severity: 'success',
+					summary: 'Success',
+					detail: 'Appointment status changed',
+					life: 3000 // Duration in ms
+				});
+			}).catch(error => {
+				this.$emit('show-alert', error.message, 'error')
+			});
 		},
 		getNotesCount(data) {
 			let count = data.visit_notes.reduce((total, value) => {
@@ -742,7 +753,7 @@ export default {
 			}, 300);  // Debounce delay of 300ms
 		},
 		rowClass(data) {
-            return [{ '!bg-rose-50 hover:!bg-rose-100': data.custom_confirmed == 0 && this.tab == 'scheduled' }];
+            return [{ '!bg-rose-50 hover:!bg-rose-100': data.custom_confirmed == 0 && (this.tab == 'scheduled' || this.tab == 'no show')}];
         },
 		updateSeen(data) {
 			data.read = !data.read

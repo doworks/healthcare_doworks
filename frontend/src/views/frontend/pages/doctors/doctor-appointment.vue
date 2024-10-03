@@ -2,15 +2,20 @@
   <!-- Main Wrapper -->
   <div class="main-wrapper mr-4">
     <v-alert
-      v-if="alertVisible"
+      v-if="alertActive && alertType === 'error'"
+      type="error"
       position="absolute"
       location="top center"
       color="red-lighten-3"
-      icon="$error"
       style="z-index: 3000; margin-top: 15px"
       closable
+      @click:close="() => {
+        alertActive = false
+        alertType = ''
+        alertMessage = ''
+      }"
     >
-      <div v-html="message"></div>
+      <div v-html="alertMessage"></div>
     </v-alert>
     <!-- Page Content -->
     <div class="appointment-tab">
@@ -465,8 +470,11 @@ export default {
       appointmentInvoiceOpen: false,
       lodingOverlay: false,
       slots: {},
-      message: '',
-      alertVisible: false,
+
+      alertMessage: '',
+      alertType: '', // 'success' or 'error'
+      alertActive: false,
+
       appointmentForm: {},
       patientInsurance: {},
       selectedRow: {name: '', patient_details: {id: ''}},
@@ -518,6 +526,7 @@ export default {
             this.totalCount = response
           })
           .catch(error => {
+            this.showAlert(error.message, 'error')
             console.error('Error fetching records:', error);
           });
 
@@ -543,12 +552,10 @@ export default {
     this.fetchRecords();
   },
   methods: {
-    showAlert(message, duration) {
-      this.message = message;
-      this.alertVisible = true;
-      setTimeout(() => {
-        this.alertVisible = false;
-      }, duration);
+    showAlert(message, type) {
+      this.alertMessage = message;
+      this.alertType = type;
+      this.alertActive = true;
     },
     fetchRecords() {
       this.appointmentsLoading = true;
@@ -572,6 +579,7 @@ export default {
       })
       .catch(error => {
         this.appointmentsLoading = false;
+        this.showAlert(error.message, 'error')
         console.error('Error fetching records:', error);
       });
     },
@@ -751,10 +759,7 @@ export default {
         this.patientInsurance.custom_copay_amount = data.custom_copay_amount
         this.paymentTypeOpen = true
       }).catch(error => {
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        const firstSpaceIndex = message.indexOf(' ');
-        this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+        this.showAlert(error.message, 'error')
       });
     },
     showSlots() {
@@ -778,10 +783,7 @@ export default {
             this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
           }
         }).catch(error => {
-          let message = error.message.split('\n');
-          message = message.find(line => line.includes('frappe.exceptions'));
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
+          this.showAlert(error.message, 'error')
         });
       } 
 	  },
@@ -870,16 +872,16 @@ export default {
       this.$call('healthcare_doworks.api.methods.transferToPractitioner', 
         {app: this.appointmentForm.name, practitioner: this.appointmentForm.practitioner}
       ).then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Appointment transformed',
+          life: 3000 // Duration in ms
+        });
         this.lodingOverlay = false;
         this.transferOpen = false;
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
+        this.showAlert(error.message, 'error')
       });
     },
     onSubmitServiceUnit() {
@@ -887,16 +889,16 @@ export default {
       this.$call('frappe.client.set_value', 
         {doctype: 'Patient Appointment', name: this.appointmentForm.name, fieldname: 'service_unit', value: this.appointmentForm.service_unit}
       ).then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Appointment room changed',
+          life: 3000 // Duration in ms
+        });
         this.lodingOverlay = false;
         this.serviceUnitOpen = false;
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
+        this.showAlert(error.message, 'error')
       });
     },
     onSubmitPaymentType() {
@@ -904,31 +906,33 @@ export default {
       if(this.appointmentForm.custom_payment_type == 'Insurance'){
         let form = {...this.patientInsurance, custom_default_payment_type: this.appointmentForm.custom_payment_type}
         form.custom_expiration_date = form.custom_expiration_date.format('YYYY-MM-DD')
-        this.$call('healthcare_doworks.api.methods.edit_doc', {form})
-        .catch(error => {
-          console.error(error);
-          let message = error.message.split('\n');
-          message = message.find(line => line.includes('frappe.exceptions'));
-          if(message){
-            const firstSpaceIndex = message.indexOf(' ');
-            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-          }
+        this.$call('healthcare_doworks.api.methods.edit_doc', {form}).then(response => {
+          this.$toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Patient insurance details saved',
+            life: 3000 // Duration in ms
+          });
+          this.lodingOverlay = false;
+          this.paymentTypeOpen = false;
+        }).catch(error => {
+          this.showAlert(error.message, 'error')
         });
       }
 
       this.$call('frappe.client.set_value', 
         {doctype: 'Patient Appointment', name: this.appointmentForm.name, fieldname: 'custom_payment_type', value: this.appointmentForm.custom_payment_type}
       ).then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Appointment payment type saved',
+          life: 3000 // Duration in ms
+        });
         this.lodingOverlay = false;
         this.paymentTypeOpen = false;
       }).catch(error => {
-        console.error(error);
-        let message = error.message.split('\n');
-        message = message.find(line => line.includes('frappe.exceptions'));
-        if(message){
-          const firstSpaceIndex = message.indexOf(' ');
-          this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-        }
+        this.showAlert(error.message, 'error')
       });
     },
     pageChanged(event) {
@@ -1089,15 +1093,15 @@ export default {
         this.$call('healthcare_doworks.api.methods.edit_doc', {form})
         .then(response => {
           this.lodingOverlay = false;
+          this.$toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Patient saved',
+            life: 3000 // Duration in ms
+          });
           window.open('/patient' + response.name, '_blank');
         }).catch(error => {
-          console.error(error);
-          let message = error.message.split('\n');
-          message = message.find(line => line.includes('frappe.exceptions'));
-          if(message){
-            const firstSpaceIndex = message.indexOf(' ');
-            this.showAlert(message.substring(firstSpaceIndex + 1) , 10000)
-          }
+          this.showAlert(error.message, 'error')
         });
       } catch (error) {
         this.lodingOverlay = false;

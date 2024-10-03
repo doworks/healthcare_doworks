@@ -77,7 +77,7 @@ def fetch_nurse_records():
 	}
 
 @frappe.whitelist()
-def reschedule_appointment(form):
+def reschedule_appointment(form, children={}):
 	appointment = frappe.get_doc('Patient Appointment', form['name'])
 	appointment.custom_visit_status = 'Cancelled'
 	appointment.status = 'Cancelled'
@@ -86,6 +86,12 @@ def reschedule_appointment(form):
 	form['name'] = ''
 	new_doc = frappe.get_doc(form)
 	new_doc.status = 'Rescheduled'
+
+	if children:
+		for key, items in children.items():
+			for item in items:
+				new_doc.append(key, item)
+
 	new_doc.insert()
 
 @frappe.whitelist()
@@ -559,7 +565,7 @@ def get_invoice_items(**args):
 	return items
 
 @frappe.whitelist()
-def edit_doc(form, submit=False):
+def edit_doc(form, children={}, submit=False):
 	# Fetch the document using the doctype and name
 	doc = frappe.get_doc(form['doctype'], form['name'])
 
@@ -572,6 +578,11 @@ def edit_doc(form, submit=False):
 		# Only set fields that exist in the document's schema
 		if hasattr(doc, key):
 			setattr(doc, key, value)
+
+	if children:
+		for key, items in children.items():
+			for item in items:
+				doc.append(key, item)
 
 	# Save the changes to the existing document
 	doc.save()
@@ -709,8 +720,10 @@ def get_appointment_details(appointment):
 	# Get visit notes
 	to_options = ['', frappe.session.user, frappe.session.full_name]
 	visit_notes = frappe.get_all('Appointment Note Table',
-		filters={'parent': appointment['name'], 'to': ['in', to_options]},
-		fields=['to', 'full_name', 'note', 'time', 'read', 'from']
+		filters={'parent': appointment['name']},
+		or_filters={'to': ['in', to_options], 'from': ['in', to_options]},
+		fields=['name', 'to', 'full_name', 'note', 'time', 'read', 'from'],
+		order_by='time'
 	)
 	appointment['visit_notes'] = visit_notes
 

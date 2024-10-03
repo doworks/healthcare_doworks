@@ -338,17 +338,16 @@ export default {
                 this.form.order_time = dayjs(this.form.form_order_time).format('HH:mm')
                 this.$call('healthcare_doworks.api.methods.new_doc', {form: this.form})
                 .then(response => {
+                    this.$toast.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: 'Medication request created successfully',
+                        life: 3000 // Duration in ms
+                    });
                     this.lodingOverlay = false;
                     this.closeDialog()
                 }).catch(error => {
-                    console.error(error);
-                    this.lodingOverlay = false;
-                    let message = error.message.split('\n');
-                    message = message.find(line => line.includes('frappe.exceptions'));
-                    if(message){
-                        const firstSpaceIndex = message.indexOf(' ');
-                        this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-                    }
+                    this.$emit('show-alert', error.message, 'error')
                 });
             })
             .catch(err => {
