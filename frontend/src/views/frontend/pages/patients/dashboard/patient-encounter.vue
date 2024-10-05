@@ -487,8 +487,8 @@
                               @search="(value) => {handleSearch(
                                 value, 
                                 $resources.serviceUnits, 
-                                {name: ['like', `%${value}%`]}, 
-                                {},
+                                {allow_appointments: 1, is_group: 0, name: ['like', `%${value}%`]}, 
+                                {allow_appointments: 1, is_group: 0},
                               )}"
                               :filterOption="false"
                               ></a-select>
@@ -2490,6 +2490,7 @@ export default {
 			type: 'list', 
 			doctype: 'Healthcare Service Unit', 
 			fields:['name'], 
+      filters:{'allow_appointments': 1, 'is_group': 0}, 
 			auto: true, 
 			orderBy: 'name',
       pageLength: 10,

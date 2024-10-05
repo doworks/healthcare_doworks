@@ -95,6 +95,10 @@
         @vital-sign-dialog="vitalSignDialog"
         @medical-history-dialog="medicalHistoryDialog"
         @table-page-change="pageChanged"
+        @service-unit-dialog="serviceUnitDialog"
+        @payment-type-dialog="paymentTypeDialog"
+        @transfer-practitioner-dialog="transferPractitionerDialog"
+        @appointment-invoice-dialog="appointmentInvoiceDialog"
         />
         </v-window-item>
       </v-window>
@@ -347,6 +351,92 @@ export default {
         return data
       },
     }},
+    customers() { return { 
+      type: 'list', 
+      doctype: 'Customer', 
+      fields: ['name', 'customer_name'], 
+      filters: {customer_group: 'Medical Insurance', disabled: 0},
+      auto: true, 
+      orderBy: 'customer_name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
+    departments() { return { 
+      type: 'list', 
+      doctype: 'Medical Department', 
+      fields: ['name', 'department'], 
+      auto: true, 
+      orderBy: 'department',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
+    appointmentTypes() { return { 
+      type: 'list', 
+      doctype: 'Appointment Type', 
+      fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
+      auto: true, 
+      orderBy: 'appointment_type',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else{
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+          this.appointmentForm.appointment_type = data.options[0].appointment_type
+          this.appointmentForm.appointment_for = data.options[0].allow_booking_for
+        }
+        return data
+      }
+    }},
+    practitioners() { return { 
+      type: 'list', 
+      doctype: 'Healthcare Practitioner', 
+      fields: ['practitioner_name', 'image', 'department', 'name'], 
+      filters: {status: 'Active'},
+      auto: true, 
+      orderBy: 'practitioner_name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
+    serviceUnits() { return { 
+      type: 'list', 
+      doctype: 'Healthcare Service Unit', 
+      fields:['name'], 
+      filters:{'allow_appointments': 1, 'is_group': 0}, 
+      auto: true, 
+      orderBy: 'name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
   },
   data() {
     return {
@@ -370,6 +460,7 @@ export default {
       appointmentInvoiceOpen: false,
       services: [],
       patientInsurance: {},
+      appointmentForm: {},
       selectedRow: {name: '', patient_details: {id: ''}},
       patient: {
         custom_allergies_table: [],
@@ -714,6 +805,34 @@ export default {
     },
     updateProgress() {
       this.progressValue = (this.appointments.length / this.totalRecords) * 100;
+    },
+    transformData (keys, values) {
+      return values.map(row => {
+        const obj = {};
+        keys.forEach((key, index) => {
+          obj[key] = row[index];  // Map each key to its corresponding value
+        });
+        return obj;
+      });
+    },
+    handleSearch(query, resource, filters, initialFilters) {
+      // Clear the previous timeout to avoid spamming requests
+      clearTimeout(this.searchTimeout);
+
+      // Set a new timeout (300ms) for debouncing
+      this.searchTimeout = setTimeout(() => {
+        if (query) {
+          // Update list resource options to fetch matching records from server
+          resource.update({filters});
+
+          // Fetch the updated results
+          resource.reload();
+        } else {
+          // If no search query, load initial records
+          resource.update({filters: initialFilters});
+          resource.reload();
+        }
+      }, 300);  // Debounce delay of 300ms
     },
   },
   name: "nurse-dashboard",
