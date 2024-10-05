@@ -330,13 +330,8 @@ def annotations_records():
 def vital_signs_list(patient):
 	if patient:
 		return frappe.db.get_list('Vital Signs', 
-			fields=['signs_date', 'signs_time', 'temperature', 'pulse', 'name', 'appointment', 'title', 'modified', 'modified_by', 'patient'],
+			fields=['signs_date', 'signs_time', 'patient_name', 'name', 'appointment', 'modified', 'modified_by', 'patient'],
 			filters={'patient': patient}, 
-			order_by='signs_date desc, signs_time desc',
-		)
-	else:
-		return frappe.db.get_list('Vital Signs', 
-			fields=['signs_date', 'signs_time', 'temperature', 'pulse', 'name', 'appointment', 'title', 'modified', 'modified_by', 'patient'], 
 			order_by='signs_date desc, signs_time desc',
 		)
 
@@ -581,6 +576,7 @@ def edit_doc(form, children={}, submit=False):
 
 	if children:
 		for key, items in children.items():
+			setattr(doc, key, [])
 			for item in items:
 				doc.append(key, item)
 
@@ -715,6 +711,8 @@ def get_appointment_details(appointment):
 		filters={'parent': appointment['name']},
 		fields=['name', 'template']
 	)
+	for procedure in procedure_templates:
+		procedure.value = procedure.template
 	appointment['procedure_templates'] = procedure_templates
 
 	# Get visit notes
@@ -723,7 +721,7 @@ def get_appointment_details(appointment):
 		filters={'parent': appointment['name']},
 		or_filters={'to': ['in', to_options], 'from': ['in', to_options]},
 		fields=['name', 'to', 'full_name', 'note', 'time', 'read', 'from'],
-		order_by='time'
+		order_by='time desc'
 	)
 	appointment['visit_notes'] = visit_notes
 

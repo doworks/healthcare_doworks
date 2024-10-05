@@ -29,11 +29,8 @@
                 @row-click="openVitalSigns"
                 >
                     <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
-                    <Column field="title" header="Title"></Column>
-                    <Column field="patient" header="Patient"></Column>
-                    <Column field="temprature" header="Body Temprature"></Column>
-                    <Column field="pulse" header="Heart Rate / Pulse"></Column>
-                    <Column field="appointment" header="Patient Appointment"></Column>
+                    <Column field="name" header="Name"></Column>
+                    <Column field="patient_name" header="Patient"></Column>
                     <Column field="signs_date" header="Date">
                         <template #body="{ data }">
                             {{ data.signs_date.format('DD/MM/YYYY') }}

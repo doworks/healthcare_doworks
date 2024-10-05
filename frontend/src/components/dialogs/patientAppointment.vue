@@ -80,7 +80,7 @@
                   v-model:value="appointmentForm.procedure_templates"
                   mode="multiple"
                   :options="$resources.clinicalProcedureTemplates.data?.options"
-                  :fieldNames="{label: 'name', value: 'name'}"
+                  :fieldNames="{label: 'template', value: 'name'}"
                   show-search
                   :loading="$resources.clinicalProcedureTemplates.list.loading"
                   @search="(value) => {handleSearch(
@@ -124,6 +124,7 @@
                 
                 <a-form-item v-if="appointmentForm.appointment_type" label="Appointment Duration">
                   <a-input-number 
+                  class="w-full"
                   :controls="false" 
                   :min="0" 
                   :step="1" 
@@ -131,6 +132,7 @@
                   v-model:value="appointmentForm.duration" 
                   />
                 </a-form-item>
+                <a-checkbox v-model:checked="appointmentForm.custom_confirmed">confirmed?</a-checkbox>
               </v-col>
               <v-col cols="12" md="6">
                 <a-form-item label="Branch" name="branch">
@@ -149,7 +151,7 @@
                   :filterOption="false"
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Practitioner" name="practitioner" @change="setPaymentDetails()">
+                <a-form-item label="Practitioner" name="practitioner">
                   <a-select
                   v-model:value="appointmentForm.practitioner_name"
                   :options="$resources.practitioners.data?.options"
@@ -172,7 +174,6 @@
                 <a-form-item label="Department" 
                 name="department" 
                 v-if="appointmentForm.appointment_for === 'Department'" 
-                @change="setPaymentDetails()"
                 >
                   <a-select
                   v-model:value="appointmentForm.department"
@@ -192,17 +193,16 @@
                 <a-form-item label="Service Unit" 
                 name="service_unit" 
                 v-if="appointmentForm.appointment_for === 'Service Unit' || appointmentForm.custom_is_walked_in" 
-                @change="setPaymentDetails()"
                 >
                   <a-select
                   v-model:value="appointmentForm.service_unit"
                   :options="$resources.serviceUnits.data?.options"
                   :fieldNames="{label: 'name', value: 'name'}"
                   show-search
-                  :loading="$resources.patients.list.loading"
+                  :loading="$resources.serviceUnits.list.loading"
                   @search="(value) => {handleSearch(
                     value, 
-                    $resources.patients, 
+                    $resources.serviceUnits, 
                     {name: ['like', `%${value}%`]}, 
                     {},
                   )}"
@@ -372,6 +372,7 @@ export default {
 				appointment_type: '',
 				appointment_for: '',
 				duration: '',
+        custom_confirmed: 0,
 				custom_appointment_category: 'First Time',
         procedure_templates: [],
         custom_payment_type: '',
@@ -603,13 +604,13 @@ export default {
         this.lodingOverlay = true;
         let form = {...this.appointmentForm}
         form.appointment_date = dayjs(form.appointment_date).format('YYYY-MM-DD')
-        const children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value}))}
         if(form.custom_is_walked_in){
           form.appointment_time = dayjs().format('HH:mm')
           form.status = 'Walked In'
         }
         if(form.type === 'New Appointment'){
           delete form['name'];
+          let children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value.template}))}
           this.$call('healthcare_doworks.api.methods.new_doc', {form, children})
           .then(response => {
             this.$toast.add({
@@ -626,6 +627,11 @@ export default {
         }
         else if(form.type === 'Edit Appointment'){
           this.lodingOverlay = true;
+          let children = {custom_procedure_templates: form.procedure_templates.filter(value => !value.name).map(value => {
+            if(value.template)
+              return {template: value.template}
+            return {template: value}
+          })}
           this.$call('healthcare_doworks.api.methods.edit_doc', {form, children})
           .then(response => {
             this.$toast.add({
@@ -641,6 +647,7 @@ export default {
           });
         }
         else if(form.type === 'Reschedule Appointment'){
+          let children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value.template}))}
           this.$call('healthcare_doworks.api.methods.reschedule_appointment', {form, children})
           .then(response => {
             this.$toast.add({

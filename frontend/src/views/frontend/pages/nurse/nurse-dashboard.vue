@@ -138,6 +138,171 @@
     @show-alert="showAlert" 
     :appointmentId="selectedRow.name"
     />
+    <appointmentInvoiceDialog 
+    :isOpen="appointmentInvoiceOpen" 
+    @update:isOpen="appointmentInvoiceOpen = $event" 
+    @show-alert="showAlert" 
+    :appointment="selectedRow"
+    />
+    <v-dialog v-model="serviceUnitOpen" width="auto">
+      <v-card
+        rounded="lg"
+        width="auto"
+        prepend-icon="mdi mdi-door-open"
+        title="Update Room"
+      >
+        <v-card-text>
+          <a-select
+          v-model:value="appointmentForm.service_unit"
+          :options="$resources.serviceUnits.data?.options"
+          :fieldNames="{label: 'name', value: 'name'}"
+          style="min-width: 400px; max-width: 600px;"
+          show-search
+          :loading="$resources.serviceUnits.list.loading"
+          @search="(value) => {handleSearch(
+            value, 
+            $resources.serviceUnits, 
+            {allow_appointments: 1, name: ['like', `%${value}%`]}, 
+            {allow_appointments: 1},
+          )}"
+          :filterOption="false"
+          ></a-select>
+        </v-card-text>
+
+        <v-card-actions class="my-2 d-flex justify-end">
+          <v-btn
+          class="text-none"
+          text="Cancel"
+          @click="serviceUnitOpen = false"
+          ></v-btn>
+
+          <v-btn
+          class="text-none"
+          color="blue"
+          
+          text="submit"
+          variant="tonal"
+          @click="onSubmitServiceUnit()"
+          ></v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="transferOpen" width="auto">
+      <v-card
+        rounded="lg"
+        width="auto"
+        prepend-icon="mdi mdi-door-open"
+        title="Transfer To Practitioner"
+      >
+        <v-card-text>
+          <a-select
+          v-model:value="appointmentForm.practitioner_name"
+          :options="$resources.practitioners.data?.options"
+          :fieldNames="{label: 'practitioner_name', value: 'name'}"
+          style="min-width: 400px; max-width: 600px;"
+          show-search
+          :loading="$resources.practitioners.list.loading"
+          @search="(value) => {handleSearch(
+            value, 
+            $resources.practitioners, 
+            {status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
+            {status: 'Active'},
+          )}"
+          :filterOption="false"
+          ></a-select>
+        </v-card-text>
+
+        <v-card-actions class="my-2 d-flex justify-end">
+          <v-btn
+          class="text-none"
+          text="Cancel"
+          @click="transferOpen = false"
+          ></v-btn>
+
+          <v-btn
+          class="text-none"
+          color="blue"
+          
+          text="Submit"
+          variant="tonal"
+          @click="onSubmitTransferPractitioner()"
+          ></v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="paymentTypeOpen" width="auto">
+      <v-card
+        rounded="lg"
+        width="auto"
+        prepend-icon="pi pi-wallet"
+        title="Update Payment Type"
+      >
+        <v-card-text>
+          <a-form layout="vertical">
+            <a-form-item label="Payment Type">
+              <a-select
+                v-model:value="appointmentForm.custom_payment_type"
+                :options="[{label: '', value: ''}, {label: 'Self Payment', value: 'Self Payment'}, {label: 'Insurance', value: 'Insurance'}]"
+                style="min-width: 400px; max-width: 600px;"
+              ></a-select>
+            </a-form-item>
+  
+            <div v-if="appointmentForm.custom_payment_type == 'Insurance'">
+              <h4 class="mb-4 font-semibold">Insurance Details</h4>
+              <a-checkbox class="mb-3" v-model:checked="patientInsurance.custom_active">Active</a-checkbox>
+              <a-form-item label="Insurance Company Name">
+                <a-select
+                v-model:value="patientInsurance.custom_insurance_company_name"
+                style="width: 100%;"
+                :options="$resources.customers.data?.options"
+                :fieldNames="{label:'customer_name', value: 'name'}"
+                show-search
+                :loading="$resources.customers.list.loading"
+                @search="(value) => {handleSearch(
+                  value, 
+                  $resources.customers, 
+                  {customer_group: 'Medical Insurance', disabled: 0, customer_name: ['like', `%${value}%`]}, 
+                  {customer_group: 'Medical Insurance', disabled: 0},
+                )}"
+                :filterOption="false"
+                >
+                </a-select>
+              </a-form-item>
+              <a-form-item label="Policy Number">
+                <a-input v-model:value="patientInsurance.custom_policy_number"/>
+              </a-form-item>
+              <a-form-item label="Expiration Date">
+                <a-date-picker 
+                v-model:value="patientInsurance.custom_expiration_date"
+                format="DD MMM YYYY" 
+                style="z-index: 3000; width: 100%"
+                />
+              </a-form-item>
+              <a-form-item label="Copay Amount">
+                <a-input-number class="w-full" :controls="false" v-model:value="patientInsurance.custom_copay_amount"/>
+              </a-form-item>
+            </div>
+          </a-form>
+        </v-card-text>
+
+        <v-card-actions class="my-2 d-flex justify-end">
+          <v-btn
+          class="text-none"
+          text="Cancel"
+          @click="paymentTypeOpen = false"
+          ></v-btn>
+
+          <v-btn
+          class="text-none"
+          color="blue"
+          
+          text="submit"
+          variant="tonal"
+          @click="onSubmitPaymentType()"
+          ></v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
   <!-- /Main Wrapper -->
 </template>
@@ -199,8 +364,13 @@ export default {
       vitalSignsOpen: false,
       medicalHistoryActive: false,
       appointmentNoteOpen: false,
+      serviceUnitOpen: false,
+      transferOpen: false,
+      paymentTypeOpen: false,
+      appointmentInvoiceOpen: false,
       services: [],
-      selectedRow: {patient: ''},
+      patientInsurance: {},
+      selectedRow: {name: '', patient_details: {id: ''}},
       patient: {
         custom_allergies_table: [],
         custom_infected_diseases: [],
@@ -345,6 +515,108 @@ export default {
     vitalSignDialog(row) {
       this.selectedRow = row
       this.vitalSignsOpen = true;
+    },
+    appointmentInvoiceDialog(row) {
+      this.selectedRow = row
+			this.appointmentInvoiceOpen = true;
+		},
+    transferPractitionerDialog(row) {
+      this.appointmentForm.name = row.name;
+      this.appointmentForm.practitioner = row.practitioner;
+      this.appointmentForm.practitioner_name = row.practitioner_name;
+			this.transferOpen = true
+		},
+    serviceUnitDialog(row) {
+      this.appointmentForm.name = row.name;
+      this.appointmentForm.service_unit = row.service_unit;
+			this.serviceUnitOpen = true
+		},
+    paymentTypeDialog(row) {
+      this.appointmentForm.name = row.name;
+      this.appointmentForm.custom_payment_type = row.custom_payment_type;
+      this.$call('frappe.client.get', {doctype: 'Patient', name: row.patient}).then((data) => {
+        this.patientInsurance.doctype = 'Patient'
+        this.patientInsurance.name = row.patient
+        this.patientInsurance.custom_active = data.custom_active
+        this.patientInsurance.custom_insurance_company_name = data.custom_insurance_company_name
+        this.patientInsurance.custom_policy_number = data.custom_policy_number
+        if(data.custom_expiration_date)
+          this.patientInsurance.custom_expiration_date = dayjs(data.custom_expiration_date)
+        else
+          this.patientInsurance.custom_expiration_date = undefined
+        this.patientInsurance.custom_copay_amount = data.custom_copay_amount
+        this.paymentTypeOpen = true
+      }).catch(error => {
+        this.showAlert(error.message, 'error')
+      });
+    },
+    onSubmitTransferPractitioner() {
+      this.lodingOverlay = true;
+      this.$call('healthcare_doworks.api.methods.transferToPractitioner', 
+        {app: this.appointmentForm.name, practitioner: this.appointmentForm.practitioner}
+      ).then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Appointment transformed',
+          life: 3000 // Duration in ms
+        });
+        this.lodingOverlay = false;
+        this.transferOpen = false;
+      }).catch(error => {
+        this.showAlert(error.message, 'error')
+      });
+    },
+    onSubmitServiceUnit() {
+      this.lodingOverlay = true;
+      this.$call('frappe.client.set_value', 
+        {doctype: 'Patient Appointment', name: this.appointmentForm.name, fieldname: 'service_unit', value: this.appointmentForm.service_unit}
+      ).then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Appointment room changed',
+          life: 3000 // Duration in ms
+        });
+        this.lodingOverlay = false;
+        this.serviceUnitOpen = false;
+      }).catch(error => {
+        this.showAlert(error.message, 'error')
+      });
+    },
+    onSubmitPaymentType() {
+      this.lodingOverlay = true;
+      if(this.appointmentForm.custom_payment_type == 'Insurance'){
+        let form = {...this.patientInsurance, custom_default_payment_type: this.appointmentForm.custom_payment_type}
+        form.custom_expiration_date = form.custom_expiration_date.format('YYYY-MM-DD')
+        this.$call('healthcare_doworks.api.methods.edit_doc', {form}).then(response => {
+          this.$toast.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Patient insurance details saved',
+            life: 3000 // Duration in ms
+          });
+          this.lodingOverlay = false;
+          this.paymentTypeOpen = false;
+        }).catch(error => {
+          this.showAlert(error.message, 'error')
+        });
+      }
+
+      this.$call('frappe.client.set_value', 
+        {doctype: 'Patient Appointment', name: this.appointmentForm.name, fieldname: 'custom_payment_type', value: this.appointmentForm.custom_payment_type}
+      ).then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Appointment payment type saved',
+          life: 3000 // Duration in ms
+        });
+        this.lodingOverlay = false;
+        this.paymentTypeOpen = false;
+      }).catch(error => {
+        this.showAlert(error.message, 'error')
+      });
     },
     medicalHistoryDialog(row) {
       this.$call('frappe.client.get', {doctype: 'Patient', name: row.patient_details.id})

@@ -132,7 +132,7 @@
                 <div class="text-start d-flex flex-column">
                   <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
                   <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
-                  <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
+                  <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex?.slice(0, 1) || '')}}</p>
                   <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
                 </div>
               </a>
@@ -184,7 +184,7 @@
                     <div class="text-start d-flex flex-column">
                       <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
                       <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
-                      <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex.slice(0, 1) || '')}}</p>
+                      <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex?.slice(0, 1) || '')}}</p>
                       <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
                     </div>
                   </a>

@@ -683,6 +683,7 @@ export default {
 				this.appointmentForm.custom_appointment_category = 'First Time';
         this.appointmentForm.procedure_templates = [];
         this.appointmentForm.custom_payment_type = '';
+        this.appointmentForm.custom_confirmed = 0;
         this.appointmentForm.practitioner = '';
 				this.appointmentForm.practitioner_name = '';
 				this.appointmentForm.patient = '';
@@ -701,6 +702,7 @@ export default {
 				this.appointmentForm.custom_appointment_category = row.custom_appointment_category;
         this.appointmentForm.procedure_templates = row.procedure_templates;
         this.appointmentForm.custom_payment_type = row.custom_payment_type;
+        this.appointmentForm.custom_confirmed = row.custom_confirmed;
         this.appointmentForm.practitioner = row.practitioner;
 				this.appointmentForm.practitioner_name = row.practitioner_name;
 				this.appointmentForm.patient = row.patient_details.id;
@@ -724,7 +726,6 @@ export default {
 			this.appointmentNoteOpen = true;
 		},
     appointmentInvoiceDialog(row) {
-      console.log(row)
       this.selectedRow = row
 			this.appointmentInvoiceOpen = true;
 		},

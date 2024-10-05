@@ -15,7 +15,7 @@
 		selectionMode="single" 
 		:metaKeySelection="true" 
 		@row-contextmenu="handleRowContextMenu"
-		:rowClass="rowClass"
+		:rowClass="appointmentRowClass"
 		@page="props => {$emit('table-page-change', props)}"
 		paginatorTemplate="RowsPerPageDropdown"
 		:loading="loading"
@@ -309,7 +309,29 @@
 						}">
 						</v-btn>
 						<v-btn 
-						v-if="tab == 'ready' || tab == 'in room' || tab == 'completed'" 
+						v-if="tab == 'no show'" 
+						variant="text" 
+						color="blue"
+						icon="mdi mdi-walk" 
+						@click="(event) => { 
+							event.stopPropagation()
+							selectedRow = data
+							updateStatus({label: 'Arrived'}) 
+						}">
+						</v-btn>
+						<v-btn 
+						v-if="tab == 'no show'" 
+						variant="text" 
+						color="amber"
+						icon="mdi mdi-clock-outline" 
+						@click="(event) => { 
+							event.stopPropagation()
+							$emit('appointment-dialog', 'Reschedule Appointment', false, data)
+						}">
+						</v-btn>
+						<v-btn 
+						v-if="this.$myresources.user.roles.some(value => value.role == 'Practitioner') && 
+							(tab == 'ready' || tab == 'in room' || tab == 'completed')" 
 						variant="text" 
 						color="blue"
 						icon="mdi mdi-bandage" 
@@ -385,6 +407,7 @@
 					:metaKeySelection="true" 
 					dataKey="name" 
 					class="max-h-72 overflow-y-auto"
+					:rowClass="noteRowClass"
 					>
 						<template #header>
 							<div class="flex flex-wrap items-center justify-between gap-2">
@@ -597,7 +620,7 @@ export default {
 					icon: 'pi pi-wallet',
 					command: () => {this.$emit('payment-type-dialog', this.selectedRow)}
 				}] : []),
-				...(this.tab == 'arrived' || this.tab == 'ready' || this.tab == 'in room' ? [{
+				...(this.$myresources.user.roles.some(value => value.role == 'Practitioner') ? [{
 					label: 'Patient Encounter',
 					icon: 'mdi mdi-bandage',
 					command: () => {this.goToEncounter()}
@@ -752,8 +775,11 @@ export default {
 				}
 			}, 300);  // Debounce delay of 300ms
 		},
-		rowClass(data) {
+		appointmentRowClass(data) {
             return [{ '!bg-rose-50 hover:!bg-rose-100': data.custom_confirmed == 0 && (this.tab == 'scheduled' || this.tab == 'no show')}];
+        },
+		noteRowClass(data) {
+            return [{ '!bg-yellow-100 hover:!bg-yellow-200': data.read}];
         },
 		updateSeen(data) {
 			data.read = !data.read
