@@ -13,15 +13,29 @@ class CustomPatientAppointment(PatientAppointment):
 		self.update_event()
 		self.set_postition_in_queue()
 
-	def update_appointment_status():
-		# update the status of appointments daily
-
-		# appointments = frappe.get_all(
-		# 	"Patient Appointment", {"status": ("not in", ["Closed", "Cancelled"])}
-		# )
-
-		# for appointment in appointments:
-		# 	appointment_doc = frappe.get_doc("Patient Appointment", appointment.name)
-		# 	appointment_doc.set_status()
-		# 	appointment_doc.save()
+	def set_status():
 		pass
+
+	@frappe.whitelist()
+	def change_status(self, status):
+		self.custom_visit_status = status
+		self.append("custom_appointment_time_logs", {
+			"status": status,
+			"time": frappe.utils.get_datetime()
+		})
+		self.save()
+
+	def on_update(self):
+		prev_doc = self.get_doc_before_save() or frappe._dict()
+		current = self.get("custom_visit_status")
+		prev = prev_doc.get("custom_visit_status")
+		if current != prev and (current == "Arrived" or prev == "Arrived"):
+			waiting_list = frappe.db.sql("""
+                SELECT pa.name, pa.patient_name, pa.patient, pa.practitioner, at.time as arrival_time, pa.appointment_time, pa.appointment_date
+                FROM `tabPatient Appointment` pa
+                LEFT JOIN `tabAppointment Time Logs` at ON pa.name = at.parent AND at.status = 'Arrived'
+                WHERE pa.custom_visit_status = 'Arrived' AND pa.appointment_date = CURDATE()
+                ORDER BY at.time DESC
+			""", as_dict=True)
+   
+			frappe.publish_realtime("waiting_list", waiting_list)
