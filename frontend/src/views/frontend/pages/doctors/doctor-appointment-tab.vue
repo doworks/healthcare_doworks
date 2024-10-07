@@ -40,7 +40,7 @@
 								class="h-100 w-100"
 								:src="data.patient_details.image ? 
 									data.patient_details.image :
-									data.patient_details.gender === 'Male' ? maleImage : femaleImage"
+									data.patient_details.gender === 'Female' ? femaleImage : maleImage"
 								/>
 								<!-- <span v-if="!data.patient_details.image" class="text-h5">{{ getInitials(data.patient_name) }}</span> -->
 							</v-avatar>

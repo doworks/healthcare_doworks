@@ -12,7 +12,7 @@
                         <v-avatar size="large" class="self-center">
                             <img
                             class="w-20 h-20 rounded-circle"
-                            :src="patient.patient_details.image ? patient.patient_details.image :patient.patient_details.gender === 'Male' ? maleImage :femaleImage"
+                            :src="patient.patient_details.image ? patient.patient_details.image :patient.patient_details.gender === 'Female' ? femaleImage :maleImage"
                             />
                             <!-- <span v-if="!data.patient_details.image" class="text-h6">{{ getInitials(data.patient_name) }}</span> -->
                         </v-avatar>

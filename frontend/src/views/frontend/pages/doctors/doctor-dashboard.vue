@@ -548,6 +548,7 @@ export default {
         const date = dayjs().isSame(dayjs(value.appointment_date), 'day')
         return date
       }).map((d) => {
+        d.notes = this.stripHtml(d.notes)
         d.arriveTime = null
 
         d.visit_notes = d.visit_notes.map(note => {
@@ -611,6 +612,11 @@ export default {
     },
     rowClass(data) {
       return [{ '!bg-green-50 hover:!bg-green-100': data.status == 'Walked In' }];
+    },
+    stripHtml(html) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      return tempDiv.textContent || tempDiv.innerText || "";
     },
     transformData (keys, values) {
       return values.map(row => {

@@ -585,6 +585,8 @@ export default {
     },
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
+        d.notes = this.stripHtml(d.notes)
+
         d.visit_notes = d.visit_notes.map(note => {
           note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
           note.dayTime = dayjs(note.time).format('h:mm A')
@@ -949,6 +951,11 @@ export default {
     updateProgress() {
       this.progressValue = (this.appointments.length / this.totalRecords) * 100;
     },
+    stripHtml(html) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      return tempDiv.textContent || tempDiv.innerText || "";
+    },
     async readIdCard(row) {
       try {
         this.lodingOverlay = true;
@@ -1100,13 +1107,14 @@ export default {
             detail: 'Patient saved',
             life: 3000 // Duration in ms
           });
-          window.open('/patient' + response.name, '_blank');
+          window.open('/patient/' + response.name, '_blank');
         }).catch(error => {
           this.showAlert(error.message, 'error')
+          this.showAlert('Please Insert A Card!', 'error')
         });
       } catch (error) {
         this.lodingOverlay = false;
-        this.showAlert('Please Insert A Card!', 10000)
+        this.showAlert('Please Insert A Card!', 'error')
       }
 		},
     transformData (keys, values) {

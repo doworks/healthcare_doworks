@@ -42,6 +42,15 @@
         :class="{ 'v-list-item--active': $route.name == 'nurse-dashboard' }"
         ></v-list-item>
         <v-list-item 
+        v-if="isPharmacist" 
+        prepend-icon="fa fa-display" 
+        title="Pharmacy Dashboard" 
+        value="pharmacyDashboard" 
+        nav 
+        to="/pharmacy-dashboard"
+        :class="{ 'v-list-item--active': $route.name == 'pharmacy-dashboard' }"
+        ></v-list-item>
+        <v-list-item 
         prepend-icon="fa fa-user" 
         title="Patient" 
         value="patient" 
@@ -88,6 +97,7 @@
       return {
         currenColor: '',
         isNurse: false,
+        isPharmacist: false,
         isHealthcareAdministrator: false
       };
     },
@@ -100,6 +110,7 @@
             this.currenColor = this.getColorFromName(this.$myresources.user.name)
             this.isHealthcareAdministrator = this.$myresources.user.roles.some(value => value.role == 'Practitioner')
             this.isNurse = this.$myresources.user.roles.some(value => value.role == 'Nursing User')
+            this.isPharmacist = this.$myresources.user.roles.some(value => value.role == 'Pharmacist')
           }
         },
         immediate: true,

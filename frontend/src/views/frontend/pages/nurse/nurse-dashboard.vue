@@ -733,6 +733,8 @@ export default {
         const date = dayjs().isSame(dayjs(value.appointment_date), 'day')
         return date
       }).map((d) => {
+        d.notes = this.stripHtml(d.notes)
+        
         d.visit_notes = d.visit_notes.map(note => {
           note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
           note.dayTime = dayjs(note.time).format('h:mm A')
@@ -805,6 +807,11 @@ export default {
     },
     updateProgress() {
       this.progressValue = (this.appointments.length / this.totalRecords) * 100;
+    },
+    stripHtml(html) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      return tempDiv.textContent || tempDiv.innerText || "";
     },
     transformData (keys, values) {
       return values.map(row => {

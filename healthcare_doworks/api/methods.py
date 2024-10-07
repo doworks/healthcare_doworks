@@ -10,6 +10,7 @@ from frappe.utils.pdf import get_pdf
 import os
 import base64
 import re
+from collections import defaultdict
 
 # App Resources
 @frappe.whitelist()
@@ -241,11 +242,38 @@ def patient_encounter_records(encounter_id):
 def submit_encounter(encounter):
 	doc = frappe.get_doc('Patient Encounter', encounter)
 	doc.submit()
-	procedures = frappe.get_list('Clinical Procedure', filters={'custom_patient_encounter': encounter})
+	procedures = frappe.get_list('Clinical Procedure', filters={'custom_patient_encounter': encounter}, pluck='name')
 	for procedure in procedures:
 		procedure_doc = frappe.get_doc('Clinical Procedure', procedure)
 		procedure_doc.submit()
 	return doc
+
+
+# Pharmacy Page
+@frappe.whitelist()
+def get_medication_requests():
+	medications = frappe.db.get_list('Medication Request', filters={'status': 'active-Medication Request Status'}, fields=['*'])
+
+	# Group by 'order_group'
+	grouped_data = defaultdict(list)
+
+	for item in medications:
+		item.status_title = item.status.split('-Medication Request Status')[0].capitalize()
+		grouped_data[item['order_group']].append(item)
+
+	output_list = [
+		{
+			"encounter": key,
+			"practitioner_name": value[0]['practitioner_name'],
+			"patient_name": value[0]['patient_name'],
+			"order_date": value[0]['order_date'],
+			"order_time": value[0]['order_time'],
+			"items": value
+		} 
+		for key, value in grouped_data.items()
+	]
+
+	return output_list
 
 @frappe.whitelist()
 def get_print_html(doctype, docname, print_format=None):
@@ -776,15 +804,24 @@ def check_app_permission():
 
 def mark_no_show_appointments():
     # mark appointmens as no-show if the appointment time has passed 15 minutes
+	correction = frappe.db.sql("""
+		SELECT name FROM `tabPatient Appointment`
+		WHERE custom_visit_status = 'No Show'
+		AND CAST(CONCAT(CAST(appointment_date as DATE), ' ', CAST(appointment_time as TIME)) as DATETIME) >= CAST(%(datetime_str)s as DATETIME)
+	""", {'datetime_str': get_datetime_str(add_to_date(get_datetime(), minutes=-15))}, as_dict=True)
+
 	appointments = frappe.db.sql("""
 		SELECT name FROM `tabPatient Appointment`
 		WHERE custom_visit_status = 'Scheduled'
-		AND CAST((CONCAT(CAST(appointment_date as DATE), ' ', CAST(appointment_time as TIME))) as DATETIME) >= CAST(%(datetime_str)s as DATETIME)
+		AND CAST(CONCAT(CAST(appointment_date as DATE), ' ', CAST(appointment_time as TIME)) as DATETIME) <= CAST(%(datetime_str)s as DATETIME)
 	""", {'datetime_str': get_datetime_str(add_to_date(get_datetime(), minutes=-15))}, as_dict=True)
 
 	# Loop through appointments and mark as no-show
 	for appointment in appointments:
 		change_status(appointment.name, 'No Show')
+
+	for appointment in correction:
+		change_status(appointment.name, 'Scheduled')
 
 def on_logout(): 
 	frappe.publish_realtime("session_logout")

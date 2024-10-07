@@ -4,6 +4,9 @@ import datetime
 def patient_update(doc, method=None):
     frappe.publish_realtime("patient_updated", doc)
 
+def medication_request_update(doc, method=None):
+    frappe.publish_realtime("medication_request_updated", doc)
+
 def patient_appointment_inserted(doc, method=None):
     if doc.status == 'Walked In':
         doc.custom_visit_status = 'Arrived'

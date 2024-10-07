@@ -161,6 +161,10 @@ doc_events = {
     'Service Request':{
         "on_update": "healthcare_doworks.api.methods.get_services"
     },
+    'Medication Request':{
+        "on_update": "healthcare_doworks.api.events.medication_request_update",
+        "on_submit": "healthcare_doworks.api.events.medication_request_update"
+    },
 }
 
 # Scheduled Tasks

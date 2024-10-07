@@ -2003,16 +2003,14 @@
           </template>
         </Card>
         <div class="pe-0">
-          <Card class="p-0 mb-3 border-bottom-title" id="attachments" style="overflow: hidden;">
+          <Card class="p-0 mb-3 border-bottom-title h-auto" id="attachments" style="overflow: hidden;">
             <template #title>
               Attachments
               <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain" @click="() => {addAttachmentActive = true}">Add</v-btn>
             </template>
             <template #content>
               <div :class="{'d-none': records.attachments.length > 0}">
-                <v-empty-state
-                  title="No Attachments"
-                  ></v-empty-state>
+                <v-empty-state title="No Attachments"></v-empty-state>
               </div>
               <div class="flex flex-col">
                 <v-list>
@@ -2042,9 +2040,9 @@
                 </v-list>
               </div>
             </template>
-            <template #footer>
+            <!-- <template #footer>
               <a v-if="records.attachments.length > 4" class="float-end" >View All</a>
-            </template>
+            </template> -->
           </Card>
         </div>
       </div> 
