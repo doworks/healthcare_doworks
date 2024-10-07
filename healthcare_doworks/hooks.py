@@ -23,9 +23,25 @@ add_to_apps_screen = [
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/healthcare_doworks/css/healthcare_doworks.css"
-# app_include_js = "/assets/healthcare_doworks/js/healthcare_doworks.js"
-
+app_include_css = [
+    "/assets/healthcare_doworks/css/jquery-ui.min.css",
+    "/assets/healthcare_doworks/css/bootstrap-popover-x.min.css",
+    "/assets/frappe/node_modules/air-datepicker/dist/css/datepicker.min.css"
+]
+app_include_js = [
+	"/assets/healthcare_doworks/js/calendar.js",
+	"/assets/healthcare_doworks/js/lib/imagemapster/jquery.imagemapster.min.js",
+	"/assets/healthcare_doworks/js/lib/p5/p5.min.js",
+	"/assets/healthcare_doworks/js/humanize-duration.js",
+	"/assets/healthcare_doworks/js/jquery-ui.min.js",
+	"/assets/healthcare_doworks/js/bootstrap-popover-x.min.js",
+	"/assets/healthcare_doworks/js/humanize-duration.js",
+	"/assets/healthcare_doworks/js/customscript.js",
+	"/assets/frappe/node_modules/air-datepicker/dist/js/datepicker.min.js",
+	"/assets/frappe/node_modules/air-datepicker/dist/js/i18n/datepicker.en.js"
+	# "/assets/do_health/js/lib/fullcalendar/fullcalendar.min.js"
+	# "/assets/do_health/js/patient_appointment.js"
+]
 # include js, css files in header of web template
 # web_include_css = "/assets/healthcare_doworks/css/healthcare_doworks.css"
 # web_include_js = "/assets/healthcare_doworks/js/healthcare_doworks.js"
@@ -38,13 +54,27 @@ add_to_apps_screen = [
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 
 # include js in page
-# page_js = {"page" : "public/js/file.js"}
+page_js = {"appointment-calendar" : "/assets/frappe/node_modules/air-datepicker/dist/js/datepicker.min.js"}
+page_js = {"appointment-calendar" : "/assets/frappe/node_modules/air-datepicker/dist/js/i18n/datepicker.en.js"}
+page_js = {"appointment-calendar" : "/assets/frappe/js/frappe/views/calendar/calendar.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
+doctype_js = {
+	# "Patient" : "public/js/patient.js",
+	"Patient Appointment" : "public/js/patient_appointment.js",
+	# "Patient Encounter" : "public/js/patient_encounter.js",
+ 	# "Clinical Procedure" : "public/js/clinical_procedure.js"
+}
+doctype_list_js = {
+	"Patient Appointment" : "public/js/patient_appointment_list.js"
+}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
-# doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
+doctype_calendar_js = {
+	"Patient Appointment" : [
+		"public/js/patient_appointment_calendar.js",
+		"/assets/healthcare_doworks/js/humanize-duration.js"
+	]
+}
 
 # Svg Icons
 # ------------------
@@ -269,6 +299,11 @@ scheduler_events = {
 # default_log_clearing_doctypes = {
 #       "Logging DocType Name": 30  # days to retain logs
 # }
+
+fixtures = [
+    {"dt": "Custom Field", "filters": {"module": "Healthcare Doworks"}},
+	{"dt": "Property Setter", "filters": {"module": "Healthcare Doworks"}},
+]
 
 on_logout = "healthcare_doworks.api.methods.on_logout"
 

@@ -11,6 +11,7 @@ import os
 import base64
 import re
 from collections import defaultdict
+import json
 
 # App Resources
 @frappe.whitelist()
@@ -825,3 +826,103 @@ def mark_no_show_appointments():
 
 def on_logout(): 
 	frappe.publish_realtime("session_logout")
+ 
+@frappe.whitelist()
+def get_events_full_calendar(start, end, filters=None,field_map=None):
+	field_map = json.loads(field_map)
+	patient_appointment = frappe.qb.DocType('Patient Appointment')
+	# healthcare_practitioner = frappe.qb.DocType('Healthcare Practitioner')
+	# patient = frappe.qb.DocType('Patient')
+	# from frappe.query_builder.functions import TimestampAdd, Concat
+
+	# appointments = (
+	# 	frappe.qb.from_(patient_appointment)
+	# 	.left_join(healthcare_practitioner).on(patient_appointment.practitioner == healthcare_practitioner.name)
+	# 	.left_join(patient).on(patient_appointment.patient == patient.name)
+	# 	.select(
+	# 		patient_appointment.name,
+	# 		(patient_appointment.practitioner).as_('resource'),
+	# 		patient_appointment.creation,
+	# 		patient_appointment.patient_name,
+	# 		patient_appointment.owner,
+	# 		patient_appointment.modified_by,
+	# 		patient_appointment.status,
+	# 		patient_appointment.notes,
+	# 		patient_appointment.modified,
+	# 		patient_appointment.patient_name.as_('customer'),
+	# 		Concat(patient_appointment.appointment_date, ' ', patient_appointment.appointment_time).as_('starts_at'),
+	# 		Concat(patient_appointment.appointment_date, ' ', TimestampAdd('minute', patient_appointment.duration, patient_appointment.appointment_time)).as_('ends_at'),
+	# 		"null as 'room'",
+	# 		"0 as 'allDay'",
+	# 		"null as 'procedure_name'",
+	# 		healthcare_practitioner.background_color.as_('bgc'),
+	# 		healthcare_practitioner.text_color.as_('font'),
+	# 		patient.image,
+	# 		patient.file_number,
+	# 		patient.patient_name.as_('full_name'),
+	# 		patient.mobile,
+	# 		patient.dob.as_('birthdate'),
+	# 		patient.cpr,
+	# 		"(SELECT atl.`time` FROM `tabAppointment Time Logs` atl WHERE atl.status = 'Arrived' AND atl.parent = `tabPatient Appointment`.name ORDER BY atl.`time` DESC LIMIT 1) as 'arrival_time'",
+	# 	)
+	# 	.where(
+	# 		(patient_appointment.appointment_date >= start)
+	# 		& (patient_appointment.appointment_date <= end)
+	# 	)
+	# )
+ 
+	# if field_map['showcancelled']:
+	# 	appointments = appointments.where(patient_appointment.status != 'Cancelled')
+ 
+	sqlcommand = """SELECT
+	appo.name 						as name,
+	appo.practitioner 				as resource,
+	appo.creation 					as creation,
+	appo.patient_name 				as patient_name,
+	appo.owner 						as owner,
+	appo.modified_by 				as modified_by,
+	appo.custom_visit_status 		as status,
+	appo.notes 						as note,
+	(SELECT atl.`time` FROM `tabAppointment Time Logs` atl WHERE atl.status = 'Arrived' AND atl.parent = appo.name ORDER BY atl.`time` DESC LIMIT 1) as arrival_time,
+	appo.modified 					as modified,
+	appo.patient_name 				as customer,
+	appo.appointment_datetime 		as starts_at,	
+	TIMESTAMPADD(minute,appo.duration,appo.appointment_datetime) 	as ends_at,
+	null 							as room,
+	0	 							as allDay,
+	null 							as procedure_name,
+	prov.custom_background_color 	as background_color,
+	prov.custom_text_color 			as text_color,
+	pat.image 						as image,
+	pat.custom_file_number 			as file_number,
+	pat.patient_name 				as full_name,
+	pat.mobile 						as mobile,
+	pat.dob 						as birthdate,
+	pat.custom_cpr 					as cpr
+	from `tabPatient Appointment` 	as appo
+	LEFT JOIN `tabPatient` 	as pat ON pat.name = appo.patient
+	LEFT JOIN `tabHealthcare Practitioner` as prov ON prov.name = appo.practitioner
+	WHERE appo.appointment_datetime >= "{start}" and appo.appointment_datetime < "{end}"  {condition}
+	ORDER BY prov.custom_column_order
+	"""
+	condition = ''
+	if field_map['showcancelled']:
+		condition = ' and ifnull(appo.status, "") != "Cancelled" '
+	sqlcommand = sqlcommand.format(start = start , end = end , condition=condition)
+	data = frappe.db.sql(sqlcommand,as_dict=True, update={"allDay": 0})
+	for id,d in enumerate(data):
+		if d['status'] in[ "Done", "Completed"]:
+			data[id]['background_color'] = '#008000'	## this is done color green
+			# data[id]['bgc'] = '#177245'
+	return data
+
+@frappe.whitelist()
+def get_waiting_list():
+	# Get the waiting list
+	return frappe.db.sql("""
+		SELECT pa.name, pa.patient_name, pa.patient, pa.practitioner, at.time as arrival_time, pa.appointment_time, pa.appointment_date
+		FROM `tabPatient Appointment` pa
+		LEFT JOIN `tabAppointment Time Logs` at ON pa.name = at.parent AND at.status = 'Arrived'
+		WHERE pa.custom_visit_status = 'Arrived' AND pa.appointment_date = CURDATE()
+		ORDER BY at.time DESC
+	""", as_dict=True)
