@@ -1,16 +1,5 @@
 <template>
     <div>
-        <v-alert
-        v-if="alertVisible"
-        position="absolute"
-        location="top center"
-        color="red-lighten-3"
-        icon="$error"
-        style="z-index: 3000; margin-top: 15px"
-        closable
-        >
-            <div v-html="message"></div>
-        </v-alert>
         <v-dialog v-model="dialogVisible" width="auto" scrollable>
             <v-card rounded="lg">
                 <v-card-title class="d-flex justify-space-between align-center">
@@ -21,13 +10,24 @@
                 <DataTable 
                 v-model:selection="selectedSigns" 
                 :metaKeySelection="true"
-                selectionMode="single" 
-                :value="vitalSigns" 
+                selectionMode="multiple" 
+                :value="this.$resources.vitalSigns.data" 
                 dataKey="name" 
                 tableStyle="min-width: 50rem"
                 :rowClass="rowClass"
                 @row-click="openVitalSigns"
                 >
+                    <template #empty>
+                        <div class="p-3 flex flex-col">
+                            <h5 class="mb-4 text-center">No Vital Signs</h5>
+                            <v-btn prepend-icon="pi pi-plus" rounded="lg" elevation="1" class="self-center" @click="() => {
+                                this.selectedRow = null
+                                this.vsDialogOpen = true
+                            }">
+                                Add Vital Signs
+                            </v-btn>
+                        </div>
+                    </template>
                     <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
                     <Column field="name" header="Name"></Column>
                     <Column field="patient_name" header="Patient"></Column>
@@ -55,23 +55,30 @@
                 ></v-progress-circular>
             </v-overlay>
         </v-dialog>
-        <vitalSignsDialog :isOpen="vsDialogOpen" @update:isOpen="vsDialogOpen = $event" @show-alert="showAlert" :appointment="appointment" :vitalSigns="selectedSigns"/>
+        <vitalSignsDialog 
+        :isOpen="vsDialogOpen" 
+        @update:isOpen="vsDialogOpen = $event" 
+        @show-alert="(message, type) => {$emit('show-alert', message, type)}" 
+        :appointment="appointment" 
+        :name="selectedRow"
+        />
     </div>
 </template>
 
 <script >
 import dayjs from 'dayjs';
-
+import { ref } from 'vue';
 import { VContainer, VCol, VRow } from 'vuetify/components/VGrid';
 import { VDivider } from 'vuetify/components/VDivider';
 import { VInfiniteScroll } from 'vuetify/components/VInfiniteScroll';
 import { VItemGroup, VItem } from 'vuetify/components/VItemGroup';
 import { VToolbar, VToolbarItems } from 'vuetify/components/VToolbar';
+import { VEmptyState } from 'vuetify/labs/VEmptyState';
 
 export default {
 	inject: ['$call'],
 	components: {
-		VDivider, VContainer, VCol, VRow, VInfiniteScroll, VItemGroup, VItem, VToolbar, VToolbarItems,
+		VDivider, VContainer, VCol, VRow, VInfiniteScroll, VItemGroup, VItem, VToolbar, VToolbarItems, VEmptyState,
 	},
 	props: {
 		isOpen: {
@@ -86,10 +93,30 @@ export default {
             }
         },
 	},
+    resources: {
+		vitalSigns() { return { 
+			type: 'list', 
+			doctype: 'Vital Signs', 
+			fields: ['signs_date', 'signs_time', 'patient_name', 'name', 'appointment', 'modified', 'modified_by', 'patient'], 
+			filters: {'patient': this.appointment.patient},
+			auto: true, 
+			orderBy: 'signs_date desc, signs_time desc',
+			pageLength: 1000,
+			transform(data) {
+				data = data.map(signs => {
+                    signs.signs_date = dayjs(signs.signs_date + ' ' + signs.signs_time);
+                    signs.signs_time = signs.signs_date
+                    return signs
+                })
+                return data
+			},
+		}},
+  	},
 	data() {
 		return {
             lodingOverlay: false,
-            selectedSigns: {},
+            selectedSigns: [],
+            selectedRow: ref(''),
             vitalSigns: [],
             vsDialogOpen: false,
             message: '',
@@ -99,7 +126,7 @@ export default {
                     label: 'Add Vital Signs',
                     icon: 'pi pi-plus',
                     command: () => {
-                        console.log(this.appointment)
+                        this.selectedRow = null
                         this.vsDialogOpen = true
                     }
                 },
@@ -110,6 +137,10 @@ export default {
             ],
 		};
 	},
+    mounted() {
+        this.selectedSigns = []
+        this.selectedRow = ''
+    },
     computed: {
         dialogVisible: {
             get() {
@@ -118,13 +149,6 @@ export default {
             set(value) {
                 this.$emit('update:isOpen', value);
             },
-        },
-    },
-    watch: {
-        appointment(newVal) {
-            if (newVal) {
-                this.fetchVitalSigns()
-            }
         },
     },
 	methods: {
@@ -138,27 +162,12 @@ export default {
         closeDialog() {
             this.updateIsOpen(false);
         },
-        fetchVitalSigns(){
-            this.lodingOverlay = true;
-            this.$call('healthcare_doworks.api.methods.vital_signs_list', {patient: this.appointment.patient_details.id})
-            .then(response => {
-                this.vitalSigns = response.map(signs => {
-                    signs.signs_date = dayjs(signs.signs_date + ' ' + signs.signs_time);
-                    signs.signs_time = signs.signs_date
-                    return signs
-                })
-                this.lodingOverlay = false;
-            }).catch(error => {
-                this.$emit('show-alert', error.message, 'error')
-            });
-        },
-        openVitalSigns(isNew = false) {
-            if(isNew)
-                this.selectedSigns = null
+        openVitalSigns({ data }) {
+            this.selectedRow = data.name
             this.vsDialogOpen = true
         },
         rowClass(data) {
-            return [{ 'bg-primary': data.appointment === this.appointment.name }];
+            return [{ '!bg-ski-100 hover:!bg-ski-200': data.appointment === this.appointment.name }];
         },
 	},
 };

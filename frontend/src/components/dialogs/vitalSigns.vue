@@ -84,7 +84,7 @@
                                 >
                                     <a-input v-model:value="form.bp" disabled/>
                                 </a-form-item>
-                                <a-form-item label="Notes" name="vital_signs_note">
+                                <a-form-item label="Nurse Notes" name="vital_signs_note">
                                     <a-textarea v-model:value="form.vital_signs_note" :rows="4" />
                                 </a-form-item>
                             </v-col>
@@ -178,12 +178,26 @@ export default {
                 name: '',
             }
         },
-        vitalSigns: {
-            default: {
+        name: {
+            type: String,
+            default: '',
+        }
+	},
+    computed: {
+        dialogVisible: {
+            get() {
+                return this.isOpen;
+            },
+            set(value) {
+                this.$emit('update:isOpen', value);
+            },
+        },
+        form() {
+            return reactive({
                 doctype: 'Vital Signs',
-                name: '',
-                patient: '',
-                appointment: '',
+                name: this.name || '',
+                patient: this.appointment?.patient || '',
+                appointment: this.appointment?.name || '',
                 signs_date: dayjs(),
                 signs_time: dayjs(),
                 temperature: '',
@@ -200,40 +214,6 @@ export default {
                 weight: '',
                 bmi: 0,
                 nutrition_note: '',
-            }
-        }
-	},
-    computed: {
-        dialogVisible: {
-            get() {
-                return this.isOpen;
-            },
-            set(value) {
-                this.$emit('update:isOpen', value);
-            },
-        },
-        form() {
-            return reactive({
-                doctype: 'Vital Signs',
-                name: this.vitalSigns.name || '',
-                patient: this.vitalSigns.patient || this.appointment.patient || '',
-                appointment: this.vitalSigns.appointment || this.appointment ? this.appointment.name : '',
-                signs_date: this.vitalSigns.signs_date || dayjs(),
-                signs_time: this.vitalSigns.signs_time || dayjs(),
-                temperature: this.vitalSigns.temperature || '',
-                pulse: this.vitalSigns.pulse || '',
-                respiratory_rate: this.vitalSigns.respiratory_rate || '',
-                tongue: this.vitalSigns.tongue || '',
-                abdomen: this.vitalSigns.abdomen || '',
-                reflexes: this.vitalSigns.reflexes || '',
-                bp_systolic: this.vitalSigns.bp_systolic || '',
-                bp_diastolic: this.vitalSigns.bp_diastolic || '',
-                bp: this.vitalSigns.bp || '',
-                vital_signs_note: this.vitalSigns.vital_signs_note || '',
-                height: this.vitalSigns.height || '',
-                weight: this.vitalSigns.weight || '',
-                bmi: this.vitalSigns.bmi || 0,
-                nutrition_note: this.vitalSigns.nutrition_note || '',
             });
         },
         rules() {
@@ -273,12 +253,52 @@ export default {
             ],
 		};
 	},
+    watch: {
+        appointment: {
+            handler(newValue) {
+                if(newValue){
+                    this.form.appointment = newValue.name
+                    this.form.patient = newValue.patient
+                }
+            }
+        },
+        name: {
+            handler(newValue) {
+                if(newValue){
+                    this.form.name = newValue
+                    this.fetchRecords();
+                }
+            }
+        },
+    },
+    mounted() {
+        this.fetchRecords();
+    },
 	methods: {
         updateIsOpen(value) {
             this.$emit('update:isOpen', value);
         },
         closeDialog() {
             this.updateIsOpen(false);
+        },
+        fetchRecords() {
+            if(this.name){
+                this.$call('frappe.client.get', {doctype: 'Vital Signs', name: this.name})
+                .then(response => {
+                    response.signs_date = dayjs(response.signs_date + ' ' + response.signs_time);
+                    response.signs_time = response.signs_date
+                    for (let key in this.form) {
+                        if(response.hasOwnProperty(key)) {
+                            this.form[key] = response[key];
+                        }
+                    }
+                })
+                .catch(error => {
+                    this.appointmentsLoading = false;
+                    this.showAlert(error.message, 'error')
+                    console.error('Error fetching records:', error);
+                });
+            }
         },
         setBloodPressure() {
             if(this.form.bp_diastolic && this.form.bp_systolic)

@@ -48,7 +48,7 @@
       removableSort 
       :rowsPerPageOptions="[20, 100, 500, 2500]"
       v-model:filters="filters"
-      :globalFilterFields="['custom_cpr', 'patient_name', 'mobile', 'email', 'uid']"
+      :globalFilterFields="['custom_cpr', 'patient_name', 'mobile', 'email', 'custom_file_number']"
       selectionMode="single"
       @row-click="openRow"
       v-model:selection="selectedRows"
@@ -58,7 +58,7 @@
         <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
         <Column header="Full Name" field="patient_name" sortable></Column>
         <Column header="CPR" field="custom_cpr" sortable></Column>
-        <Column header="File Number" field="uid" sortable></Column>
+        <Column header="File Number" field="custom_file_number" sortable></Column>
         <Column header="Age" field="age" sortable></Column>
         <Column header="Mobile" field="mobile" sortable></Column>
         <Column header="Email" field="email" sortable></Column>
@@ -121,7 +121,7 @@ export default {
       this.loadingOverlay = true;
       this.$call('frappe.client.get_list', {
         doctype: 'Patient', 
-        fields: ['name', 'patient_name', 'custom_cpr', 'sex', 'dob', 'mobile', 'email', 'uid'],
+        fields: ['name', 'patient_name', 'custom_cpr', 'sex', 'dob', 'mobile', 'email', 'custom_file_number'],
         order_by: 'name',
         limit_page_length: null
       }).then(response => {

@@ -5,7 +5,7 @@
             <div class="box-body">
                 <div class="table-image appoint-doctor d-flex" v-if="patient">
                     <a 
-                    :href="$router.resolve({ name: 'patient', params: { patientId: data.patient_details.id } }).href" 
+                    :href="$router.resolve({ name: 'patient', params: { patientId: patient.patient_details.id } }).href" 
                     target="_blank" 
                     style="color: unset; text-decoration: unset"
                     >

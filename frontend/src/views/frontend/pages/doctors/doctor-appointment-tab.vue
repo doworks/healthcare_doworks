@@ -360,7 +360,6 @@
 								<img :src="bellImage" width="30px" class="me-1"/>
 							</v-badge>
 						</v-btn>
-						<!-- <i v-else class="mdi mdi-bell-outline" style="font-size: 25px; padding-left: 6px;"></i> -->
 						<v-btn v-else
 						icon="mdi mdi-bell-plus-outline" 
 						variant="text" 
@@ -388,18 +387,6 @@
 				>
 				</v-btn>
 				<div v-if="selectedRow.visit_notes.length > 0">
-					<!-- <span class="fw-semibold d-block mb-2">Visit Notes</span>
-					<ul class="list-none p-0 m-0 flex flex-column">
-						<li v-for="(note, index) in selectedRow.visit_notes" :key="index" class="flex align-items-center gap-2 mb-3">
-							<div>
-								<a-textarea v-model:value="note" disabled/>
-								<span>{{ note.time }}</span>
-							</div>
-							<div class="flex align-items-center gap-2 text-color-secondary ms-auto text-sm">
-								<span>{{ note.provider }}</span>
-							</div>
-						</li>
-					</ul> -->
 					<DataTable 
 					:value="selectedRow.visit_notes" 
 					size="small"
@@ -528,45 +515,12 @@ export default {
 				};
 			});
 		},
-	},
-	mounted() {
-		setInterval(() => {
-			this.currentTime = dayjs();
-		}, 60000); // Update every n mili seconds
-	},
-	data() {
-		return {
-			bellImage:bellImage,
-			maleImage:maleImage,
-			femaleImage:femaleImage,
-			filters: {
-				global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-				patient_name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
-				'patient_details.cpr': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
-				department: { value: null, matchMode: FilterMatchMode.IN },
-				patient_cpr: { value: null, matchMode: FilterMatchMode.CONTAINS },
-				practitioner: { value: undefined, matchMode: FilterMatchMode.IN },
-				practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN },
-				appointment_time: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
-				appointment_time_moment: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
-				appointment_date: { value: formatedDates, matchMode: FilterMatchMode.IN },
-				service_unit: { value: null, matchMode: FilterMatchMode.EQUALS },
-				status: { value: null, matchMode: FilterMatchMode.EQUALS },
-				'patient_details.mobile': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
-				custom_payment_type: { value: null, matchMode: FilterMatchMode.EQUALS },
-			},
-			statuses: [{label:'Scheduled', value:'Scheduled'}, {label:'Rescheduled', value:'Rescheduled'}, {label:'Walked In', value:'Walked In'}],
-			selectedRow: null,
-			contextItems: [
+		contextItems() {
+			return [
 				...(this.$route.name == 'appointments' ? [{
 					label: 'New Appointment',
 					icon: 'mdi mdi-account-multiple-plus-outline',
 					command: () => this.$emit('appointment-dialog', 'New Appointment', false, this.selectedRow)
-				}] : []),
-				...(this.$route.name == 'appointments' ? [{
-					label: 'Visit Status Log',
-					icon: 'mdi mdi-timetable',
-					command: () => {this.$emit('visit-status-log', this.selectedRow)}
 				}] : []),
 				{
 					label: 'Status',
@@ -580,6 +534,12 @@ export default {
 						...(this.tab !== 'transferred' ? [{label: 'Transferred', command: ({ item }) => this.updateStatus(item)}] : []),
 					]
 				},
+				...(this.$route.name == 'appointments' ? [{
+					label: 'Visit Logs',
+					icon: 'mdi mdi-timetable',
+					disabled: this.selectedRow?.status_log.length == 0,
+					command: () => {this.$emit('visit-status-log', this.selectedRow)}
+				}] : []),
 				{
 					label: 'Add Note',
 					icon: 'mdi mdi-text',
@@ -636,7 +596,118 @@ export default {
 					icon: 'mdi mdi-transit-transfer',
 					command: () => {this.$emit('transfer-practitioner-dialog', this.selectedRow)}
 				},
-      		],
+      		]		
+		},
+	},
+	mounted() {
+		setInterval(() => {
+			this.currentTime = dayjs();
+		}, 60000); // Update every n mili seconds
+	},
+	data() {
+		return {
+			bellImage:bellImage,
+			maleImage:maleImage,
+			femaleImage:femaleImage,
+			filters: {
+				global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+				patient_name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+				'patient_details.cpr': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+				department: { value: null, matchMode: FilterMatchMode.IN },
+				patient_cpr: { value: null, matchMode: FilterMatchMode.CONTAINS },
+				practitioner: { value: undefined, matchMode: FilterMatchMode.IN },
+				practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN },
+				appointment_time: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+				appointment_time_moment: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+				appointment_date: { value: formatedDates, matchMode: FilterMatchMode.IN },
+				service_unit: { value: null, matchMode: FilterMatchMode.EQUALS },
+				status: { value: null, matchMode: FilterMatchMode.EQUALS },
+				'patient_details.mobile': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
+				custom_payment_type: { value: null, matchMode: FilterMatchMode.EQUALS },
+			},
+			statuses: [{label:'Scheduled', value:'Scheduled'}, {label:'Rescheduled', value:'Rescheduled'}, {label:'Walked In', value:'Walked In'}],
+			selectedRow: null,
+			// contextItems: [
+			// 	...(this.$route.name == 'appointments' ? [{
+			// 		label: 'New Appointment',
+			// 		icon: 'mdi mdi-account-multiple-plus-outline',
+			// 		command: () => this.$emit('appointment-dialog', 'New Appointment', false, this.selectedRow)
+			// 	}] : []),
+			// 	...(this.$route.name == 'appointments' ? [{
+			// 		label: 'Visit Logs',
+			// 		icon: 'mdi mdi-timetable',
+			// 		disabled: this.selectedRow?.status_log.length == 0,
+			// 		command: () => {this.$emit('visit-status-log', this.selectedRow)}
+			// 	}] : []),
+			// 	{
+			// 		label: 'Status',
+			// 		icon: 'mdi mdi-clipboard-edit-outline',
+			// 		items: [
+			// 			...(this.tab !== 'scheduled' ? [{label: 'Scheduled', command: ({ item }) => this.updateStatus(item)}] : []),
+			// 			...(this.tab !== 'arrived' ? [{label: 'Arrived', command: ({ item }) => this.updateStatus(item)}] : []),
+			// 			...(this.tab !== 'ready' ? [{label: 'Ready', command: ({ item }) => this.updateStatus(item)}] : []),
+			// 			...(this.tab !== 'in room' ? [{label: 'In Room', command: ({ item }) => this.updateStatus(item)}] : []),
+			// 			...(this.tab !== 'completed' ? [{label: 'Completed', command: ({ item }) => this.updateStatus(item)}] : []),
+			// 			...(this.tab !== 'transferred' ? [{label: 'Transferred', command: ({ item }) => this.updateStatus(item)}] : []),
+			// 		]
+			// 	},
+			// 	{
+			// 		label: 'Add Note',
+			// 		icon: 'mdi mdi-text',
+			// 		command: () => {this.$emit('appointment-note-dialog', this.selectedRow)}
+			// 	},
+			// 	{separator: true},
+			// 	...(this.$route.name == 'appointments' ? [{
+			// 		label: 'Reschedule Appointment',
+			// 		icon: 'mdi mdi-clock-outline',
+			// 		command: () => {this.$emit('appointment-dialog', 'Reschedule Appointment', false, this.selectedRow)}
+			// 	}] : []),
+			// 	...(this.$route.name == 'appointments' ? [{
+			// 		label: 'Billing Items',
+			// 		icon: 'mdi mdi-invoice-text-outline',
+			// 		command: () => {this.$emit('appointment-invoice-dialog', this.selectedRow)}
+			// 	}] : []),
+			// 	{
+			// 		label: 'ID Card Reading',
+			// 		icon: 'mdi mdi-card-account-details-outline',
+			// 		command: () => {this.$emit('read-card', this.selectedRow)}
+			// 	},
+			// 	{
+			// 		label: 'Vital Signs',
+			// 		icon: 'mdi mdi-pulse',
+			// 		command: () => {this.$emit('vital-sign-dialog', this.selectedRow)}
+			// 	},
+			// 	...(this.$route.name == 'nurse-dashboard' ? [{
+			// 		label: 'Medical History',
+			// 		icon: 'mdi mdi-medical-bag',
+			// 		command: () => this.$emit('medical-history-dialog', this.selectedRow)
+			// 	}] : []),
+			// 	{
+			// 		label: 'Update Room',
+			// 		icon: 'mdi mdi-door-open',
+			// 		command: () => {this.$emit('service-unit-dialog', this.selectedRow)}
+			// 	},
+			// 	...(this.$route.name == 'appointments' ? [{
+			// 		label: 'Update Payment Type',
+			// 		icon: 'pi pi-wallet',
+			// 		command: () => {this.$emit('payment-type-dialog', this.selectedRow)}
+			// 	}] : []),
+			// 	...(this.$myresources.user.roles.some(value => value.role == 'Practitioner') ? [{
+			// 		label: 'Patient Encounter',
+			// 		icon: 'mdi mdi-bandage',
+			// 		command: () => {this.goToEncounter()}
+			// 	}] : []),
+			// 	{
+			// 		label: 'Request a Service',
+			// 		icon: 'mdi mdi-needle',
+			// 		disabled: true
+			// 	},
+			// 	{
+			// 		label: 'Tranfer To Practitioner',
+			// 		icon: 'mdi mdi-transit-transfer',
+			// 		command: () => {this.$emit('transfer-practitioner-dialog', this.selectedRow)}
+			// 	},
+      		// ],
 			colorCache: {},
 			currentTime: dayjs(),
 			

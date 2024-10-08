@@ -154,7 +154,7 @@
                 <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
                 <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
                 <p v-if="records.appointment.department" class="mb-0">Department: <span class="font-weight-bold">{{ records.appointment.department }}</span></p>
-                <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
+                <p v-if="records.appointment.service_unit" class="mb-0">Room: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
                 <h4 class="my-2">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
                 <Tag :severity="records.current_encounter.status == 'Completed' ? 'info' : 'danger'" rounded>
                   <h5 class="m-1">{{ records.current_encounter.status || 'Draft' }}</h5>
@@ -300,7 +300,7 @@
                     <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
                     <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
                     <p v-if="records.appointment.department" class="mb-0">Department: <span class="font-weight-bold">{{ records.appointment.department }}</span></p>
-                    <p v-if="records.appointment.service_unit" class="mb-0">Service Unit: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
+                    <p v-if="records.appointment.service_unit" class="mb-0">Room: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
                     <h4 class="my-2">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
                     <Tag :severity="records.current_encounter.status == 'Completed' ? 'info' : 'danger'" rounded>
                       <h5 class="m-1">{{ records.current_encounter.status || 'Draft' }}</h5>
@@ -471,7 +471,7 @@
                               :filterOption="false"
                               ></a-select>
                             </a-form-item>
-                            <a-form-item label="Service Unit">
+                            <a-form-item label="Room">
                               <a-select
                               :disabled="records.current_encounter.status == 'Completed'"
                               allowClear

@@ -153,7 +153,7 @@
                   target="_blank" 
                   style="color: unset; text-decoration: unset"
                   >
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="flex align-items-center gap-2">
                       <v-avatar>
                         <img
                         class="h-100 w-100"

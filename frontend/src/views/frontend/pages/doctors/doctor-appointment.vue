@@ -127,14 +127,15 @@
             ref="appointmentTabRef"
             @show-alert="showAlert"
             @appointment-dialog="appointmentDialog"
-            @appointment-note-dialog="appointmentNoteDialog"
-            @appointment-invoice-dialog="appointmentInvoiceDialog"
+            @appointment-note-dialog="addAppointmentNoteDialog"
+            @appointment-invoice-dialog="appointmentInvoiceItemsDialog"
             @vital-sign-dialog="vitalSignDialog"
             @service-unit-dialog="serviceUnitDialog"
             @payment-type-dialog="paymentTypeDialog"
             @transfer-practitioner-dialog="transferPractitionerDialog"
             @table-page-change="pageChanged"
             @read-card="readIdCard"
+            @visit-status-log="visitStatusLogDiallog"
             />
           </v-window-item>
         </v-window>
@@ -330,6 +331,22 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="visitStatusLogOpen" width="450">
+      <v-card
+        rounded="lg"
+        width="auto"
+        prepend-icon="mdi mdi-door-open"
+        title="Visit Logs"
+      >
+        <v-card-text>
+          <div class="mt-4"></div>
+          <div v-for="(status, index) in selectedRow.status_log" :key="index" class="flex flex-row justify-between mb-3">
+            <h4 class="m-0">{{ status.status }} :</h4>
+            <h6 class="align-self-center m-0">{{ status.timeFormat }}</h6>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <!-- / Page Dialogs -->
     <v-overlay
       :model-value="lodingOverlay"
@@ -468,6 +485,7 @@ export default {
       transferOpen: false,
       paymentTypeOpen: false,
       appointmentInvoiceOpen: false,
+      visitStatusLogOpen: false,
       lodingOverlay: false,
       slots: {},
 
@@ -594,6 +612,7 @@ export default {
         })
         d.arriveTime = '-'
         d.status_log.forEach(value => {
+          value.timeFormat = dayjs(value.time).format('h:mm a    D/MM/YYYY')
           if(value.status == 'Arrived')
             d.arriveTime = dayjs(value.time)
         })
@@ -723,13 +742,17 @@ export default {
       this.appointmentForm.custom_is_walked_in = false;
 			this.appointmentOpen = true
 		},
-    appointmentNoteDialog(row) {
+    addAppointmentNoteDialog(row) {
       this.selectedRow = row
 			this.appointmentNoteOpen = true;
 		},
-    appointmentInvoiceDialog(row) {
+    appointmentInvoiceItemsDialog(row) {
       this.selectedRow = row
 			this.appointmentInvoiceOpen = true;
+		},
+    visitStatusLogDiallog(row) {
+      this.selectedRow = row
+			this.visitStatusLogOpen = true;
 		},
     vitalSignDialog(row) {
       this.selectedRow = row
@@ -1107,7 +1130,11 @@ export default {
             detail: 'Patient saved',
             life: 3000 // Duration in ms
           });
-          window.open('/patient/' + response.name, '_blank');
+          const url = this.$router.resolve({
+            name: 'patient',
+            params: { patientId: response.name }
+          }).href;
+          window.open(url, '_blank');
         }).catch(error => {
           this.showAlert(error.message, 'error')
           this.showAlert('Please Insert A Card!', 'error')

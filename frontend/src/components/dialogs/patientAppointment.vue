@@ -90,6 +90,7 @@
                     {},
                   )}"
                   :filterOption="false"
+                  :disabled="appointmentForm.type == 'Edit Appointment'"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Appointment Type" name="appointment_type">
@@ -118,9 +119,9 @@
                   :disabled="appointmentForm.type == 'Edit Appointment'"
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
+                <!-- <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
                   <a-input v-model:value="appointmentForm.appointment_for" disabled/>
-                </a-form-item>
+                </a-form-item> -->
                 
                 <a-form-item v-if="appointmentForm.appointment_type" label="Appointment Duration">
                   <a-input-number 
@@ -131,6 +132,9 @@
                   :parser="value => value.replace(/\.\d*/g, '')" 
                   v-model:value="appointmentForm.duration" 
                   />
+                </a-form-item>
+                <a-form-item label="Notes">
+                  <a-textarea v-model:value="appointmentForm.notes" placeholder="Notes" :rows="4" />
                 </a-form-item>
                 <a-checkbox v-model:checked="appointmentForm.custom_confirmed">confirmed?</a-checkbox>
               </v-col>
@@ -190,9 +194,9 @@
                   :filterOption="false"
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Service Unit" 
+                <a-form-item label="Room" 
                 name="service_unit" 
-                v-if="appointmentForm.appointment_for === 'Service Unit' || appointmentForm.custom_is_walked_in" 
+                v-if="appointmentForm.appointment_for === 'Service Unit' || appointmentForm.custom_is_walked_in || freeBooking" 
                 >
                   <a-select
                   v-model:value="appointmentForm.service_unit"
@@ -228,21 +232,35 @@
                 <a-form-item label="Appointment Time" v-if="appointmentForm.type == 'Edit Appointment'">
                   <a-input v-model:value="appointmentForm.appointment_time" disabled/>
                 </a-form-item>
+                <a-form-item name="appointment_time" label="Appointment Time" v-if="freeBooking">
+                  <a-time-picker v-model:value="appointmentForm.appointment_time" use12-hours format="HH:mm" style="z-index: 3000; width: 100%;"/>
+                </a-form-item>
                 <a-checkbox 
-                v-if="appointmentForm.type != 'Edit Appointment'"
-                class="mb-3" 
+                class="mb-3 w-full" 
                 v-model:checked="appointmentForm.custom_is_walked_in" 
                 @change="walkedIn"
+                :disabled="appointmentForm.type == 'Edit Appointment'"
                 >
                   Walked In?
                 </a-checkbox>
-                <a-form-item label="Notes">
-                  <a-textarea v-model:value="appointmentForm.notes" placeholder="Notes" :rows="4" />
-                </a-form-item>
+                <a-checkbox 
+                v-if="appointmentForm.type != 'Edit Appointment'"
+                class="mb-3 w-full" 
+                v-model:checked="freeBooking" 
+                @change="() => {
+                  appointmentForm.custom_is_walked_in = false
+                }"
+                >
+                  Free Booking?
+                </a-checkbox>
               </v-col>
             </v-row>
-            <v-divider v-if="!appointmentForm.custom_is_walked_in && appointmentForm.type != 'Edit Appointment'" class="mt-2 mb-8"></v-divider>
-            <v-row v-if="appointmentForm.type != 'Edit Appointment'">
+            <v-divider 
+            v-if="appointmentForm.type != 'Edit Appointment' && !freeBooking && !appointmentForm.custom_is_walked_in" 
+            class="mt-2 mb-8"
+            >
+            </v-divider>
+            <v-row v-if="appointmentForm.type != 'Edit Appointment' && !freeBooking && !appointmentForm.custom_is_walked_in">
               <div 
               class="text-center mb-0" 
               ref="appointmentSlots" 
@@ -261,7 +279,7 @@
                       <span><b>Practitioner Schedule:  </b> {{ slotInfo.slot_name }}
                         <i v-if="slotInfo.tele_conf && !slotInfo.allow_overlap" class="fa fa-video-camera fa-1x" aria-hidden="true"></i>
                       </span><br/>
-                      <span><b> Service Unit:  </b> {{slotInfo.service_unit}}</span>
+                      <span><b> Room:  </b> {{slotInfo.service_unit}}</span>
                       <br v-if="slotInfo.service_unit_capacity"/>
                       <span v-if="slotInfo.service_unit_capacity"> <b> Maximum Capacity: </b> {{slotInfo.service_unit_capacity}} </span>
                     </div>
@@ -535,10 +553,7 @@ export default {
         patient: [{ required: true, message: 'Please choose a patient!' }],
         practitioner: [{ required: this.appointmentForm.appointment_for === 'Practitioner', message: 'Please choose a practitioner!' }],
         department: [{ required: this.appointmentForm.appointment_for === 'Department', message: 'Please choose a department!' }],
-        service_unit: [{ 
-          required: this.appointmentForm.appointment_for === 'Service Unit' || this.appointmentForm.custom_is_walked_in, 
-          message: 'Please choose a service unit!' 
-        }],
+        service_unit: [{ required: true, message: 'Please choose a room!' }],
         appointment_date: [{ required: true, message: 'Please choose a date!' }],
         appointment_time: [{ required: !this.appointmentForm.custom_is_walked_in, message: 'Please choose a time!' }],
         procedure_templates: [{ 
@@ -561,6 +576,7 @@ export default {
 		return {
       lodingOverlay: false,
       newPatientOpen: false,
+      freeBooking: false,
       searchTimeout: null,
       patientSearch: '',
       categoryOptions: [
@@ -608,9 +624,16 @@ export default {
           form.appointment_time = dayjs().format('HH:mm')
           form.status = 'Walked In'
         }
+        if(this.freeBooking){
+          form.appointment_time = form.appointment_time.format('HH:mm')
+        }
+        let children = {custom_procedure_templates: form.procedure_templates.filter(value => !value.name).map(value => {
+          if(value.template)
+            return {template: value.template}
+          return {template: value}
+        })}
         if(form.type === 'New Appointment'){
           delete form['name'];
-          let children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value.template}))}
           this.$call('healthcare_doworks.api.methods.new_doc', {form, children})
           .then(response => {
             this.$toast.add({
@@ -627,11 +650,6 @@ export default {
         }
         else if(form.type === 'Edit Appointment'){
           this.lodingOverlay = true;
-          let children = {custom_procedure_templates: form.procedure_templates.filter(value => !value.name).map(value => {
-            if(value.template)
-              return {template: value.template}
-            return {template: value}
-          })}
           this.$call('healthcare_doworks.api.methods.edit_doc', {form, children})
           .then(response => {
             this.$toast.add({
@@ -647,7 +665,7 @@ export default {
           });
         }
         else if(form.type === 'Reschedule Appointment'){
-          let children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value.template}))}
+          children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value.template}))}
           this.$call('healthcare_doworks.api.methods.reschedule_appointment', {form, children})
           .then(response => {
             this.$toast.add({
@@ -698,6 +716,7 @@ export default {
       return current && current < dayjs().endOf('day').subtract(1, 'day');
     },
     walkedIn() {
+      this.freeBooking = false
       this.appointmentForm.appointment_date = dayjs()
     },
     patientFilterOption(input, option) {

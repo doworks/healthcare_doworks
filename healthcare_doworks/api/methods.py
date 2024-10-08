@@ -88,7 +88,7 @@ def reschedule_appointment(form, children={}):
 	form['name'] = ''
 	new_doc = frappe.get_doc(form)
 	new_doc.status = 'Rescheduled'
-
+	
 	if children:
 		for key, items in children.items():
 			for item in items:
@@ -136,6 +136,7 @@ def patient_encounter_name(appointment_id):
 			new_encounter.medical_department = appointment.department
 			new_encounter.appointment_type = appointment.appointment_type
 			new_encounter.custom_appointment_category = appointment.custom_appointment_category
+			new_encounter.custom_encounter_state = appointment.custom_appointment_category
 			new_encounter.patient = patient.name
 			new_encounter.patient_name = patient.patient_name
 			new_encounter.patient_sex = patient.sex
@@ -805,12 +806,6 @@ def check_app_permission():
 
 def mark_no_show_appointments():
     # mark appointmens as no-show if the appointment time has passed 15 minutes
-	correction = frappe.db.sql("""
-		SELECT name FROM `tabPatient Appointment`
-		WHERE custom_visit_status = 'No Show'
-		AND CAST(CONCAT(CAST(appointment_date as DATE), ' ', CAST(appointment_time as TIME)) as DATETIME) >= CAST(%(datetime_str)s as DATETIME)
-	""", {'datetime_str': get_datetime_str(add_to_date(get_datetime(), minutes=-15))}, as_dict=True)
-
 	appointments = frappe.db.sql("""
 		SELECT name FROM `tabPatient Appointment`
 		WHERE custom_visit_status = 'Scheduled'
@@ -820,9 +815,6 @@ def mark_no_show_appointments():
 	# Loop through appointments and mark as no-show
 	for appointment in appointments:
 		change_status(appointment.name, 'No Show')
-
-	for appointment in correction:
-		change_status(appointment.name, 'Scheduled')
 
 def on_logout(): 
 	frappe.publish_realtime("session_logout")
