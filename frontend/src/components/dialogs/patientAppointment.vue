@@ -1,5 +1,31 @@
 <template>
   <v-dialog v-model="dialogVisible" width="auto" scrollable>
+    <OverlayPanel ref="popover" :dismissable="false" :baseZIndex="2000">
+      <v-card min-width="300" >
+        <ListView
+        class="max-h-[250px]"
+        :columns="[
+          {label: 'Practitioner', key: 'practitioner_name'},
+          {label: 'Date', key: 'appointment_date'},
+          {label: 'Time', key: 'appointment_time'},
+          {label: 'Visit Status', key: 'custom_visit_status'},
+          {label: 'Category', key: 'custom_appointment_category'},
+          {label: 'Procedures', key: 'procedure_templates', getLabel: ({ row }) => row.procedure_templates.templates},
+        ]"
+        :rows="pastAppointments"
+        :options="{
+          selectable: true,
+          showTooltip: true,
+          resizeColumn: true,
+          emptyState: {
+            title: 'No appointment',
+            description: 'This patient has no past appointments',
+          },
+        }"
+        row-key="name"
+        />
+      </v-card>
+    </OverlayPanel>
     <v-card rounded="lg">
       <a-form layout="vertical" :model="appointmentForm" :rules="rulesRef">
         <v-card-title class="d-flex justify-space-between align-center">
@@ -13,9 +39,10 @@
             <v-row>
               <v-col cols="12" md="6">
                 <a-form-item label="Patient" name="patient">
-                  <a-input-group class="w-full" style="display: flex" compact>
+                  <a-input-group class="w-full max-w-full" style="display: flex" compact>
                     <a-select
                     class="w-full"
+                    ref="patientRef"
                     v-model:value="appointmentForm.patient_name"
                     :options="$resources.patients.data?.options"
                     :fieldNames="{label: 'patient_name', value: 'name'}"
@@ -26,6 +53,7 @@
                       appointmentForm.patient_sex = option.sex;
                       appointmentForm.patient_mobile = option.mobile
                       appointmentForm.patient_age = calculateAge(option.dob)
+                      getPastAppointments(option.name)
                     }"
                     show-search
                     :loading="$resources.patients.list.loading"
@@ -37,6 +65,8 @@
                       [['patient_name', 'like', `%${value}%`], ['mobile', 'like', `%${value}%`], ['custom_cpr', 'like', `%${value}%`]]
                     )}"
                     :filterOption="false"
+                    @mouseenter="showPopover" 
+                    @mouseleave="hidePopover"
                     >
                       <template #option="{ patient_name, mobile, custom_cpr }">
                         <div class="flex flex-col">
@@ -46,8 +76,10 @@
                         </div>
                       </template>
                     </a-select>
-                    <a-button type="primary" @click="newPatientOpen = true"><i class="mdi mdi-plus" /></a-button>
+                    <a-button ref="addPatientRef" type="primary" @click="newPatientOpen = true"><i class="mdi mdi-plus" /></a-button>
                   </a-input-group>
+
+                                      
                 </a-form-item>
                 <a-form-item label="Patient Mobile" v-if="appointmentForm.patient">
                   <a-input v-model:value="appointmentForm.patient_mobile" disabled/>
@@ -369,14 +401,17 @@ import { ref } from 'vue'
 import dayjs from 'dayjs';
 import { Form } from 'ant-design-vue';
 import { reactive } from 'vue';
+import { ListView } from 'frappe-ui'
 
 import { VContainer, VCol, VRow } from 'vuetify/components/VGrid';
 import { VDivider } from 'vuetify/components/VDivider';
 import { VItemGroup, VItem } from 'vuetify/components/VItemGroup';
+import { VMenu } from 'vuetify/components/VMenu'
+import { VList, VListItem, VListItemTitle } from 'vuetify/components/VList'
 
 export default {
 	inject: ['$call'],
-	components: {VDivider, VContainer, VCol, VRow, VItemGroup, VItem},
+	components: {ListView, VDivider, VContainer, VCol, VRow, VItemGroup, VItem, VMenu, VList, VListItem, VListItemTitle},
 	props: {
 		isOpen: {
       type: Boolean,
@@ -579,6 +614,7 @@ export default {
       freeBooking: false,
       searchTimeout: null,
       patientSearch: '',
+      pastAppointments: [],
       categoryOptions: [
         {label: 'First Time', value: 'First Time'}, 
         {label: 'Follow-up', value: 'Follow-up'}, 
@@ -613,6 +649,14 @@ export default {
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
+    },
+    getPastAppointments(patient) {
+      this.$call('healthcare_doworks.api.methods.get_past_appointments', {patient})
+      .then(response => {
+        this.pastAppointments = response
+      }).catch(error => {
+        this.$emit('show-alert', error.message, 'error')
+      });
     },
     onSubmit() {
       const { validate } = Form.useForm(this.appointmentForm, this.rulesRef);
@@ -689,6 +733,13 @@ export default {
       this.appointmentForm.appointment_time = time;
       this.appointmentForm.service_unit = service_unit;
       toggle();
+    },
+    showPopover(event) {
+      if(this.appointmentForm.patient)
+        this.$refs.popover.toggle(event); // Show the popover
+    },
+    hidePopover() {
+      this.$refs.popover.hide(); // Hide the popover
     },
     setPaymentDetails() {
       this.$call('healthcare.healthcare.utils.get_appointment_billing_item_and_rate', {doc: this.appointmentForm}).then(data => {

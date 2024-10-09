@@ -96,8 +96,6 @@
         @medical-history-dialog="medicalHistoryDialog"
         @table-page-change="pageChanged"
         @service-unit-dialog="serviceUnitDialog"
-        @payment-type-dialog="paymentTypeDialog"
-        @transfer-practitioner-dialog="transferPractitionerDialog"
         @appointment-invoice-dialog="appointmentInvoiceDialog"
         />
         </v-window-item>
@@ -734,7 +732,7 @@ export default {
         return date
       }).map((d) => {
         d.notes = this.stripHtml(d.notes)
-        
+
         d.visit_notes = d.visit_notes.map(note => {
           note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
           note.dayTime = dayjs(note.time).format('h:mm A')

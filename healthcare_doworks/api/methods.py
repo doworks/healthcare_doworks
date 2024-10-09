@@ -72,6 +72,43 @@ def fetch_patient_appointments(filters=None, start=0, limit=50):
 	return dic
 
 @frappe.whitelist()
+def check_availability(patient):
+	appointments = frappe.get_list(
+		'Patient Appointment',
+		filters={'patient': patient},
+		fields=[
+			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
+			'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner', 'appointment_datetime',
+			'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
+			'custom_payment_type', 'patient_age', 'patient', 'custom_confirmed', 'custom_customer'
+		],
+		order_by='appointment_datetime desc',
+		page_length=30
+	)
+	for appointment in appointments:
+		appointment = get_appointment_details(appointment)
+	return appointments
+
+@frappe.whitelist()
+def get_past_appointments(patient):
+	appointments = frappe.get_list(
+		'Patient Appointment',
+		filters={'patient': patient},
+		fields=[
+			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
+			'practitioner_name', 'duration', 'appointment_date', 'appointment_time'
+		],
+		order_by='appointment_datetime desc',
+		page_length=10
+	)
+	for appointment in appointments:
+		appointment.procedure_templates = frappe.get_all('Procedure Template Multi-select',
+			filters={'parent': appointment.name},
+			fields=['name', 'template']
+		)
+	return appointments
+
+@frappe.whitelist()
 def fetch_nurse_records():
 	return {
 		'appointments': get_appointments(),
@@ -709,7 +746,8 @@ def get_appointment_details(appointment):
 		'gender': patient_details.sex,
 		'age': appointment['patient_age'],
 		'cpr': patient_details.custom_cpr,
-		'date_of_birth': patient_details.dob
+		'date_of_birth': patient_details.dob,
+		'file_number': patient_details.custom_file_number
 	}
 
 	# Get latest vital signs for the patient

@@ -86,12 +86,19 @@
             </a-select>
           </div>
           <div class="flex flex-col" style="width: 17rem">
-            <a-input v-model:value="searchValue" placeholder="Search" size="large">
+            <a-input v-model:value="searchValue" placeholder="Filters" size="large">
               <template #prefix>
                 <v-icon icon="mdi mdi-magnify" color="grey"></v-icon>
               </template>
             </a-input>
           </div>
+          <v-btn elevation="1" @click="() => {
+            checkAvailabilityPatient = ''
+            checkAvailabilityAppointments = []
+            checkAvailabilityOpen = true
+          }">
+            Check Availability
+          </v-btn>
         </div>
         <div class="ms-xxl-auto order-1 order-xxl-2 w-fit">
           <Clock/>
@@ -331,6 +338,118 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="checkAvailabilityOpen" min-width="650" width="auto">
+      <v-card
+        rounded="lg"
+        width="auto"
+        prepend-icon="mdi mdi-door-open"
+        title="Chech Availability"
+      >
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="12" md="6">
+                <a-select
+                  class="w-full"
+                  ref="patientRef"
+                  v-model:value="checkAvailabilityPatient"
+                  :options="$resources.patients.data?.options"
+                  :fieldNames="{label: 'patient_name', value: 'name'}"
+                  show-search
+                  :loading="$resources.patients.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.patients, 
+                    {status: 'Active'}, 
+                    {status: 'Active'},
+                    [['patient_name', 'like', `%${value}%`], ['mobile', 'like', `%${value}%`], ['custom_cpr', 'like', `%${value}%`]]
+                  )}"
+                  @change="(value, option) => {
+                    checkAvailabilityDialog(option.name)
+                  }"
+                  :filterOption="false"
+                  >
+                    <template #option="{ patient_name, mobile, custom_cpr }">
+                      <div class="flex flex-col">
+                        <span v-if="patient_name" class="ms-2"><strong>Name:</strong> {{ patient_name }}</span>
+                        <span v-if="custom_cpr" class="ms-2 text-xs"><strong>CPR:</strong> {{ custom_cpr }}</span>
+                        <span v-if="mobile" class="ms-2 text-xs"><strong>Mobile:</strong> {{ mobile }}</span>
+                      </div>
+                    </template>
+                  </a-select>
+              </v-col>
+            </v-row>
+            <v-row v-if="checkAvailabilityPatient">
+              <v-col cols="12">
+                <DataTable 
+                :value="checkAvailabilityAppointments" 
+                selectionMode="single" 
+                :metaKeySelection="true" 
+                dataKey="id" 
+                sortField="appointment_datetime"
+                @row-click="({ data }) => {appointmentDialog('Edit Appointment', false, data)}"
+                :loading="checkAvailabilityLoading"
+                >
+                  <template #empty><v-empty-state title="No available appoiontments for this patient"></v-empty-state></template>
+                  <Column header="Time" field="appointment_time">
+                    <template #body="{ data }">
+                      <div @click="() => {$emit('appointment-dialog', 'Edit Appointment', false, data)}">
+                        <div class="text-center">
+                          {{ data.appointment_date_moment }}
+                        </div>
+                        <div class="text-center">
+                          {{ data.appointment_time_moment }}
+                        </div>
+                      </div>
+                    </template>
+                  </Column>
+                  <Column header="Confirmed?" field="custom_confirmed">
+                    <template #body="{ data }">
+                      <div class="text-center">
+                        <i v-if="data.custom_confirmed" class="mdi mdi-check"/>
+                        <i v-else class="mdi mdi-close"/>
+                      </div>
+                    </template>
+                  </Column>
+                  <Column field="appointment_datetime" hidden></Column>
+                  <Column header="Status" field="status"></Column>
+                  <Column header="Practitioner" field="practitioner_name">
+                    <template #body="{ data }">
+                      <div class="flex align-items-center gap-2" v-if="data.practitioner_name">
+                        <v-avatar v-if="data.practitioner_image">
+                          <img
+                          class="h-100 w-100"
+                          :src="data.practitioner_image"
+                          />
+                        </v-avatar>
+                        <span>{{ data.practitioner_name }}</span>
+                      </div>
+                    </template>
+                  </Column>
+                  <Column header="Procedures" field="procedure_templates">
+                    <template #body="{ data }">
+                      <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
+                    </template>
+                  </Column>
+                  <Column header="Room" field="service_unit"></Column>
+                </DataTable>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+    <!-- / Page Dialogs -->
+    <v-overlay
+      :model-value="lodingOverlay"
+      class="align-center justify-center"
+    >
+      <v-progress-circular
+        color="primary"
+        size="64"
+        indeterminate
+      ></v-progress-circular>
+    </v-overlay>
     <v-dialog v-model="visitStatusLogOpen" width="450">
       <v-card
         rounded="lg"
@@ -372,13 +491,16 @@ import { VIcon } from 'vuetify/components/VIcon';
 import { VToolbar, VToolbarItems } from 'vuetify/components/VToolbar';
 import { VBtnToggle } from 'vuetify/components/VBtnToggle';
 import { VProgressLinear } from 'vuetify/components/VProgressLinear';
+import { VAvatar } from 'vuetify/components/VAvatar';
+import { VChip } from 'vuetify/components/VChip';
+import { VEmptyState } from 'vuetify/labs/VEmptyState';
 
 import AppointmentTab from './doctor-appointment-tab.vue'
 
 export default {
   inject: ['$socket', '$call'],
   components: {
-    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear,
+    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear, VAvatar, VChip, VEmptyState,
   },
   resources: {
     customers() { return { 
@@ -467,6 +589,26 @@ export default {
         return data
       }
     }},
+    patients() { return { 
+      type: 'list', 
+      doctype: 'Patient', 
+      fields: [
+        'sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 
+        'inpatient_record', 'inpatient_status', 'custom_default_payment_type',
+      ], 
+      filters: {status: 'Active'},
+      limit_start: 0,
+      pageLength: 10, 
+      url: 'frappe.desk.reportview.get', 
+      auto: true, 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
   },
   data() {
     return {
@@ -486,8 +628,12 @@ export default {
       paymentTypeOpen: false,
       appointmentInvoiceOpen: false,
       visitStatusLogOpen: false,
+      checkAvailabilityOpen: false,
       lodingOverlay: false,
       slots: {},
+      checkAvailabilityAppointments: [],
+      checkAvailabilityPatient: '',
+      checkAvailabilityLoading: false,
 
       alertMessage: '',
       alertType: '', // 'success' or 'error'
@@ -734,8 +880,9 @@ export default {
         this.appointmentForm.notes = row.notes;
         this.appointmentForm.appointment_date = dayjs(row.appointment_date)
         this.appointmentForm.appointment_time = row.appointment_time;
-        this.showSlots()
 			}
+      if(formType == 'Reschedule Appointment')
+        this.showSlots()
       this.appointmentForm.doctype = 'Patient Appointment';
       // this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
 			this.appointmentForm.type = formType
@@ -769,6 +916,17 @@ export default {
       this.appointmentForm.service_unit = row.service_unit;
 			this.serviceUnitOpen = true
 		},
+    checkAvailabilityDialog() {
+      this.checkAvailabilityLoading = true
+      this.$call('healthcare_doworks.api.methods.check_availability', { patient: this.checkAvailabilityPatient })
+      .then((response) => {
+        this.checkAvailabilityAppointments = this.adjustAppointments(response)
+        this.checkAvailabilityLoading = false
+      }).catch(error => {
+        this.checkAvailabilityLoading = false
+        this.showAlert(error.message, 'error')
+      });
+    },
     paymentTypeDialog(row) {
       this.appointmentForm.name = row.name;
       this.appointmentForm.custom_payment_type = row.custom_payment_type;
@@ -1153,7 +1311,7 @@ export default {
         return obj;
       });
     },
-    handleSearch(query, resource, filters, initialFilters) {
+    handleSearch(query, resource, filters, initialFilters, orFilters) {
       // Clear the previous timeout to avoid spamming requests
       clearTimeout(this.searchTimeout);
 
@@ -1161,13 +1319,13 @@ export default {
       this.searchTimeout = setTimeout(() => {
         if (query) {
           // Update list resource options to fetch matching records from server
-          resource.update({filters});
+          resource.update({filters, orFilters});
 
           // Fetch the updated results
           resource.reload();
         } else {
           // If no search query, load initial records
-          resource.update({filters: initialFilters});
+          resource.update({filters: initialFilters, orFilters});
           resource.reload();
         }
       }, 300);  // Debounce delay of 300ms

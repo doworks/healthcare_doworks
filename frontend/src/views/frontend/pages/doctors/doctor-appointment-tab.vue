@@ -11,7 +11,7 @@
 		:sortOrder="1"
 		:rows="20"
 		:rowsPerPageOptions="[20, 100, 500, 2500]"
-		:value="updatedAppointments"
+		:value="filteredData"
 		selectionMode="single" 
 		:metaKeySelection="true" 
 		@row-contextmenu="handleRowContextMenu"
@@ -29,11 +29,11 @@
 			style="width: 20%"
 			>
 				<template #body="{ data }">
-					<!-- <a 
+					<a 
 					:href="$router.resolve({ name: 'patient', params: { patientId: data.patient_details.id } }).href" 
 					target="_blank" 
 					style="color: unset; text-decoration: unset"
-					> -->
+					>
 						<div class="flex align-items-center gap-2">
 							<v-avatar>
 								<img
@@ -46,10 +46,12 @@
 							</v-avatar>
 							<div class="position-relative vstack">
 								{{ data.patient_name }}
-								<span class="fw-light text-teal ms-3" style="font-size: smaller">{{ data.patient_details.cpr }}</span>
+								<span class="fw-light text-teal" style="font-size: smaller">
+									{{ renderPatientDetails(data) }}
+								</span>
 							</div><br/>
 						</div>
-					<!-- </a> -->
+					</a>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-input 
@@ -125,24 +127,37 @@
 					</a-select>
 				</template>
 			</Column>
-			<Column header="Mobile" 
-			field="mobile" 
-			filterField="patient_details.mobile" 
+			<Column header="Procedures" 
+			field="procedure_templates" 
+			style="width: 10%"
 			:showFilterMenu="false" 
 			:showClearButton="false" 
-			style="width: 10%"
 			>
 				<template #body="{ data }">
-					{{ data.patient_details.mobile }}
+					<v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
-					<a-input 
-						v-model:value="filterModel.value"
-						@change="filterCallback()"
-						placeholder="Search by Mobile" 
-						class="p-column-filter"
-						style="width: 100%; align-items: center;"
-					/>
+					<a-select
+					v-model:value="procedureFilter"
+					@change="(filterCallback())"
+					mode="multiple"
+					class="p-column-filter"
+					style="width: 100%; align-items: center;"
+					placeholder="Any Procedure"
+					max-tag-count="responsive"
+					:options="$resources.clinicalProcedureTemplates.data?.options"
+					:fieldNames="{label: 'template', value: 'name'}"
+					show-search
+                    :loading="$resources.clinicalProcedureTemplates.list.loading"
+                    @search="(value) => {handleSearch(
+						value, 
+						$resources.clinicalProcedureTemplates, 
+						{template: ['like', `%${value}%`]}, 
+						{},
+                    )}"
+                    :filterOption="false"
+					>
+					</a-select>
 				</template>
 			</Column>
 			<Column header="Practitioner" 
@@ -241,7 +256,7 @@
 			}"
 			>
 				<template #body="{ data }">
-					<v-chip class="ma-2" label size="small">{{ data.service_unit }}</v-chip>
+					{{ data.service_unit }}
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-select
@@ -500,6 +515,22 @@ export default {
 				return data
 			}
 		}},
+		clinicalProcedureTemplates() { return { 
+			type: 'list', 
+			doctype: 'Clinical Procedure Template', 
+			fields: ['name', 'template', 'medical_department'], 
+			auto: true,
+			orderBy: 'name',
+			pageLength: 10,
+			url: 'frappe.desk.reportview.get', 
+			transform(data) {
+				if(data.values.length == 0)
+					data.options = []
+				else
+					data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+				return data
+			}
+		}},
   	},
 	computed: {
 		updatedAppointments() {
@@ -513,6 +544,13 @@ export default {
 					...appointment,
 					timeSinceArrived: `${hours}h ${minutes}m`
 				};
+			});
+		},
+		filteredData() {
+			return this.updatedAppointments.filter(item => {
+				const procedureFilter = this.procedureTemplatesFilter(item.procedure_templates, this.procedureFilter);
+				// Include other filter checks for different fields as needed
+				return procedureFilter; // Add more conditions as per your filter logic
 			});
 		},
 		contextItems() {
@@ -609,12 +647,14 @@ export default {
 			bellImage:bellImage,
 			maleImage:maleImage,
 			femaleImage:femaleImage,
+			procedureFilter: undefined,
 			filters: {
 				global: { value: null, matchMode: FilterMatchMode.CONTAINS },
 				patient_name: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				'patient_details.cpr': { value: null, matchMode: FilterMatchMode.STARTS_WITH },
 				department: { value: null, matchMode: FilterMatchMode.IN },
 				patient_cpr: { value: null, matchMode: FilterMatchMode.CONTAINS },
+				procedure_templates: { value: undefined, matchMode: FilterMatchMode.IN },
 				practitioner: { value: undefined, matchMode: FilterMatchMode.IN },
 				practitioner_name: { value: undefined, matchMode: FilterMatchMode.IN },
 				appointment_time: { value: null, matchMode: FilterMatchMode.STARTS_WITH },
@@ -772,6 +812,31 @@ export default {
 				hash = str.charCodeAt(i) + ((hash << 5) - hash);
 			}
 			return Math.abs(hash);
+		},
+		procedureTemplatesFilter(value, filter) {
+			if (!filter || filter.length == 0 || !Array.isArray(value)) return true; // If there's no filter or value isn't an array, include all
+
+			// Check if any object in the array matches the filter value
+			return value.some(item => {
+				return item.template && filter.includes(item.template);
+			});
+		},
+		renderPatientDetails(data) {
+			let age = `Age: ${ data.patient_age?.split(' ')[0] } | `
+			let file = `File: ${ data.patient_details.file_number } | `
+			let cpr = `CPR: ${ data.patient_details.cpr } | `
+			let mobile = `${ data.patient_details.mobile } | `
+			let details = ''
+			if(data.patient_age)
+				details += age
+			if(data.patient_details.file_number)
+				details += file
+			if(data.patient_details.cpr)
+				details += cpr
+			if(data.patient_details.mobile)
+				details += mobile
+
+			return details.slice(0, -2)
 		},
 		getInitials(name) {
 			if(!name)
