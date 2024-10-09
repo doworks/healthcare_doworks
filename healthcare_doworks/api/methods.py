@@ -83,7 +83,6 @@ def check_availability(patient):
 			'custom_payment_type', 'patient_age', 'patient', 'custom_confirmed', 'custom_customer'
 		],
 		order_by='appointment_datetime desc',
-		page_length=30
 	)
 	for appointment in appointments:
 		appointment = get_appointment_details(appointment)
@@ -96,7 +95,7 @@ def get_past_appointments(patient):
 		filters={'patient': patient},
 		fields=[
 			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
-			'practitioner_name', 'duration', 'appointment_date', 'appointment_time'
+			'practitioner_name', 'duration', 'appointment_date', 'appointment_time', 'custom_confirmed'
 		],
 		order_by='appointment_datetime desc',
 		page_length=10
@@ -173,7 +172,10 @@ def patient_encounter_name(appointment_id):
 			new_encounter.medical_department = appointment.department
 			new_encounter.appointment_type = appointment.appointment_type
 			new_encounter.custom_appointment_category = appointment.custom_appointment_category
-			new_encounter.custom_encounter_state = appointment.custom_appointment_category
+			if appointment.custom_appointment_category == 'First Time':
+				new_encounter.custom_encounter_state = 'Consultation'
+			else:
+				new_encounter.custom_encounter_state = appointment.custom_appointment_category
 			new_encounter.patient = patient.name
 			new_encounter.patient_name = patient.patient_name
 			new_encounter.patient_sex = patient.sex
@@ -805,7 +807,12 @@ def get_appointment_details(appointment):
 		filters={'parent': appointment['name']},
 		fields=['*']
 	)
+	paid_amount = 0
+	for item in invoice_items:
+		if item.customer_invoice:
+			paid_amount += frappe.db.get_value('Sales Invoice', item.customer_invoice, 'paid_amount')
 	appointment['invoice_items'] = invoice_items
+	appointment['paid_amount'] = paid_amount
 
 	# Get practitioner image
 	practitioner = frappe.get_doc('Healthcare Practitioner', appointment['practitioner'])

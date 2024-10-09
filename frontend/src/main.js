@@ -166,8 +166,8 @@ router.beforeEach(async (to, from, next) => {
 let resources = reactive({user: {}, siteName: '', colorCache: {}});
 
 // Card Reader Socket
-let cardReader = io('http://localhost:5000', {reconnectionAttempts: 3})
-app.provide("$cardReader", cardReader);
+// let cardReader = io('http://localhost:5000', {reconnectionAttempts: 3})
+// app.provide("$cardReader", cardReader);
 
 // Global Properties,
 // components can inject this

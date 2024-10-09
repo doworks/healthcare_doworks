@@ -160,6 +160,7 @@
     @show-slots="showSlots"
     :form="appointmentForm"
     :slots="slots"
+    :adjustAppointments="adjustAppointments"
     />
     <vitalSignsListDialog 
     :isOpen="vitalSignsOpen" 
@@ -343,7 +344,7 @@
         rounded="lg"
         width="auto"
         prepend-icon="mdi mdi-door-open"
-        title="Chech Availability"
+        title="Check Availability"
       >
         <v-card-text>
           <v-container>
@@ -431,7 +432,11 @@
                       <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
                     </template>
                   </Column>
-                  <Column header="Room" field="service_unit"></Column>
+                  <Column header="Paid Amount" field="paid_amount">
+                    <template #body="{ data }">
+                      BD {{ data.paid_amount }}
+                    </template>
+                  </Column>
                 </DataTable>
               </v-col>
             </v-row>
@@ -751,20 +756,20 @@ export default {
 			return [...(data || [])].map((d) => {
         d.notes = this.stripHtml(d.notes)
 
-        d.visit_notes = d.visit_notes.map(note => {
+        d.visit_notes = d.visit_notes?.map(note => {
           note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
           note.dayTime = dayjs(note.time).format('h:mm A')
           return note
         })
         d.arriveTime = '-'
-        d.status_log.forEach(value => {
+        d.status_log?.forEach(value => {
           value.timeFormat = dayjs(value.time).format('h:mm a    D/MM/YYYY')
           if(value.status == 'Arrived')
             d.arriveTime = dayjs(value.time)
         })
         d.appointment_date_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('D/MM/YYYY');
 				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
-				d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
+				d.patient_cpr = d.patient_name + ' ' + d.patient_details?.cpr
 
 				return d;
 			});

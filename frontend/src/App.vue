@@ -43,9 +43,9 @@ export default {
 		// 	console.log('Received card data:', data);
 		// });
 
-		this.$socket.on('session_logout', (data) => {
-			window.location.href = '/login';
-		});
+		// this.$socket.on('session_logout', (data) => {
+		// 	window.open('/login');
+		// });
 	},
 	data() {
 		return {
