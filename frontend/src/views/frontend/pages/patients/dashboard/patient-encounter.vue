@@ -611,6 +611,13 @@
                       <v-container>
                         <v-row>
                           <v-col>
+                            General Data
+                            <QuillEditor v-model:content="procedureForms[selectedProcedure].custom_general_data" :options="quillEditorOptions" style="height: 300px"/>
+                          </v-col>
+                        </v-row>
+                        <v-divider></v-divider>
+                        <v-row>
+                          <v-col>
                             <div class="d-flex gap-2">
                               <v-btn class="text-none" variant="flat" color="orange" disabled>Predefined Areas</v-btn>
                               <v-btn class="text-none" variant="flat" color="orange" disabled>Predefined Annotations</v-btn>
@@ -2121,12 +2128,18 @@
       <v-dialog v-model="consentFormDialog" width="auto">
         <v-toolbar color="red-accent-4" :style="{borderTopRightRadius: '12px', borderTopLeftRadius: '12px'}">
           <v-btn variant="text" icon="mdi mdi-close" @click="consentFormDialog = false"></v-btn>
-
+          
           <v-toolbar-title>Consent Form</v-toolbar-title>
-
+          
           <v-spacer></v-spacer>
           
-          <v-toolbar-items>
+          <v-toolbar-items v-if="records.current_encounter.status != 'Completed'">
+            <v-btn
+              class="text-none" 
+              text="Clear"
+              variant="text"
+              @click="clearSignature"
+            ></v-btn>
             <v-btn
               class="text-none" 
               text="Save"
@@ -2137,7 +2150,7 @@
         </v-toolbar>
 
         <v-card>
-          <pdfSignature :html="consentFormHtml" ref="consentFrom"/>
+          <pdfSignature :html="consentFormHtml" ref="consentForm"/>
         </v-card>
 
       </v-dialog>
@@ -2177,10 +2190,12 @@ import soundImage from '@/assets/img/sound.png';
 import lungsImage from '@/assets/img/lungs.png';
 import celsiusImage from '@/assets/img/celsius.png';
 
+import { QuillEditor } from '@vueup/vue-quill'
+
 export default {
   inject: ['$socket', '$call'],
   components: {
-    VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VAvatar, VIcon, VBtnGroup,
+    VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VAvatar, VIcon, VBtnGroup, QuillEditor,
     VSelect, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet,
     Image, VHover, pdfSignature, VToolbar, VToolbarItems, VToolbarTitle, VSpacer, VList, VListItem, VListItemTitle,
   },
@@ -2509,6 +2524,24 @@ export default {
       lungsImage:lungsImage,
       celsiusImage:celsiusImage,
       soundImage:soundImage,
+
+      quillEditorOptions: {
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            [{ header: [1, 2, 3, false] }],
+            [{ size: ['small', false, 'large', 'huge'] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ color: [] }, { background: [] }],
+            ['blockquote', 'code-block'],
+            [{ direction: 'rtl' }],
+            ['link', 'image'],
+            [{ list: 'ordered'}, { list: 'bullet' }, { list: 'check' }],
+            [{ align: [] }],
+            [{ indent: '-1'}, { indent: '+1' }],
+          ],
+        },
+      },
 
       isLoading: false,
       consentFormDialog: false,
@@ -2949,8 +2982,12 @@ export default {
         this.showAlert(error.message, 'error')
       });
     },
+    clearSignature() {
+      this.$refs.consentForm.clearSignature()
+      this.autoSave('Clinical Procedure', this.procedureForms[this.selectedProcedure].name, 'custom_patient_consent_signature', undefined)
+    },
     saveSignature() {
-      const signature = this.$refs.consentFrom.saveSignature();
+      const signature = this.$refs.consentForm.saveSignature();
 
       this.$call('healthcare_doworks.api.methods.upload_signature', 
         {docname: this.procedureForms[this.selectedProcedure].name, doctype: 'Clinical Procedure', file_data: signature}

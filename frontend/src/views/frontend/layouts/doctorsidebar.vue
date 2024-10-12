@@ -100,7 +100,7 @@
     },
     data() {
       return {
-        rail: false,
+        rail: true,
         currenColor: '',
         isNurse: false,
         isPharmacist: false,

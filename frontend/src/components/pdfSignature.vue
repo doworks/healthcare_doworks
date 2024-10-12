@@ -9,8 +9,6 @@
       :style="signatureCanvasStyle"
     ></canvas>
   </div>
-  <button @click="clearSignature">Clear Signature</button>
-  <button @click="saveSignature">Save Signature</button>
 </template>
   
 <script>
@@ -65,8 +63,8 @@ export default {
           const containerOffset = this.$refs.htmlContent.getBoundingClientRect();
           
           // Position the canvas over the signature area
-          this.signatureCanvasStyle.top = `${top - containerOffset.top}px`;
-          this.signatureCanvasStyle.left = `${left - containerOffset.left}px`;
+          this.signatureCanvasStyle.top = `${top - containerOffset.top + 50}px`;
+          this.signatureCanvasStyle.left = `${left - containerOffset.left + 40}px`;
           this.signatureCanvasStyle.width = `${width}px`;
           this.signatureCanvasStyle.height = `${height}px`;
           this.signatureCanvasStyle.display = 'block'; // Show the canvas
