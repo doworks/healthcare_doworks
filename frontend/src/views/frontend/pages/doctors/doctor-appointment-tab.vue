@@ -521,7 +521,7 @@ export default {
 			fields: ['name', 'template', 'medical_department'], 
 			auto: true,
 			orderBy: 'name',
-			pageLength: 10,
+			pageLength: 30,
 			url: 'frappe.desk.reportview.get', 
 			transform(data) {
 				if(data.values.length == 0)

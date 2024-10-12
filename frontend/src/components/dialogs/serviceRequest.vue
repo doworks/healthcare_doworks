@@ -418,7 +418,7 @@
         fields: ['name'], 
         auto: true, 
         orderBy: 'name',
-        pageLength: 10,
+        pageLength: 30,
         url: 'frappe.desk.reportview.get', 
         transform(data) {
           if(data.values.length == 0)

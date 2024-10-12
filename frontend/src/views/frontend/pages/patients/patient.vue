@@ -29,7 +29,7 @@
           <v-tab v-if="!isNew" value="medicalHestory">Medical History</v-tab>
           <v-tab v-if="!isNew" value="records">Medical Records</v-tab>
         </v-tabs>
-        <v-btn v-if="tab == 'details' || tab == 'insurance'" class="ml-auto" color="purple" variant="outlined" @click="saveNew">save</v-btn>
+        <v-btn v-if="tab == 'details' || tab == 'insurance'" class="ml-auto text-none" color="purple" variant="outlined" @click="saveNew">save</v-btn>
       </div>
 
       <v-window v-model="tab">
@@ -593,7 +593,7 @@
           <v-tab v-if="!isNew" value="medicalHestory">Medical History</v-tab>
           <v-tab v-if="!isNew" value="records">Medical Records</v-tab>
         </v-tabs>
-        <v-btn v-if="tab == 'details' || tab == 'insurance'" class="ml-auto" color="purple" variant="outlined" @click="saveNew">save</v-btn>
+        <v-btn v-if="tab == 'details' || tab == 'insurance'" class="ml-auto text-none" color="purple" variant="outlined" @click="saveNew">save</v-btn>
       </div>
 
       <v-window v-model="tab">

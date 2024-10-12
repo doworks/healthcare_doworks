@@ -76,7 +76,7 @@
                   >
                     <template #activator="{ props }">
                       <!-- Wrap the activator element with the props -->
-                      <a-input-group class="w-full max-w-full" style="display: flex" compact @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
+                      <a-input-group class="w-full max-w-full" style="display: flex" compact>
                         <a-select
                         class="w-full"
                         ref="patientRef"
@@ -99,7 +99,12 @@
                           $resources.patients, 
                           {status: 'Active'}, 
                           {status: 'Active'},
-                          [['patient_name', 'like', `%${value}%`], ['mobile', 'like', `%${value}%`], ['custom_cpr', 'like', `%${value}%`]]
+                          [
+                            ['patient_name', 'like', `%${value}%`], 
+                            ['mobile', 'like', `%${value}%`], 
+                            ['custom_cpr', 'like', `%${value}%`], 
+                            ['custom_file_number', 'like', `%${value}%`]
+                          ]
                         )}"
                         :filterOption="false"
                         >
@@ -214,7 +219,7 @@
                   :disabled="appointmentForm.type == 'Edit Appointment'"
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Appointment Type" name="appointment_type">
+                <a-form-item label="Booking For" name="appointment_type">
                   <a-select
                   v-model:value="appointmentForm.appointment_type"
                   :options="$resources.appointmentTypes.data?.options"
@@ -315,10 +320,7 @@
                   :filterOption="false"
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Room" 
-                name="service_unit" 
-                v-if="appointmentForm.appointment_for === 'Service Unit' || appointmentForm.custom_is_walked_in || freeBooking" 
-                >
+                <a-form-item label="Room" name="service_unit">
                   <a-select
                   v-model:value="appointmentForm.service_unit"
                   :options="$resources.serviceUnits.data?.options"
@@ -411,7 +413,7 @@
                       v-slot="{ isSelected, selectedClass, toggle }"
                     >
                       <v-btn
-                      class="text-center"
+                      class="text-center text-none"
                       :class="selectedClass"
                       :data-name="slot.from_time"
                       :data-service-unit="slotInfo.service_unit || ''"
@@ -651,7 +653,7 @@ export default {
       fields: ['name', 'template', 'medical_department'], 
       auto: true,
       orderBy: 'name',
-      pageLength: 10,
+      pageLength: 30,
       url: 'frappe.desk.reportview.get', 
       transform(data) {
         if(data.values.length == 0)
@@ -680,7 +682,7 @@ export default {
         patient: [{ required: true, message: 'Please choose a patient!' }],
         practitioner: [{ required: this.appointmentForm.appointment_for === 'Practitioner', message: 'Please choose a practitioner!' }],
         department: [{ required: this.appointmentForm.appointment_for === 'Department', message: 'Please choose a department!' }],
-        service_unit: [{ required: true, message: 'Please choose a room!' }],
+        service_unit: [{ required: this.appointmentForm.appointment_for === 'Service Unit', message: 'Please choose a room!' }],
         appointment_date: [{ required: true, message: 'Please choose a date!' }],
         appointment_time: [{ required: !this.appointmentForm.custom_is_walked_in, message: 'Please choose a time!' }],
         procedure_templates: [{ 

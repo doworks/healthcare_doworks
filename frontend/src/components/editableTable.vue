@@ -7,7 +7,7 @@
         color="green-accent-1" 
         rounded="lg" 
         size="small" 
-        class="mr-2" 
+        class="mr-2 text-none" 
         @click="openNew"
         >
           Add Row
@@ -19,6 +19,7 @@
         rounded="lg" 
         size="small" 
         @click="deleteRowsDialog = true" 
+        class="text-none" 
         >
           Delete
         </v-btn>
@@ -55,8 +56,8 @@
           <slot name="dialog" :row="row"></slot>
         </template>
         <v-card-actions>
-          <v-btn prepend-icon="mdi mdi-close" size="small" variant="text" @click="hideDialog">Cancel</v-btn>
-          <v-btn prepend-icon="mdi mdi-check" size="small" variant="flat" color="green" @click="saveItem(row)">Save</v-btn>
+          <v-btn prepend-icon="mdi mdi-close" class="text-none" size="small" variant="text" @click="hideDialog">Cancel</v-btn>
+          <v-btn prepend-icon="mdi mdi-check" class="text-none" size="small" variant="flat" color="green" @click="saveItem(row)">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -73,11 +74,13 @@
         
         <v-card-actions>
           <v-btn
+            class="text-none" 
             text="No"
             variant="text"
             @click="deleteRowsDialog = false"
           ></v-btn>
           <v-btn
+            class="text-none" 
             text="Yes"
             variant="text"
             @click="deleteSelectedRows"

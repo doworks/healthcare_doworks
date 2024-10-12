@@ -6,7 +6,7 @@
       position="absolute"
       location="top center"
       color="red-lighten-3"
-      style="z-index: 3000; margin-top: 15px"
+      style="z-index: 5000; margin-top: 15px"
       border="start"
       closable
       @click:close="() => {
@@ -44,8 +44,8 @@
           </a-form-item>
           </a-form>
           <div class="d-flex align-items-center gap-2 mt-4">
-            <v-btn @click="acceptCallback" color="primary" size="small">Save</v-btn>
-            <v-btn outlined @click="rejectCallback" size="small" text>Cancel</v-btn>
+            <v-btn class="text-none" @click="acceptCallback" color="primary" size="small">Save</v-btn>
+            <v-btn class="text-none" outlined @click="rejectCallback" size="small" text>Cancel</v-btn>
           </div>
         </div>
       </template>
@@ -106,7 +106,7 @@
         </v-btn>
       </template>
       <template #item="{ item, toggleCallback }">
-        <v-btn color="blue" icon size="large" @click="item.command">
+        <v-btn class="text-none" color="blue" icon size="large" @click="item.command">
           <div class="flex flex-col items-center justify-between gap-2">
             <span :class="item.icon" />
             <span>
@@ -317,7 +317,7 @@
           <Card class="p-0" id="past-encounters" style="overflow: hidden;">
             <template #title>Visit Logs
               <!-- <a class="fs-6 float-end" :class="{'d-none': records.encounters.length <= 5}">See All</a> -->
-              <v-btn class="float-end text-orange" variant="plain">See All</v-btn>
+              <v-btn class="float-end text-orange text-none" variant="plain">See All</v-btn>
             </template>
             <template #content>
               <DataTable 
@@ -340,7 +340,7 @@
           <Card class="p-0" id="services" style="overflow: hidden;">
             <template #title>
               <span class="align-middle">Service Requests / Results ({{ records.services && records.services.length }})</span>
-              <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain" @click="()=>{serviceRequestActive = true}">Add</v-btn>
+              <v-btn class="float-end text-orange text-none" prepend-icon="pi pi-plus" variant="plain" @click="()=>{serviceRequestActive = true}">Add</v-btn>
             </template>
             <template #content>
               <DataTable :value="records.services ? records.services.slice(0, 5) : records.services">
@@ -539,7 +539,7 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex pt-4">
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                      <v-btn class="text-none" variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
@@ -583,7 +583,7 @@
                             <v-btn 
                             variant="flat" 
                             color="red-accent-4" 
-                            
+                            class="text-none" 
                             @click="showConsentForm"
                             >
                               Consent Form
@@ -600,8 +600,8 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex py-4 gap-2">
-                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                      <v-btn class="text-none" variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
+                      <v-btn class="text-none" variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
@@ -612,9 +612,9 @@
                         <v-row>
                           <v-col>
                             <div class="d-flex gap-2">
-                              <v-btn variant="flat" color="orange" disabled>Predefined Areas</v-btn>
-                              <v-btn variant="flat" color="orange" disabled>Predefined Annotations</v-btn>
-                              <v-btn variant="flat" color="orange" @click="() => {
+                              <v-btn class="text-none" variant="flat" color="orange" disabled>Predefined Areas</v-btn>
+                              <v-btn class="text-none" variant="flat" color="orange" disabled>Predefined Annotations</v-btn>
+                              <v-btn class="text-none" variant="flat" color="orange" @click="() => {
                                 annotationDoctype = procedureForms[selectedProcedure].doctype; 
                                 procedureActive = true
                               }">Free Drawing</v-btn>
@@ -666,8 +666,8 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex py-4 gap-2">
-                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                      <v-btn class="text-none" variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
+                      <v-btn class="text-none" variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
@@ -793,8 +793,8 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex py-4 gap-2">
-                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                      <v-btn class="text-none" variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
+                      <v-btn class="text-none" variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
@@ -818,7 +818,7 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex py-4">
-                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
+                      <v-btn class="text-none" variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
@@ -891,7 +891,7 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex pt-4">
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                      <v-btn class="text-none" variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
@@ -1042,8 +1042,8 @@
                               </template>
                             </EditableTable>
                             <div class="d-flex gap-2 mt-10">
-                              <v-btn variant="flat" color="primary" disabled>Radiology Test</v-btn>
-                              <v-btn variant="flat" color="yellow-darken-1" 
+                              <v-btn class="text-none" variant="flat" color="primary" disabled>Radiology Test</v-btn>
+                              <v-btn class="text-none" variant="flat" color="yellow-darken-1" 
                               :disabled="records.current_encounter.status == 'Completed'"
                               @click="() => {
                                 annotationDoctype = encounterForm.doctype; 
@@ -1101,8 +1101,8 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex py-4 gap-2">
-                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                      <v-btn class="text-none" variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
+                      <v-btn class="text-none" variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
@@ -1124,7 +1124,7 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex pt-4">
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                      <v-btn class="text-none" variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
@@ -1222,8 +1222,8 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex py-4 gap-2">
-                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                      <v-btn class="text-none" variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
+                      <v-btn class="text-none" variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
                     </div>
                   </template>
                 </StepperPanel>
@@ -1700,7 +1700,7 @@
                         <v-row>
                           <v-col>
                             <div class="d-flex gap-2">
-                              <v-btn variant="flat" color="yellow-darken-1" 
+                              <v-btn class="text-none" variant="flat" color="yellow-darken-1" 
                               :disabled="records.current_encounter.status == 'Completed'"
                               @click="() => {
                                 annotationDoctype = encounterForm.doctype; 
@@ -1758,8 +1758,8 @@
                       </v-container>
                     </v-sheet>
                     <div class="d-flex py-4 gap-2">
-                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
-                      <v-btn variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn>
+                      <v-btn class="text-none" variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
+                      <!-- <v-btn class="text-none" variant="flat" color="blue-darken-2" @click="nextCallback">Next</v-btn> -->
                     </div>
                   </template>
                 </StepperPanel>
@@ -1770,18 +1770,18 @@
                         <v-row>
                           <v-col>
                             <div class="d-flex gap-2">
-                              <v-btn variant="flat" color="pink" @click="() => {medicationRequestActive = true}">Medications</v-btn>
-                              <v-btn variant="flat" color="pink" @click="() => {labTestActive = true}">Lab Test</v-btn>
-                              <v-btn variant="flat" color="pink" disabled>Radiology Test</v-btn>
-                              <v-btn variant="flat" color="pink" disabled>Transfer To Other Hospital</v-btn>
-                              <v-btn variant="flat" color="pink" disabled>Transfer To Other Doctor</v-btn>
+                              <v-btn class="text-none" variant="flat" color="pink" @click="() => {medicationRequestActive = true}">Medications</v-btn>
+                              <v-btn class="text-none" variant="flat" color="pink" @click="() => {labTestActive = true}">Lab Test</v-btn>
+                              <v-btn class="text-none" variant="flat" color="pink" disabled>Radiology Test</v-btn>
+                              <v-btn class="text-none" variant="flat" color="pink" disabled>Transfer To Other Hospital</v-btn>
+                              <v-btn class="text-none" variant="flat" color="pink" disabled>Transfer To Other Doctor</v-btn>
                             </div>
                           </v-col>
                         </v-row>
                       </v-container>
                     </v-sheet>
                     <div class="d-flex py-4">
-                      <v-btn variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
+                      <v-btn class="text-none" variant="flat" color="grey-lighten-2" @click="prevCallback">Back</v-btn>
                     </div>
                   </template>
                 </StepperPanel> -->
@@ -1790,8 +1790,8 @@
 
               </Stepper>
               <div class="d-flex py-4 gap-2">
-                <!-- <v-btn variant="flat" color="lime" @click="submitEncounter()">Save</v-btn> -->
-                <!-- <v-btn variant="flat" color="amber" @click="submitEncounter(true)">Submit</v-btn> -->
+                <!-- <v-btn class="text-none" variant="flat" color="lime" @click="submitEncounter()">Save</v-btn> -->
+                <!-- <v-btn class="text-none" variant="flat" color="amber" @click="submitEncounter(true)">Submit</v-btn> -->
               </div>
             </a-form>
           </template>
@@ -2006,7 +2006,7 @@
           <Card class="p-0 mb-3 border-bottom-title h-auto" id="attachments" style="overflow: hidden;">
             <template #title>
               Attachments
-              <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain" @click="() => {addAttachmentActive = true}">Add</v-btn>
+              <v-btn class="float-end text-orange text-none" prepend-icon="pi pi-plus" variant="plain" @click="() => {addAttachmentActive = true}">Add</v-btn>
             </template>
             <template #content>
               <div :class="{'d-none': records.attachments.length > 0}">
@@ -2128,6 +2128,7 @@
           
           <v-toolbar-items>
             <v-btn
+              class="text-none" 
               text="Save"
               variant="text"
               @click="saveSignature"
@@ -2286,7 +2287,7 @@ export default {
       fields: ['name', 'template', 'medical_department'], 
       auto: true,
       orderBy: 'name',
-      pageLength: 10,
+      pageLength: 30,
       url: 'frappe.desk.reportview.get', 
       transform(data) {
         if(data.values.length == 0)

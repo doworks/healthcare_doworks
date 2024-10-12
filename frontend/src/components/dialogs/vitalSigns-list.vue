@@ -20,7 +20,7 @@
                     <template #empty>
                         <div class="p-3 flex flex-col">
                             <h5 class="mb-4 text-center">No Vital Signs</h5>
-                            <v-btn prepend-icon="pi pi-plus" rounded="lg" elevation="1" class="self-center" @click="() => {
+                            <v-btn prepend-icon="pi pi-plus" rounded="lg" elevation="1" class="self-center text-none" @click="() => {
                                 this.selectedRow = null
                                 this.vsDialogOpen = true
                             }">

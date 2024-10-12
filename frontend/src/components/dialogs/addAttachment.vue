@@ -23,7 +23,7 @@
                             <div class="d-flex flex-wrap justify-between align-items-center flex-fill gap-3">
                                 <div class="d-flex gap-2">
                                     <!-- <Button @click="chooseCallback()" outlined severity="secondary">Attach</Button> -->
-                                    <v-btn @click="chooseCallback()" prepend-icon="mdi mdi-upload" color="light-blue">Attach</v-btn>
+                                    <v-btn class="text-none" @click="chooseCallback()" prepend-icon="mdi mdi-upload" color="light-blue">Attach</v-btn>
                                     <!-- <Button @click="uploadEvent(uploadCallback)" icon="pi pi-cloud-upload" rounded outlined severity="success" :disabled="!files || files.length === 0"></Button>
                                     <Button @click="clearCallback()" icon="pi pi-times" rounded outlined severity="danger" :disabled="!files || files.length === 0"></Button> -->
                                 </div>

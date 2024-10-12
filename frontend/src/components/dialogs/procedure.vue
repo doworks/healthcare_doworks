@@ -18,6 +18,7 @@
 
           <v-toolbar-items>
             <v-btn
+              class="text-none" 
               text="Save"
               variant="text"
               @click="triggerReactFunction"

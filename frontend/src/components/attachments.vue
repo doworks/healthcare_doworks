@@ -2,7 +2,7 @@
   <Card class="p-0 mb-3 border-bottom-title" id="attachments" style="overflow: hidden;">
     <template #title>
       Attachments
-      <v-btn class="float-end text-orange" prepend-icon="pi pi-plus" variant="plain" @click="triggerFileInput">Add</v-btn>
+      <v-btn class="float-end text-orange text-none" prepend-icon="pi pi-plus" variant="plain" @click="triggerFileInput">Add</v-btn>
     </template>
     <template #content>
       <v-file-input

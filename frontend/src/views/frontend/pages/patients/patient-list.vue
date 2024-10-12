@@ -19,7 +19,7 @@
         prepend-icon="pi pi-plus" 
         color="green" 
         rounded="lg" 
-        class="mr-2" 
+        class="mr-2 text-none" 
         @click="openNew"
         >
           Add Patient
@@ -30,6 +30,7 @@
         color="red" 
         rounded="lg" 
         @click="deleteRowsDialog = true" 
+        class="text-none" 
         >
           Delete
         </v-btn>

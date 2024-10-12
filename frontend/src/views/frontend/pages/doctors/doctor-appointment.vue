@@ -53,9 +53,9 @@
             @change="(value) => {selectedDates = getDatesInBetween(value[0], value[1]); fetchRecords()}"
             />
             <v-btn-toggle class="mt-1" v-model="dateFilterType" color="blue" mandatory density="compact">
-              <v-btn size="small" value="span">Timespans</v-btn>
-              <v-btn size="small" value="single">Single</v-btn>
-              <v-btn size="small" value="range">Range</v-btn>
+              <v-btn size="small" class="text-none"  value="span">Timespans</v-btn>
+              <v-btn size="small" class="text-none"  value="single">Single</v-btn>
+              <v-btn size="small" class="text-none"  value="range">Range</v-btn>
             </v-btn-toggle>
             <!-- <a-radio-group class="mt-2" v-model:value="dateFilterType">
               <a-radio-button value="span">Timespan</a-radio-button>
@@ -92,7 +92,7 @@
               </template>
             </a-input>
           </div>
-          <v-btn elevation="1" @click="() => {
+          <v-btn class="text-none" elevation="1" @click="() => {
             checkAvailabilityPatient = ''
             checkAvailabilityAppointments = []
             checkAvailabilityOpen = true
@@ -363,7 +363,12 @@
                     $resources.patients, 
                     {status: 'Active'}, 
                     {status: 'Active'},
-                    [['patient_name', 'like', `%${value}%`], ['mobile', 'like', `%${value}%`], ['custom_cpr', 'like', `%${value}%`]]
+                    [
+                      ['patient_name', 'like', `%${value}%`], 
+                      ['mobile', 'like', `%${value}%`], 
+                      ['custom_cpr', 'like', `%${value}%`], 
+                      ['custom_file_number', 'like', `%${value}%`]
+                    ]
                   )}"
                   @change="(value, option) => {
                     checkAvailabilityDialog(option.name)

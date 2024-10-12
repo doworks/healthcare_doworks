@@ -55,7 +55,7 @@
               <template #body="row">
                 <v-menu open-on-hover>
                   <template v-slot:activator="{ props }">
-                    <v-btn variant="text" color="amber" v-bind="props">
+                    <v-btn class="text-none" variant="text" color="amber" v-bind="props">
                       Change Status
                     </v-btn>
                   </template>

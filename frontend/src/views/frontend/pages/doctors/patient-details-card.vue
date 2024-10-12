@@ -70,12 +70,12 @@
                         </div>
                         <v-row align="center" justify="center" class="mt-5">
                             <v-col cols="auto" v-if="patient.patient_details.mobile">
-                                <v-btn class="text-blue" prepend-icon="pi pi-phone" elevation="2">{{patient.patient_details.mobile}}</v-btn>
+                                <v-btn class="text-blue text-none" prepend-icon="pi pi-phone" elevation="2">{{patient.patient_details.mobile}}</v-btn>
                             </v-col>
                             <v-col cols="auto">
                                 <v-btn 
                                 elevation="2" 
-                                class="bg-green-accent-2" 
+                                class="bg-green-accent-2 text-none" 
                                 @click="goToEncounter"
                                 >
                                     Encounter
@@ -129,9 +129,8 @@ export default {
             this.$emit('cardRendered', this.$refs.cardRef.$el.querySelector('.p-card-body').offsetHeight);
         },
         goToEncounter() {
-			this.$call('healthcare_doworks.api.methods.patient_encounter_name', {appointment_id: this.patient.appointment_id})
+			this.$call('healthcare_doworks.api.methods.patient_encounter_name', {appointment_id: this.patient.name})
 			.then(response => {
-				const appointmentId = this.patient.appointment_id;
 				this.$router.push({ name: 'patient-encounter', params: { encounterId: response } });
 			}).catch(error => {
 				console.error(error);

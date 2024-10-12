@@ -44,7 +44,7 @@ export default {
 		// });
 
 		// this.$socket.on('session_logout', (data) => {
-		// 	window.open('/login');
+		// 	window.open('/');
 		// });
 	},
 	data() {
