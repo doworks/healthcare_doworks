@@ -10,7 +10,7 @@
     ></canvas>
   </div>
 </template>
-  
+
 <script>
 import SignaturePad from 'signature_pad';
 
@@ -24,27 +24,50 @@ export default {
   },
   data() {
     return {
-      htmlContent: `
-        <div>
-          <h1>Document Title</h1>
-          <p>This is a sample document content.</p>
-          <p>Please sign below:</p>
-          <div style="border: 1px dashed #ccc; width: 200px; height: 50px; margin-top: 20px;"></div>
-        </div>
-      `,
       signaturePad: null,
       signatureCanvasStyle: {
         position: 'absolute',
         border: '1px solid #ccc',
         display: 'none', // Initially hide the canvas
-        top: '300px',
-        left: '150px',
+        top: '0px',
+        left: '0px',
+        width: '0px',
+        height: '0px',
       },
     };
   },
   mounted() {
     this.initSignaturePad();
     this.positionSignatureCanvas();
+
+    // Add event listeners
+    window.addEventListener('resize', this.positionSignatureCanvas);
+
+    // Observe mutations in the htmlContent
+    this.observer = new MutationObserver(() => {
+      this.positionSignatureCanvas();
+    });
+
+    this.observer.observe(this.$refs.htmlContent, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      characterData: true,
+    });
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.positionSignatureCanvas);
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+  },
+  watch: {
+    html(newValue, oldValue) {
+      // Wait for the DOM to update with the new HTML content
+      this.$nextTick(() => {
+        this.positionSignatureCanvas();
+      });
+    },
   },
   methods: {
     initSignaturePad() {
@@ -59,12 +82,18 @@ export default {
       this.$nextTick(() => {
         const signatureArea = this.$refs.htmlContent.querySelector('.signature-area');
         if (signatureArea) {
-          const { top, left, width, height } = signatureArea.getBoundingClientRect();
-          const containerOffset = this.$refs.htmlContent.getBoundingClientRect();
-          
-          // Position the canvas over the signature area
-          this.signatureCanvasStyle.top = `${top - containerOffset.top + 50}px`;
-          this.signatureCanvasStyle.left = `${left - containerOffset.left + 40}px`;
+          const signatureAreaRect = signatureArea.getBoundingClientRect();
+          const containerRect = this.$refs.htmlContent.getBoundingClientRect();
+
+          // Calculate the position relative to the container
+          const top = signatureAreaRect.top - containerRect.top + this.$refs.htmlContent.scrollTop;
+          const left = signatureAreaRect.left - containerRect.left + this.$refs.htmlContent.scrollLeft;
+          const width = signatureAreaRect.width;
+          const height = signatureAreaRect.height;
+
+          // Update the style of the canvas
+          this.signatureCanvasStyle.top = `${top}px`;
+          this.signatureCanvasStyle.left = `${left}px`;
           this.signatureCanvasStyle.width = `${width}px`;
           this.signatureCanvasStyle.height = `${height}px`;
           this.signatureCanvasStyle.display = 'block'; // Show the canvas
@@ -73,6 +102,19 @@ export default {
           const canvas = this.$refs.signatureCanvas;
           canvas.width = width;
           canvas.height = height;
+
+          // Reinitialize the signature pad with the new dimensions
+          if (this.signaturePad) {
+            this.signaturePad.clear();
+            this.signaturePad.off();
+            this.signaturePad = new SignaturePad(canvas, {
+              backgroundColor: 'rgba(255, 255, 255, 0)',
+              penColor: 'black',
+            });
+          }
+        } else {
+          // Hide the canvas if signature area is not found
+          this.signatureCanvasStyle.display = 'none';
         }
       });
     },
@@ -85,7 +127,7 @@ export default {
         return;
       }
       const dataUrl = this.signaturePad.toDataURL(); // Save this data URL to your server
-      return dataUrl
+      return dataUrl;
       // Example: send the dataUrl to your server or do further processing
     },
   },
@@ -93,7 +135,7 @@ export default {
 </script>
 
 <style>
-#print-html .action-banner{
-  display: none
+#print-html .action-banner {
+  display: none;
 }
 </style>
