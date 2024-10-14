@@ -609,6 +609,11 @@ export default {
 					icon: 'mdi mdi-medical-bag',
 					command: () => this.$emit('medical-history-dialog', this.selectedRow)
 				}] : []),
+				...(this.$route.name == 'nurse-dashboard' ? [{
+					label: 'Checklist Form',
+					icon: 'mdi mdi-medical-bag',
+					command: () => this.$emit('checklist-form-dialog', this.selectedRow)
+				}] : []),
 				{
 					label: 'Update Room',
 					icon: 'mdi mdi-door-open',

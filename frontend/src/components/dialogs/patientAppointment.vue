@@ -67,113 +67,49 @@
             <v-row>
               <v-col cols="12" md="6">
                 <a-form-item label="Patient" name="patient">
-                  <v-menu
-                  v-model="popoverVisible"
-                  :close-on-content-click="false"
-                  location="end"
-                  activator="parent"
-                  @update:modelValue="(value) => {console.log(value)}"
-                  >
-                    <template #activator="{ props }">
-                      <!-- Wrap the activator element with the props -->
-                      <a-input-group class="w-full max-w-full" style="display: flex" compact>
-                        <a-select
-                        class="w-full"
-                        ref="patientRef"
-                        v-model:value="appointmentForm.patient_name"
-                        :options="$resources.patients.data?.options"
-                        :fieldNames="{label: 'patient_name', value: 'name'}"
-                        @change="(value, option) => {
-                          appointmentForm.custom_payment_type = option.custom_default_payment_type
-                          
-                          appointmentForm.patient = option.name;
-                          appointmentForm.patient_sex = option.sex;
-                          appointmentForm.patient_mobile = option.mobile
-                          appointmentForm.patient_age = calculateAge(option.dob)
-                          getPastAppointments(option.name)
-                        }"
-                        show-search
-                        :loading="$resources.patients.list.loading"
-                        @search="(value) => {handleSearch(
-                          value, 
-                          $resources.patients, 
-                          {status: 'Active'}, 
-                          {status: 'Active'},
-                          [
-                            ['patient_name', 'like', `%${value}%`], 
-                            ['mobile', 'like', `%${value}%`], 
-                            ['custom_cpr', 'like', `%${value}%`], 
-                            ['custom_file_number', 'like', `%${value}%`]
-                          ]
-                        )}"
-                        :filterOption="false"
-                        >
-                          <template #option="{ patient_name, mobile, custom_cpr }">
-                            <div class="flex flex-col">
-                              <span v-if="patient_name" class="ms-2"><strong>Name:</strong> {{ patient_name }}</span>
-                              <span v-if="custom_cpr" class="ms-2 text-xs"><strong>CPR:</strong> {{ custom_cpr }}</span>
-                              <span v-if="mobile" class="ms-2 text-xs"><strong>Mobile:</strong> {{ mobile }}</span>
-                            </div>
-                          </template>
-                        </a-select>
-                        <a-button ref="addPatientRef" type="primary" @click="newPatientOpen = true"><i class="mdi mdi-plus" /></a-button>
-                      </a-input-group>
-                    </template>
-                    <!-- Popover content -->
-                    <v-card min-width="300">
-                      <!-- Your popover content goes here -->
-                      <DataTable 
-                      :value="pastAppointments" 
-                      selectionMode="single" 
-                      :metaKeySelection="true" 
-                      dataKey="id" 
-                      >
-                        <template #empty><v-empty-state title="No available appoiontments for this patient"></v-empty-state></template>
-                        <Column header="Time" field="appointment_time">
-                          <template #body="{ data }">
-                            <div @click="() => {$emit('appointment-dialog', 'Edit Appointment', false, data)}">
-                              <div class="text-center">
-                                {{ data.appointment_date_moment }}
-                              </div>
-                              <div class="text-center">
-                                {{ data.appointment_time_moment }}
-                              </div>
-                            </div>
-                          </template>
-                        </Column>
-                        <Column header="Confirmed?" field="custom_confirmed">
-                          <template #body="{ data }">
-                            <div class="text-center">
-                              <i v-if="data.custom_confirmed" class="mdi mdi-check"/>
-                              <i v-else class="mdi mdi-close"/>
-                            </div>
-                          </template>
-                        </Column>
-                        <Column field="appointment_datetime" hidden></Column>
-                        <Column header="Visit Status" field="custom_visit_status"></Column>
-                        <Column header="Practitioner" field="practitioner_name">
-                          <template #body="{ data }">
-                            <div class="flex align-items-center gap-2" v-if="data.practitioner_name">
-                              <v-avatar v-if="data.practitioner_image">
-                                <img
-                                class="h-100 w-100"
-                                :src="data.practitioner_image"
-                                />
-                              </v-avatar>
-                              <span>{{ data.practitioner_name }}</span>
-                            </div>
-                          </template>
-                        </Column>
-                        <Column header="Type" field="custom_appointment_category"></Column>
-                        <Column header="Procedures" field="procedure_templates">
-                          <template #body="{ data }">
-                            <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
-                          </template>
-                        </Column>
-                        <Column header="Room" field="service_unit"></Column>
-                      </DataTable>
-                    </v-card>
-                  </v-menu>                  
+                  <a-input-group class="w-full max-w-full" style="display: flex" compact>
+                    <a-select
+                    class="w-full"
+                    ref="patientRef"
+                    v-model:value="appointmentForm.patient_name"
+                    :options="$resources.patients.data?.options"
+                    :fieldNames="{label: 'patient_name', value: 'name'}"
+                    @change="(value, option) => {
+                      appointmentForm.custom_payment_type = option.custom_default_payment_type
+                      
+                      appointmentForm.patient = option.name;
+                      appointmentForm.patient_sex = option.sex;
+                      appointmentForm.patient_mobile = option.mobile
+                      appointmentForm.patient_age = calculateAge(option.dob)
+                      getPastAppointments(option.name)
+                    }"
+                    show-search
+                    :loading="$resources.patients.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.patients, 
+                      {status: 'Active'}, 
+                      {status: 'Active'},
+                      [
+                        ['patient_name', 'like', `%${value}%`], 
+                        ['mobile', 'like', `%${value}%`], 
+                        ['custom_cpr', 'like', `%${value}%`], 
+                        ['custom_file_number', 'like', `%${value}%`]
+                      ]
+                    )}"
+                    :filterOption="false"
+                    >
+                      <template #option="{ patient_name, mobile, custom_cpr, custom_file_number }">
+                        <div class="flex flex-col">
+                          <span v-if="patient_name" class="ms-2"><strong>Name:</strong> {{ patient_name }}</span>
+                          <span v-if="custom_cpr" class="ms-2 text-xs"><strong>CPR:</strong> {{ custom_cpr }}</span>
+                          <span v-if="mobile" class="ms-2 text-xs"><strong>Mobile:</strong> {{ mobile }}</span>
+                          <span v-if="mobile" class="ms-2 text-xs"><strong>File#:</strong> {{ custom_file_number }}</span>
+                        </div>
+                      </template>
+                    </a-select>
+                    <a-button ref="addPatientRef" type="primary" @click="newPatientOpen = true"><i class="mdi mdi-plus" /></a-button>
+                  </a-input-group>      
                 </a-form-item>
                 <a-form-item label="Patient Mobile" v-if="appointmentForm.patient">
                   <a-input v-model:value="appointmentForm.patient_mobile" disabled/>
@@ -632,7 +568,7 @@ export default {
       doctype: 'Patient', 
       fields: [
         'sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 
-        'inpatient_record', 'inpatient_status', 'custom_default_payment_type',
+        'inpatient_record', 'inpatient_status', 'custom_default_payment_type', 'custom_file_number'
       ], 
       filters: {status: 'Active'},
       limit_start: 0,

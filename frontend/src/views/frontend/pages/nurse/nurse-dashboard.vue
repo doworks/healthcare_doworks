@@ -97,6 +97,7 @@
         @table-page-change="pageChanged"
         @service-unit-dialog="serviceUnitDialog"
         @appointment-invoice-dialog="appointmentInvoiceDialog"
+        @checklist-form-dialog="checklistFormDialog"
         />
         </v-window-item>
       </v-window>
@@ -145,6 +146,12 @@
     @update:isOpen="appointmentInvoiceOpen = $event" 
     @show-alert="showAlert" 
     :appointment="selectedRow"
+    />
+    <checklistFormListDialog 
+    :isOpen="checklistFormOpen" 
+    :appointment="selectedRow"
+    @update:isOpen="checklistFormOpen = $event" 
+    @show-alert="showAlert" 
     />
     <v-dialog v-model="serviceUnitOpen" width="auto">
       <v-card
@@ -456,6 +463,7 @@ export default {
       transferOpen: false,
       paymentTypeOpen: false,
       appointmentInvoiceOpen: false,
+      checklistFormOpen: false,
       services: [],
       patientInsurance: {},
       appointmentForm: {},
@@ -620,6 +628,10 @@ export default {
       this.appointmentForm.service_unit = row.service_unit;
 			this.serviceUnitOpen = true
 		},
+    checklistFormDialog(row) {
+      this.selectedRow = row
+      this.checklistFormOpen = true;
+    },
     paymentTypeDialog(row) {
       this.appointmentForm.name = row.name;
       this.appointmentForm.custom_payment_type = row.custom_payment_type;

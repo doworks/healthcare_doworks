@@ -495,7 +495,7 @@ const ExcalidrawWrapper = () => {
                 </TabList>
                 <TabPanel value={0} sx={{ p: 0 }}>
                   <div>
-                    <List>
+                    <List style={{height: 'calc(100vh - 175px)',overflowY: 'auto'}}>
                       {images.male.map((img, index, array) => (
                         <ListItemButton key={img.label} onClick={() => {handleImageClick(img, array, 'male')}}>
                           <ListItemDecorator>

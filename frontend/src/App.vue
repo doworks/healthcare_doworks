@@ -23,7 +23,7 @@ import '@/assets/css/prime.css';
 import { VLayout } from 'vuetify/components/VLayout'
 import { VMain } from 'vuetify/components/VMain'
 export default {
-	inject: ['$auth', '$cardReader', '$socket'],
+	inject: ['$auth', '$socket'],
 	components:{
 		VLayout,
 		VMain,

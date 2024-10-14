@@ -244,7 +244,7 @@
                 </EditableTable>
               </v-col>
               <v-col cols="12" lg="6">
-                <h5>Infected Diseases</h5>
+                <h5>Medical History</h5>
                 <EditableTable :columns="[
                   {label: 'Name', key: 'name1'},
                   {label: 'Note', key: 'note', width: '320px'},
@@ -259,7 +259,7 @@
                     })
                 }"
                 @delete="rows => {deleteChildRow({fieldName: 'custom_infected_diseases', rows})}"
-                title="Infected Diseases"
+                title="Medical History"
                 >
                   <template v-slot:dialog="{ row }">
                     <a-form layout="vertical">
@@ -808,7 +808,7 @@
                 </EditableTable>
               </v-col>
               <v-col cols="12" lg="6">
-                <h5>Infected Diseases</h5>
+                <h5>Medical History</h5>
                 <EditableTable :columns="[
                   {label: 'Name', key: 'name1'},
                   {label: 'Note', key: 'note', width: '320px'},
@@ -823,7 +823,7 @@
                     })
                 }"
                 @delete="rows => {deleteChildRow({fieldName: 'custom_infected_diseases', rows})}"
-                title="Infected Diseases"
+                title="Medical History"
                 >
                   <template v-slot:dialog="{ row }">
                     <a-form layout="vertical">

@@ -351,38 +351,39 @@
             <v-row>
               <v-col cols="12" md="6">
                 <a-select
-                  class="w-full"
-                  ref="patientRef"
-                  v-model:value="checkAvailabilityPatient"
-                  :options="$resources.patients.data?.options"
-                  :fieldNames="{label: 'patient_name', value: 'name'}"
-                  show-search
-                  :loading="$resources.patients.list.loading"
-                  @search="(value) => {handleSearch(
-                    value, 
-                    $resources.patients, 
-                    {status: 'Active'}, 
-                    {status: 'Active'},
-                    [
-                      ['patient_name', 'like', `%${value}%`], 
-                      ['mobile', 'like', `%${value}%`], 
-                      ['custom_cpr', 'like', `%${value}%`], 
-                      ['custom_file_number', 'like', `%${value}%`]
-                    ]
-                  )}"
-                  @change="(value, option) => {
-                    checkAvailabilityDialog(option.name)
-                  }"
-                  :filterOption="false"
-                  >
-                    <template #option="{ patient_name, mobile, custom_cpr }">
-                      <div class="flex flex-col">
-                        <span v-if="patient_name" class="ms-2"><strong>Name:</strong> {{ patient_name }}</span>
-                        <span v-if="custom_cpr" class="ms-2 text-xs"><strong>CPR:</strong> {{ custom_cpr }}</span>
-                        <span v-if="mobile" class="ms-2 text-xs"><strong>Mobile:</strong> {{ mobile }}</span>
-                      </div>
-                    </template>
-                  </a-select>
+                class="w-full"
+                ref="patientRef"
+                v-model:value="checkAvailabilityPatient"
+                :options="$resources.patients.data?.options"
+                :fieldNames="{label: 'patient_name', value: 'name'}"
+                show-search
+                :loading="$resources.patients.list.loading"
+                @search="(value) => {handleSearch(
+                  value, 
+                  $resources.patients, 
+                  {status: 'Active'}, 
+                  {status: 'Active'},
+                  [
+                    ['patient_name', 'like', `%${value}%`], 
+                    ['mobile', 'like', `%${value}%`], 
+                    ['custom_cpr', 'like', `%${value}%`], 
+                    ['custom_file_number', 'like', `%${value}%`]
+                  ]
+                )}"
+                @change="(value, option) => {
+                  checkAvailabilityDialog(option.name)
+                }"
+                :filterOption="false"
+                >
+                  <template #option="{ patient_name, mobile, custom_cpr }">
+                    <div class="flex flex-col">
+                      <span v-if="patient_name" class="ms-2"><strong>Name:</strong> {{ patient_name }}</span>
+                      <span v-if="custom_cpr" class="ms-2 text-xs"><strong>CPR:</strong> {{ custom_cpr }}</span>
+                      <span v-if="mobile" class="ms-2 text-xs"><strong>Mobile:</strong> {{ mobile }}</span>
+                      <span v-if="mobile" class="ms-2 text-xs"><strong>File#:</strong> {{ custom_file_number }}</span>
+                    </div>
+                  </template>
+                </a-select>
               </v-col>
             </v-row>
             <v-row v-if="checkAvailabilityPatient">
@@ -604,7 +605,7 @@ export default {
       doctype: 'Patient', 
       fields: [
         'sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 
-        'inpatient_record', 'inpatient_status', 'custom_default_payment_type',
+        'inpatient_record', 'inpatient_status', 'custom_default_payment_type', 'custom_file_number'
       ], 
       filters: {status: 'Active'},
       limit_start: 0,

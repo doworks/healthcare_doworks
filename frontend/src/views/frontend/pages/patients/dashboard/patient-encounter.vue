@@ -612,7 +612,16 @@
                         <v-row>
                           <v-col>
                             General Data
-                            <QuillEditor v-model:content="procedureForms[selectedProcedure].custom_general_data" :options="quillEditorOptions" style="height: 300px"/>
+                            <QuillEditor 
+                            ref="quillEditor" 
+                            contentType="html"
+                            v-model:content="procedureForms[selectedProcedure].custom_general_data" 
+                            :options="quillEditorOptions" 
+                            style="height: 300px"
+                            @blur="event => {
+                              autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'custom_general_data', event.target.value)
+                            }"
+                            />
                           </v-col>
                         </v-row>
                         <v-divider></v-divider>
@@ -625,6 +634,15 @@
                                 annotationDoctype = procedureForms[selectedProcedure].doctype; 
                                 procedureActive = true
                               }">Free Drawing</v-btn>
+                              <v-btn 
+                              class="text-none" 
+                              variant="flat" 
+                              :disabled="records.current_encounter.status == 'Completed'" 
+                              color="red" 
+                              @click="() => {sergicalProcedureActive = true}"
+                              >
+                                Sergical Procedure
+                              </v-btn>
                             </div>
                           </v-col>
                         </v-row>
@@ -1852,12 +1870,12 @@
               </v-card>
               <v-card class="p-0 mt-4" id="infected-diseases" variant="tonal" color="light-green">
                 <template v-slot:title>
-                  Infected Diseases
+                  Medical History
                 </template>
                 <template v-slot:text>
                   <div :class="{'d-none': records.patient.custom_infected_diseases.length > 0}">
                     <v-empty-state
-                      title="No Infected Diseases"
+                      title="No Medical History"
                     ></v-empty-state>
                   </div>
                   <div
@@ -2154,6 +2172,84 @@
         </v-card>
 
       </v-dialog>
+
+      <v-dialog v-model="sergicalProcedureActive" width="auto">
+        <v-toolbar color="light-blue" :style="{borderTopRightRadius: '12px', borderTopLeftRadius: '12px'}">
+          <v-btn variant="text" icon="mdi mdi-close" @click="sergicalProcedureActive = false"></v-btn>
+          
+          <v-toolbar-title>Sergical Procedure</v-toolbar-title>
+          
+          <v-spacer></v-spacer>
+          
+          <v-toolbar-items v-if="records.current_encounter.status != 'Completed'">
+            <v-btn
+              class="text-none" 
+              text="Save"
+              variant="text"
+              @click="saveSergicalHistory"
+            ></v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
+
+        <v-card rounded="lg">
+          <v-card-text>
+
+            <a-form layout="vertical">
+              <a-form-item label="Procedure Name">
+                <a-select
+                v-model:value="procedureProcedureName"
+                mode="multiple"
+                :options="$resources.clinicalProcedureTemplates.data?.options"
+                :fieldNames="{label: 'template', value: 'template'}"
+                style="min-width: 400px; max-width: 600px;"
+                show-search
+                :loading="$resources.clinicalProcedureTemplates.list.loading"
+                @search="(value) => {handleSearch(
+                  value, 
+                  $resources.clinicalProcedureTemplates, 
+                  {}, 
+                  {},
+                )}"
+                :filterOption="false"
+                ></a-select>
+              </a-form-item>
+              <a-form-item label="Indication">
+                <a-select
+                v-model:value="procedureIndication"
+                mode="multiple"
+                :options="$resources.surgeryIndications.data?.options"
+                :fieldNames="{label: 'indication_name', value: 'indication_name'}"
+                style="min-width: 400px; max-width: 600px;"
+                show-search
+                :loading="$resources.surgeryIndications.list.loading"
+                @search="(value) => {handleSearch(
+                  value, 
+                  $resources.surgeryIndications, 
+                  {}, 
+                  {},
+                )}"
+                :filterOption="false"
+                ></a-select>
+              </a-form-item>
+              <a-form-item label="Finding">
+                <a-textarea 
+                :disabled="records.current_encounter.status == 'Completed'"
+                :rows="4" 
+                v-model:value="procedureFinding" 
+                />
+              </a-form-item>
+              <a-form-item label="Operative Notes">
+                <a-textarea 
+                :disabled="records.current_encounter.status == 'Completed'"
+                :rows="4" 
+                v-model:value="procedureOperativeNote" 
+                />
+              </a-form-item>
+            </a-form>
+          </v-card-text>
+        </v-card>
+
+      </v-dialog>
     </div>
   </div>
 </template>
@@ -2303,6 +2399,22 @@ export default {
       auto: true,
       orderBy: 'name',
       pageLength: 30,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
+    surgeryIndications() { return { 
+      type: 'list', 
+      doctype: 'Surgery Indication', 
+      fields: ['name', 'indication_name'], 
+      auto: true,
+      orderBy: 'name',
+      pageLength: 10,
       url: 'frappe.desk.reportview.get', 
       transform(data) {
         if(data.values.length == 0)
@@ -2576,6 +2688,12 @@ export default {
       medicalHistoryActive: false,
       appointmentNoteActive: false,
       appointmentInvoiceActive: false,
+      sergicalProcedureActive: false,
+
+      procedureProcedureName: [],
+      procedureIndication: [],
+      procedureFinding: '',
+      procedureOperativeNote: '',
 
       alertMessage: '',
       alertType: '', // 'success' or 'error'
@@ -2971,6 +3089,33 @@ export default {
       }).catch(error => {
         this.showAlert(error.message, 'error')
       });
+    },
+    saveSergicalHistory() {
+      let procedureRow = ''
+      let indicationRow = ''
+      let findingRow = ''
+      let noteRow = ''
+      if(this.procedureProcedureName){
+        procedureRow = '<strong>Procedure Name:</strong> '
+        this.procedureProcedureName.forEach(value => {procedureRow += value + ', '})
+        procedureRow = procedureRow.slice(0, -2)
+        procedureRow += '<br>'
+      }
+      if(this.procedureIndication){
+        indicationRow = '<strong>Indication:</strong> '
+        this.procedureIndication.forEach(value => {indicationRow += value + ', '})
+        indicationRow = indicationRow.slice(0, -2)
+        indicationRow += '<br>'
+      }
+      if(this.procedureFinding)
+        findingRow = '<strong>Finding:</strong> ' + this.procedureFinding + '<br>'
+      if(this.procedureOperativeNote)
+        noteRow = '<strong>Operative Note:</strong> ' + this.procedureOperativeNote
+      this.procedureForms[this.selectedProcedure].custom_general_data = procedureRow + indicationRow + findingRow + noteRow
+      this.procedureForms[this.selectedProcedure].custom_general_data = this.procedureForms[this.selectedProcedure].custom_general_data.replace(/\n/g, '<br>')
+      this.$refs.quillEditor.pasteHTML(this.procedureForms[this.selectedProcedure].custom_general_data)
+      this.autoSave('Clinical Procedure', this.procedureForms[this.selectedProcedure].name, 'custom_general_data', this.$refs.quillEditor.getHTML())
+      this.sergicalProcedureActive = false
     },
     showConsentForm() {
       this.$call('healthcare_doworks.api.methods.get_print_html', 
