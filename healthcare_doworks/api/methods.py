@@ -31,7 +31,7 @@ def fetch_resources():
 		'siteName': frappe.local.site
 	}
 
-# Appointments Page
+# Appointments And Nurse Pages
 @frappe.whitelist()
 def get_tabs_count(filters):
 	total_count = {'Scheduled': 0, 'Arrived': 0, 'Ready': 0, 'In Room': 0, 'Completed': 0, 'No Show': 0}
@@ -82,7 +82,7 @@ def check_availability(patient):
 			'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
 			'custom_payment_type', 'patient_age', 'patient', 'custom_confirmed', 'custom_customer'
 		],
-		order_by='appointment_datetime desc',
+		order_by='appointment_date desc, appointment_time desc',
 	)
 	for appointment in appointments:
 		appointment = get_appointment_details(appointment)
@@ -97,7 +97,7 @@ def get_past_appointments(patient):
 			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
 			'practitioner_name', 'duration', 'appointment_date', 'appointment_time', 'custom_confirmed'
 		],
-		order_by='appointment_datetime desc',
+		order_by='appointment_date desc, appointment_time desc',
 		page_length=10
 	)
 	for appointment in appointments:
@@ -108,11 +108,14 @@ def get_past_appointments(patient):
 	return appointments
 
 @frappe.whitelist()
-def fetch_nurse_records():
-	return {
-		'appointments': get_appointments(),
-		'services': get_services(),
-	}
+def get_checklist_form(name):
+	form = frappe.db.get_list('Checklist Form', filters={'name': name}, fields=['doctype', 'name', 'form_template', 'appointment'], )[0]
+	form['children'] = {'checklist_items': get_checklist_form_items(name)}
+	return form
+
+@frappe.whitelist()
+def get_checklist_form_items(template):
+	return frappe.get_all('Checklist Form Items', fields=['label', 'for', 'type', 'options', 'value', 'idx'], filters={'parent': template}, order_by='idx')
 
 @frappe.whitelist()
 def reschedule_appointment(form, children={}):
