@@ -741,7 +741,7 @@ export default {
       .then(response => {
         if(response.total_count)
           this.totalCount = response.total_count
-
+        console.log(response.appointments)
         const combinedAppointments = [...this.appointments, ...this.adjustAppointments(response.appointments)].reduce((acc, obj) => {
           acc.set(obj.name, obj);
           return acc;

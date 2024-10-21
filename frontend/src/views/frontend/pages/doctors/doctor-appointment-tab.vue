@@ -437,7 +437,8 @@
 							</template>
 						</Column>
 						<Column header="From" field="from"></Column>
-						<Column header="To" field="full_name"></Column>
+						<Column header="For" field="for"></Column>
+						<Column header="Users/Roles" field="names"></Column>
 						<Column header="Note" field="note"></Column>
 					</DataTable>
 				</div>
@@ -611,7 +612,7 @@ export default {
 				}] : []),
 				...(this.$route.name == 'nurse-dashboard' ? [{
 					label: 'Checklist Form',
-					icon: 'mdi mdi-medical-bag',
+					icon: 'mdi mdi-format-list-checks',
 					command: () => this.$emit('checklist-form-dialog', this.selectedRow)
 				}] : []),
 				{
@@ -624,7 +625,7 @@ export default {
 					icon: 'pi pi-wallet',
 					command: () => {this.$emit('payment-type-dialog', this.selectedRow)}
 				}] : []),
-				...(this.$myresources.user.roles.some(value => value.role == 'Practitioner') ? [{
+				...(this.$myresources.user.roles.some(value => value.role == 'Practitioner') && this.tab != 'scheduled' && this.tab != 'no show' ? [{
 					label: 'Patient Encounter',
 					icon: 'mdi mdi-bandage',
 					command: () => {this.goToEncounter()}

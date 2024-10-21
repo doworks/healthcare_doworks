@@ -641,7 +641,7 @@
                               color="red" 
                               @click="() => {sergicalProcedureActive = true}"
                               >
-                                Sergical Procedure
+                                Surgical Procedure
                               </v-btn>
                             </div>
                           </v-col>
@@ -890,17 +890,67 @@
                                 {},
                               )}"
                               :filterOption="false"
-                              ></a-select>
+                              >
+                                <template #dropdownRender="{ menuNode: menu }">
+                                  <v-nodes :vnodes="menu" />
+                                  <a-divider style="margin: 4px 0" />
+                                  <a-space style="padding: 4px 8px">
+                                    <a-input ref="inputRef" v-model:value="newComplaint" placeholder="Please enter complaint" />
+                                    <a-button type="text" @click="() => {
+                                      addDoc({doctype: 'Complaint', complaints: newComplaint}, doc => {
+                                        newComplaint = ''
+                                        $resources.complaints.reload()
+                                      }); 
+                                    }">
+                                      <template #icon>
+                                        <i class="mdi mdi-plus"></i>
+                                      </template>
+                                      Add Complaint
+                                    </a-button>
+                                  </a-space>
+                                </template>
+                              </a-select>
                             </a-form-item>
                             <a-form-item label="Symptoms Duration">
-                              <a-input-number 
+                              <a-select
                               :disabled="records.current_encounter.status == 'Completed'"
-                              class="w-full" 
-                              :min="0" 
-                              v-model:value="encounterForm.custom_symptoms_duration" 
-                              @blur="event => {
-                                autoSave('Patient Encounter', encounterForm.name, 'custom_symptoms_duration', parseInt(event.target.value))
-                              }"/>
+                              v-model:value="encounterForm.custom_symptom_duration"
+                              :options="$resources.symptomDurations.data?.options"
+                              :fieldNames="{label: 'duration', value: 'name'}"
+                              style="width: 100%"
+                              @change="value => {
+                                autoSave('Patient Encounter', encounterForm.name, 'custom_symptom_duration', value)
+                              }"
+                              show-search
+                              :loading="$resources.symptomDurations.list.loading"
+                              @search="(value) => {handleSearch(
+                                value, 
+                                $resources.symptomDurations, 
+                                {duration: ['like', `%${value}%`]}, 
+                                {},
+                              )}"
+                              :filterOption="false"
+                              >
+                                <template #dropdownRender="{ menuNode: menu }">
+                                  <v-nodes :vnodes="menu" />
+                                  <a-divider style="margin: 4px 0" />
+                                  <a-space style="padding: 4px 8px">
+                                    <a-input ref="inputRef" v-model:value="newSymptomDuration" placeholder="Please enter duration" />
+                                    <a-button type="text" @click="() => {
+                                      addDoc({doctype: 'Symptom Duration', duration: newSymptomDuration}, doc => {
+                                        newSymptomDuration = ''
+                                        $resources.symptomDurations.reload()
+                                        encounterForm.custom_symptom_duration = doc.name
+                                      }); 
+                                    }">
+                                      <template #icon>
+                                        <i class="mdi mdi-plus"></i>
+                                      </template>
+                                      Add Symptom Duration
+                                    </a-button>
+                                  </a-space>
+                                </template>
+                              </a-select>
                             </a-form-item>
                             <a-form-item label="Note">
                               <a-textarea 
@@ -1194,7 +1244,26 @@
                                 {},
                               )}"
                               :filterOption="false"
-                              ></a-select>
+                              >
+                                <template #dropdownRender="{ menuNode: menu }">
+                                  <v-nodes :vnodes="menu" />
+                                  <a-divider style="margin: 4px 0" />
+                                  <a-space style="padding: 4px 8px">
+                                    <a-input ref="inputRef" v-model:value="newDiagnosis" placeholder="Please enter diagnosis" />
+                                    <a-button type="text" @click="() => {
+                                      addDoc({doctype: 'Diagnosis', diagnosis: newDiagnosis}, doc => {
+                                        newDiagnosis = ''
+                                        $resources.diagnosis.reload()
+                                      }); 
+                                    }">
+                                      <template #icon>
+                                        <i class="mdi mdi-plus"></i>
+                                      </template>
+                                      Add Diagnosis
+                                    </a-button>
+                                  </a-space>
+                                </template>
+                              </a-select>
                             </a-form-item>
                             <a-form-item label="Differential Diagnosis">
                               <a-select
@@ -1231,7 +1300,26 @@
                                 {},
                               )}"
                               :filterOption="false"
-                              ></a-select>
+                              >
+                                <template #dropdownRender="{ menuNode: menu }">
+                                  <v-nodes :vnodes="menu" />
+                                  <a-divider style="margin: 4px 0" />
+                                  <a-space style="padding: 4px 8px">
+                                    <a-input ref="inputRef" v-model:value="newDiagnosis" placeholder="Please enter diagnosis" />
+                                    <a-button type="text" @click="() => {
+                                      addDoc({doctype: 'Diagnosis', diagnosis: newDiagnosis}, doc => {
+                                        newDiagnosis = ''
+                                        $resources.diagnosis.reload()
+                                      }); 
+                                    }">
+                                      <template #icon>
+                                        <i class="mdi mdi-plus"></i>
+                                      </template>
+                                      Add Diagnosis
+                                    </a-button>
+                                  </a-space>
+                                </template>
+                              </a-select>
                             </a-form-item>
                             <a-form-item label="Diagnosis Note">
                               <a-textarea 
@@ -2277,7 +2365,7 @@ import GifLoader from "@/components/GifLoader.vue";
 // import LottieLoader from "@/components/LottieLoader.vue";
 import gifUrl from "@/assets/img/animations/loading-animation.gif";
 
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed, defineComponent } from 'vue';
 import { Form } from 'ant-design-vue';
 
 import encounterRecords from '@/assets/json/encounterrecords.json'
@@ -2294,6 +2382,17 @@ export default {
     VSlideGroup, VSlideGroupItem, VProgressLinear, VChip, VEmptyState, VAvatar, VIcon, VBtnGroup, QuillEditor,
     VSelect, VStepper, VStepperHeader, VStepperItem, VStepperActions, VStepperWindow, VStepperWindowItem, VSheet,
     Image, VHover, pdfSignature, VToolbar, VToolbarItems, VToolbarTitle, VSpacer, VList, VListItem, VListItemTitle,
+    VNodes: defineComponent({
+      props: {
+        vnodes: {
+          type: Object,
+          required: true,
+        },
+      },
+      render() {
+        return this.vnodes;
+      },
+    }),
   },
   resources: {
     medications() { return { 
@@ -2396,6 +2495,22 @@ export default {
       type: 'list', 
       doctype: 'Clinical Procedure Template', 
       fields: ['name', 'template', 'medical_department'], 
+      auto: true,
+      orderBy: 'name',
+      pageLength: 30,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
+    symptomDurations() { return { 
+      type: 'list', 
+      doctype: 'Symptom Duration', 
+      fields: ['name', 'duration'], 
       auto: true,
       orderBy: 'name',
       pageLength: 30,
@@ -2630,6 +2745,65 @@ export default {
       }
 		}},
   },
+  setup() {
+    let encounterForm = reactive({
+      doctype: 'Patient Encounter',
+      name: '',
+      custom_encounter_start_time: dayjs(),
+      procedure_date: dayjs(),
+      symptoms: [],
+      custom_symptom_duration: 0,
+      custom_symptoms_notes: '',
+      custom_physicalExamination: '',
+      custom_otherExamination: '',
+      diagnosis: [],
+      custom_differential_diagnosis: [],
+      custom_diagnosis_note: '',
+      appointment: '',
+      appointment_type: '',
+      custom_appointment_category: '',
+      custom_encounter_state: '',
+      patient: '',
+      patient_name: '',
+      patient_sex: '',
+      patient_age: '',
+      practitioner: '',
+      practitioner_name: '',
+      medical_department: '',
+      custom_illness_progression: '',
+    });
+
+    let procedureForms = reactive([{
+      doctype: 'Clinical Procedure',
+      name: '',
+      custom_patient_consent_signature: '',
+
+      custom_patient_encounter: '',
+      procedure_template: '',
+      
+      patient: '',
+      patient_name: '',
+      patient_sex: '',
+      patient_age: '',
+      inpatient_record: '',
+      notes: '',
+      practitioner: '',
+      practitioner_name: '',
+      medical_department: '',
+      service_unit: '',
+      start_date: dayjs(),
+      start_time: dayjs(),
+      sample: '',
+
+      custom_pre_operative_diagnosis: '',
+      custom_post_operative_diagnosis: '',
+    }]);
+
+    return {
+      encounterForm,
+      procedureForms,
+    };
+  },
   data() {
     return {
       gifUrl:gifUrl,
@@ -2654,6 +2828,10 @@ export default {
           ],
         },
       },
+
+      newSymptomDuration: '',
+      newComplaint: '',
+      newDiagnosis: '',
 
       isLoading: false,
       consentFormDialog: false,
@@ -2708,58 +2886,7 @@ export default {
       previousState: '',
       annotationDoctype: '',
       encounterAnnotationType: '',
-      encounterForm: reactive({
-        doctype: 'Patient Encounter',
-        name: '',
-        custom_encounter_start_time: dayjs(),
-        procedure_date: dayjs(),
-        symptoms: [],
-        custom_symptoms_duration: 0,
-        custom_symptoms_notes: '',
-        custom_physicalExamination: '',
-        custom_otherExamination: '',
-        diagnosis: [],
-        custom_differential_diagnosis: [],
-        custom_diagnosis_note: '',
-        appointment: '',
-        appointment_type: '',
-        custom_appointment_category: '',
-        custom_encounter_state: '',
-        patient: '',
-        patient_name: '',
-        patient_sex: '',
-        patient_age: '',
-        practitioner: '',
-        practitioner_name: '',
-        medical_department: '',
-        custom_illness_progression: '',
-			}),
-
-      procedureForms: reactive([{
-        doctype: 'Clinical Procedure',
-        name: '',
-        custom_patient_consent_signature: '',
-
-        custom_patient_encounter: '',
-        procedure_template: '',
-        
-        patient: '',
-        patient_name: '',
-        patient_sex: '',
-        patient_age: '',
-        inpatient_record: '',
-        notes: '',
-        practitioner: '',
-        practitioner_name: '',
-        medical_department: '',
-        service_unit: '',
-        start_date: dayjs(),
-        start_time: dayjs(),
-        sample: '',
-
-        custom_pre_operative_diagnosis: '',
-        custom_post_operative_diagnosis: '',
-			}]),
+      
     };
   },
   computed: {
@@ -3116,6 +3243,15 @@ export default {
       this.$refs.quillEditor.pasteHTML(this.procedureForms[this.selectedProcedure].custom_general_data)
       this.autoSave('Clinical Procedure', this.procedureForms[this.selectedProcedure].name, 'custom_general_data', this.$refs.quillEditor.getHTML())
       this.sergicalProcedureActive = false
+    },
+    addDoc(form, callback){
+      this.$call('healthcare_doworks.api.methods.new_doc', {form})
+      .then(response => {
+        callback(response)
+        this.$toast.add({ severity: 'success', summary: 'Success', detail: `New ${response.doctype} created`, life: 3000 });
+      }).catch(error => {
+        this.showAlert(error.message, 'error')
+      });
     },
     showConsentForm() {
       this.$call('healthcare_doworks.api.methods.get_print_html', 

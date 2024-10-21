@@ -23,16 +23,16 @@
         <template #content>
           <div class="flex justify-between gap-8">
             <div class="flex flex-col gap-1">
-              <span class="text-surface-500 dark:text-surface-400 text-sm">Today Appointments</span>
+              <span class="text-surface-500 dark:text-surface-400 text-sm">Orders Completed</span>
               <!-- <span class="font-bold text-lg">{{ val.value }}%</span>
               <h6 >Today Appointments</h6> -->
               <div class="d-flex">
-                <span class="text-info font-bold text-lg">{{appointments.length - updatedAppointments.length}}</span>
-                <span class="font-bold text-lg">/{{appointments.length}}</span>
+                <span class="text-green font-bold text-lg">{{$resources.services.data?.filter(value => value.status == 'Completed').length}}</span>
+                <span class="font-bold text-lg">/{{$resources.services.data?.length}}</span>
               </div>
             </div>
             <span class="w-8 h-8 rounded-full inline-flex justify-center items-center text-center bg-blue">
-              <i class="mdi mdi-calendar-account" />
+              <i class="mdi mdi-account-voice"/>
             </span>
           </div>
         </template>
@@ -41,16 +41,16 @@
         <template #content>
           <div class="flex justify-between gap-8">
             <div class="flex flex-col gap-1">
-              <span class="text-surface-500 dark:text-surface-400 text-sm">Orders Completed</span>
+              <span class="text-surface-500 dark:text-surface-400 text-sm">Nursing Tasks Completed</span>
               <!-- <span class="font-bold text-lg">{{ val.value }}%</span>
               <h6 >Today Appointments</h6> -->
               <div class="d-flex">
-                <span class="text-green font-bold text-lg">{{services.filter(value => value.status == 'Completed').length}}</span>
-                <span class="font-bold text-lg">/{{services.length}}</span>
+                <span class="text-green font-bold text-lg">{{$resources.nursingTasks.data?.filter(value => value.status == 'Completed').length}}</span>
+                <span class="font-bold text-lg">/{{$resources.nursingTasks.data?.length}}</span>
               </div>
             </div>
             <span class="w-8 h-8 rounded-full inline-flex justify-center items-center text-center bg-green">
-              <i class="mdi mdi-walk" />
+              <i class="mdi mdi-order-bool-ascending-variant" />
             </span>
           </div>
         </template>
@@ -105,19 +105,37 @@
     <div class="row row-cols-lg-2 cont mb-3" style="overflow: hidden;">
       <Card class="col-12 col-lg-6 left-col p-0" id="services" style="overflow: hidden;">
         <template #title>
-          Orders ({{ services && services.length }})
+          Orders ({{ $resources.services.data?.length }})
         </template>
         <template #content>
-          <DataTable :value="services">
+          <DataTable :value="$resources.services.data">
             <template #empty><v-empty-state title="No Service Requests"></v-empty-state></template>
             <Column field="template_dn" header="Service Name"></Column>
             <Column field="order_date" header="Ordered On"></Column>
             <Column field="status" header="Status">
               <template #body="{ data }">
-                {{ data.status.split('-')[0] }}
+                {{ data.status?.split('-')[0] }}
               </template>
             </Column>
             <Column field="practitioner" header="Ordered By"></Column>
+          </DataTable>
+        </template>
+      </Card>
+      <Card class="col-12 col-lg-6 right-col p-0" id="nursing-tasks" style="overflow: hidden;">
+        <template #title>
+          Nursing Tasks ({{ $resources.nursingTasks.data?.length }})
+        </template>
+        <template #content>
+          <DataTable :value="$resources.nursingTasks.data">
+            <template #empty><v-empty-state title="No Nursing Tasks"></v-empty-state></template>
+            <Column field="activity" header="Activity"></Column>
+            <Column field="mandatory" header="Mandatory?"></Column>
+            <Column field="patient_name" header="Patient Name"></Column>
+            <Column field="service_unit" header="Room"></Column>
+            <Column field="requested_start_time" header="Requested Start Time"></Column>
+            <Column field="requested_end_time" header="Requested EnD Time"></Column>
+            <Column field="duration" header="Duration"></Column>
+            <Column field="status" header="Status"></Column>
           </DataTable>
         </template>
       </Card>
@@ -345,16 +363,29 @@ export default {
       fields: [
 				'status', 'order_date', 'order_time', 'practitioner', 'practitioner_email', 'medical_department', 'referred_to_practitioner', 
 				'source_doc', 'order_group', 'sequence', 'staff_role', 'patient_care_type', 'intent', 'priority', 'quantity', 'dosage_form', 
-				'as_needed', 'dosage', 'occurrence_date', 'occurrence_time', 'healthcare_service_unit_type', 'order_description', 
+				'as_needed', 'dosage', 'occurrence_date', 'occurrence_time', 'healthcare_service_unit_type', 'order_description', 'name',
 				'patient_instructions', 'template_dt', 'template_dn', 'sample_collection_required', 'qty_invoiced', 'billing_status'
 			], 
       filters: {staff_role: 'Nursing User'},
       auto: true, 
       pageLength: 1000,
+    }},
+    nursingTasks() { return { 
+      type: 'list', 
+      doctype: 'Nursing Task', 
+      fields:[
+        'name', 'date', 'service_unit', 'medical_department', 'status', 'activity', 'mandatory', 'description', 'patient', 'patient_name',
+        'age', 'gender', 'inpatient_record', 'inpatient_status', 'requested_start_time', 'requested_end_time', 'duration', 'task_start_time',
+        'task_end_time', 'task_duration', 'reference_doctype', 'reference_name', 'task_doctype', 'task_document_name', 'notes'
+      ], 
+      filters:{'requested_start_time': ['<=', dayjs().format('YYYY-MM-DD')], 'requested_end_time': ['>=', dayjs().format('YYYY-MM-DD')]}, 
+      auto: true, 
+      pageLength: 1000,
       transform(data) {
-        this.services = data
+        if(data.values.length == 0)
+
         return data
-      },
+      }
     }},
     customers() { return { 
       type: 'list', 

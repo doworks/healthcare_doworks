@@ -1134,7 +1134,7 @@
                           {{ formatDate(slotProps.data.creation) }}
                         </template>
                       </Column>
-                      <Column field="medical_department"></Column>
+                      <Column field="procedure_template"></Column>
                       <Column field="practitioner_name"></Column>
                     </DataTable>
                   </template>

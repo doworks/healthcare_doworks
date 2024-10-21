@@ -7,14 +7,21 @@
         </v-card-title>
         <v-divider class="m-0"></v-divider>
         <v-card-text>
-          <a-form-item label="To">
+          <a-form-item label="For">
+            <a-select
+            v-model:value="form.for"
+            :options="[{label: 'Users', value: 'Users'}, {label: 'Roles', value: 'Roles'}]"
+            style="min-width: 400px; max-width: 600px;"
+            ></a-select>
+          </a-form-item>
+          <a-form-item label="Users" v-if="form.for == 'Users'">
             <a-select
             allow-clear
-            v-model:value="form.to"
+            mode="multiple"
+            v-model:value="form.children.users"
             :options="$resources.users.data?.options"
             :fieldNames="{label: 'full_name', value: 'name'}"
             style="min-width: 400px; max-width: 600px;"
-            @change="(value, option) => {form.full_name = option.full_name}"
             show-search
             :loading="$resources.users.list.loading"
             @search="(value) => {handleSearch(
@@ -22,6 +29,25 @@
               $resources.users, 
               {enabled: 1, full_name: ['like', `%${value}%`]}, 
               {enabled: 1},
+            )}"
+            :filterOption="false"
+            ></a-select>
+          </a-form-item>
+          <a-form-item label="Roles" v-if="form.for == 'Roles'">
+            <a-select
+            allow-clear
+            mode="multiple"
+            v-model:value="form.children.roles"
+            :options="$resources.roles.data?.options"
+            :fieldNames="{label: 'role_name', value: 'name'}"
+            style="min-width: 400px; max-width: 600px;"
+            show-search
+            :loading="$resources.roles.list.loading"
+            @search="(value) => {handleSearch(
+              value, 
+              $resources.roles, 
+              {disabled: 0, role_name: ['like', `%${value}%`]}, 
+              {disabled: 0},
             )}"
             :filterOption="false"
             ></a-select>
@@ -72,13 +98,30 @@ export default {
     appointmentId: {type: String, required: true, default: ''},
   },
   resources: {
-      users() { return { 
+    users() { return { 
       type: 'list', 
       doctype: 'User', 
       filters: {enabled: 1},
       fields: ['name', 'full_name'], 
       auto: true, 
       orderBy: 'full_name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
+    roles() { return { 
+      type: 'list', 
+      doctype: 'Role', 
+      filters: {disabled: 0},
+      fields: ['name', 'role_name'], 
+      auto: true, 
+      orderBy: 'role_name',
       pageLength: 10,
       url: 'frappe.desk.reportview.get', 
       transform(data) {
@@ -104,9 +147,12 @@ export default {
     return {
       lodingOverlay: false,
       form: {
-        to: '',
-        full_name: '',
+        for: 'Users',
         note: '',
+        children: {
+          users: [],
+          roles: []
+        },
       },
     };
   },
@@ -114,9 +160,12 @@ export default {
     isOpen(newVal) {
       if (newVal) {
         this.form = {
-          to: '',
-          full_name: '',
+          for: 'Users',
           note: '',
+          children: {
+            users: [],
+            roles: []
+          },
         }
       }
     },
@@ -130,18 +179,35 @@ export default {
     },
     onSubmit() {
       this.lodingOverlay = true;
-      this.$call('frappe.client.insert', {doc: {
+      // let form = {
+      //   doctype: 'Appointment Note Table', 
+      //   parent: this.appointmentId, 
+      //   parentfield: 'custom_visit_notes', 
+      //   parenttype: 'Patient Appointment', 
+      //   for: this.form.for, 
+      //   from: this.$myresources.user.name,
+      //   time: dayjs().format('YYYY-MM-DD HH:mm'), 
+      //   note: this.form.note, 
+      //   read: 0, 
+      // }
+      let children = {}
+      if(this.form.children.users.length > 0){
+        children.users = this.form.children.users.map(value => ({user: value}))
+      }
+      if(this.form.children.roles.length > 0){
+        children.roles = this.form.children.roles.map(value => ({role: value}))
+      }
+      this.$call('healthcare_doworks.api.methods.new_doc', {form: {
         doctype: 'Appointment Note Table', 
         parent: this.appointmentId, 
         parentfield: 'custom_visit_notes', 
         parenttype: 'Patient Appointment', 
-        to: this.form.to, 
+        for: this.form.for, 
         from: this.$myresources.user.name,
         time: dayjs().format('YYYY-MM-DD HH:mm'), 
-        full_name: this.form.full_name,
         note: this.form.note, 
         read: 0, 
-      }}).then(response => {
+      }, children}).then(response => {
         this.$toast.add({
           severity: 'success',
           summary: 'Success',

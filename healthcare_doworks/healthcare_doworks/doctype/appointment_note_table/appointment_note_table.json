@@ -6,12 +6,13 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "to",
-  "full_name",
+  "for",
   "note",
   "read",
   "time",
-  "from"
+  "from",
+  "users",
+  "roles"
  ],
  "fields": [
   {
@@ -28,19 +29,6 @@
    "label": "Read"
   },
   {
-   "fieldname": "to",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "To",
-   "options": "User"
-  },
-  {
-   "fetch_from": "to.full_name",
-   "fieldname": "full_name",
-   "fieldtype": "Data",
-   "label": "Full Name"
-  },
-  {
    "fieldname": "time",
    "fieldtype": "Datetime",
    "label": "Time"
@@ -50,12 +38,33 @@
    "fieldtype": "Link",
    "label": "From",
    "options": "User"
+  },
+  {
+   "fieldname": "for",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "For",
+   "options": "Users\nRoles"
+  },
+  {
+   "depends_on": "eval:doc.for==\"Users\"",
+   "fieldname": "users",
+   "fieldtype": "Table MultiSelect",
+   "label": "Users",
+   "options": "User Multitable"
+  },
+  {
+   "depends_on": "eval:doc.for==\"Roles\"",
+   "fieldname": "roles",
+   "fieldtype": "Table MultiSelect",
+   "label": "Roles",
+   "options": "Role Multitable"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-09-08 10:16:38.386099",
+ "modified": "2024-10-21 11:27:57.334887",
  "modified_by": "Administrator",
  "module": "Healthcare Doworks",
  "name": "Appointment Note Table",

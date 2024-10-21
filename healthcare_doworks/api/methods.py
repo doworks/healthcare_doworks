@@ -671,6 +671,15 @@ def new_doc(form, children={}, submit=False):
 	doc.insert()
 	if(submit):
 		doc.submit()
+
+	if form.get('parenttype') == 'Patient Appointment':
+		parent = frappe.get_doc('Patient Appointment', form['parent'])
+		frappe.publish_realtime(
+			event="patient_appointments_updated",
+			message=get_appointment_details(parent.as_dict()),
+			after_commit=True
+		)
+
 	return doc
 
 def get_age(delta_st):
@@ -789,13 +798,32 @@ def get_appointment_details(appointment):
 	appointment['procedure_templates'] = procedure_templates
 
 	# Get visit notes
-	to_options = ['', frappe.session.user, frappe.session.full_name]
+	from_options = ['', frappe.session.user, frappe.session.full_name]
 	visit_notes = frappe.get_all('Appointment Note Table',
 		filters={'parent': appointment['name']},
-		or_filters={'to': ['in', to_options], 'from': ['in', to_options]},
-		fields=['name', 'to', 'full_name', 'note', 'time', 'read', 'from'],
+		fields=['name', 'for', 'note', 'time', 'read', 'from'],
 		order_by='time desc'
 	)
+	for note in visit_notes:
+
+		note['names'] = []
+		if note['for'] == 'Users':
+			users = frappe.get_all('User Multitable', filters={'parent': note.name}, fields=['user'])
+			if not (note['from'] in from_options or any(user['user'] == frappe.session.user for user in users)):
+				continue
+			note['users'] = users
+			for user in note['users']:
+				note['names'].append(frappe.db.get_value('User', user.user, 'full_name'))
+		else:
+			roles = frappe.get_all('Role Multitable', filters={'parent': note.name}, fields=['role'])
+			if not (note['from'] in from_options or any(role['role'] in frappe.get_roles(frappe.session.user) for role in roles)):
+				continue
+			note['roles'] = roles
+			for role in note['roles']:
+				note['names'].append(frappe.db.get_value('Role', role.role, 'role_name'))
+
+		note['names'] = ', '.join(note['names'])
+
 	appointment['visit_notes'] = visit_notes
 
 	# Get status log
@@ -857,8 +885,8 @@ def mark_no_show_appointments():
 	appointments = frappe.db.sql("""
 		SELECT name FROM `tabPatient Appointment`
 		WHERE custom_visit_status = 'Scheduled'
-		AND CAST(CONCAT(CAST(appointment_date as DATE), ' ', CAST(appointment_time as TIME)) as DATETIME) <= CAST(%(datetime_str)s as DATETIME)
-	""", {'datetime_str': get_datetime_str(add_to_date(get_datetime(), minutes=-15))}, as_dict=True)
+		AND TIMESTAMP(appointment_date, appointment_time) < (NOW() - INTERVAL 15 MINUTE)
+	""", as_dict=True)
 
 	# Loop through appointments and mark as no-show
 	for appointment in appointments:

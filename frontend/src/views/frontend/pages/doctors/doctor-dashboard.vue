@@ -182,9 +182,9 @@
                   <Tag v-if="data.timeSinceArrived" :value="data.timeSinceArrived" severity="success" style="width: 95px"></Tag>
                 </template>
               </Column>
-              <Column header="Status" field="status_log">
+              <Column header="Status" field="custom_visit_status">
                 <template #body="{ data }">
-                  <v-chip class="ma-2" label size="small" :color="getSeverity(visitStatus(data))">{{ visitStatus(data) }}</v-chip>
+                  <v-chip class="ma-2" label size="small" :color="getSeverity(data.custom_visit_status)">{{ data.custom_visit_status }}</v-chip>
                 </template>
               </Column>
               <Column style="width: 5%">
@@ -592,14 +592,16 @@ export default {
     getSeverity(status) {
 			switch (status) {
 				case 'Scheduled':
-					return 'success';
-
-				case 'Rescheduled':
-					return 'info';
-
-				case 'Walked In':
-					return 'warning';
-
+        case 'No Show':
+					return 'blue-grey';
+				case 'Arrived':
+					return 'lime';
+				case 'Ready':
+					return 'green';
+        case 'In Room':
+					return 'amber';
+        case 'Completed':
+					return 'blue';
 				default:
 					return 'danger';
 			}
