@@ -925,8 +925,22 @@ export default {
             return [{ '!bg-yellow-100 hover:!bg-yellow-200': data.read}];
         },
 		updateSeen(data) {
-			data.read = !data.read
-			this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {parent_doctype: 'Patient Appointment', parent_doc_name: this.selectedRow.name, child_table_fieldname: 'custom_visit_notes', filters: {name: data.name}, update_data: data})
+			this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {
+				parent_doctype: 'Patient Appointment', 
+				parent_doc_name: this.selectedRow.name, 
+				child_table_fieldname: 'custom_visit_notes', 
+				filters: {name: data.name}, 
+				update_data: {read: !data.read}
+			}).then(response => {
+				this.$toast.add({
+					severity: 'success',
+					summary: 'Success',
+					detail: 'Note updated',
+					life: 3000 // Duration in ms
+				});
+			}).catch(error => {
+				this.$emit('show-alert', error.message, 'error')
+			});
 		},
 		pageChanged(props) {
 			console.log(props)

@@ -80,7 +80,7 @@ export default {
   },
 	data() {
 		return {
-      lodingOverlay: false,
+      loding: false,
       notifications: false,
       sound: true,
       widgets: false,
@@ -94,6 +94,7 @@ export default {
       this.updateIsOpen(false);
     },
     triggerReactFunction() {
+      this.loding = true
       const event = new CustomEvent('vueToReactEvent', {
         detail: {
           callback: async (data) => {
@@ -112,8 +113,10 @@ export default {
                 detail: 'Annotation saved',
                 life: 3000 // Duration in ms
               });
+              this.loding = false
               this.closeDialog()
             }).catch(error => {
+              this.loding = false
               this.$emit('show-alert', error.message, 'error')
             });
           }

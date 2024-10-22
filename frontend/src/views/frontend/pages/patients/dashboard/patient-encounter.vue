@@ -2946,6 +2946,16 @@ export default {
       }
     })
 
+    this.$socket.on('clinical_procedure_updated', doc => {
+      let index = 0
+      if(this.procedureForms.some((procedure, i) => {index = i; return procedure.name == doc.name})){
+        doc.start_time = dayjs(doc.start_date + ' ' + doc.start_time)
+        doc.start_date = dayjs(doc.start_date)
+
+        this.procedureForms[index] = doc
+      }
+    })
+
     this.$socket.on('services', response => {
       let thisPatient = false
       this.records.services = response.filter(service => {
@@ -3265,6 +3275,7 @@ export default {
     },
     clearSignature() {
       this.$refs.consentForm.clearSignature()
+      this.procedureForms[this.selectedProcedure].custom_patient_consent_signature = undefined
       this.autoSave('Clinical Procedure', this.procedureForms[this.selectedProcedure].name, 'custom_patient_consent_signature', undefined)
     },
     saveSignature() {

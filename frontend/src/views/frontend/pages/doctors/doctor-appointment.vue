@@ -347,106 +347,131 @@
         title="Check Availability"
       >
         <v-card-text>
-          <v-container>
-            <v-row>
-              <v-col cols="12" md="6">
-                <a-select
-                class="w-full"
-                ref="patientRef"
-                v-model:value="checkAvailabilityPatient"
-                :options="$resources.patients.data?.options"
-                :fieldNames="{label: 'patient_name', value: 'name'}"
-                show-search
-                :loading="$resources.patients.list.loading"
-                @search="(value) => {handleSearch(
-                  value, 
-                  $resources.patients, 
-                  {status: 'Active'}, 
-                  {status: 'Active'},
-                  [
-                    ['patient_name', 'like', `%${value}%`], 
-                    ['mobile', 'like', `%${value}%`], 
-                    ['custom_cpr', 'like', `%${value}%`], 
-                    ['custom_file_number', 'like', `%${value}%`]
-                  ]
-                )}"
-                @change="(value, option) => {
-                  checkAvailabilityDialog(option.name)
-                }"
-                :filterOption="false"
-                >
-                  <template #option="{ patient_name, mobile, custom_cpr }">
-                    <div class="flex flex-col">
-                      <span v-if="patient_name" class="ms-2"><strong>Name:</strong> {{ patient_name }}</span>
-                      <span v-if="custom_cpr" class="ms-2 text-xs"><strong>CPR:</strong> {{ custom_cpr }}</span>
-                      <span v-if="mobile" class="ms-2 text-xs"><strong>Mobile:</strong> {{ mobile }}</span>
-                      <span v-if="mobile" class="ms-2 text-xs"><strong>File#:</strong> {{ custom_file_number }}</span>
-                    </div>
-                  </template>
-                </a-select>
-              </v-col>
-            </v-row>
-            <v-row v-if="checkAvailabilityPatient">
-              <v-col cols="12">
-                <DataTable 
-                :value="checkAvailabilityAppointments" 
-                selectionMode="single" 
-                :metaKeySelection="true" 
-                dataKey="id" 
-                sortField="appointment_datetime"
-                @row-click="({ data }) => {appointmentDialog('Edit Appointment', false, data)}"
-                :loading="checkAvailabilityLoading"
-                >
-                  <template #empty><v-empty-state title="No available appoiontments for this patient"></v-empty-state></template>
-                  <Column header="Time" field="appointment_time">
-                    <template #body="{ data }">
-                      <div @click="() => {$emit('appointment-dialog', 'Edit Appointment', false, data)}">
-                        <div class="text-center">
-                          {{ data.appointment_date_moment }}
+          <a-form class="w-full" layout="vertical">
+            <v-container>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-avatar v-if="checkAvailabilityPatient && checkAvailabilityPatientImage" rounded="0" size="120" class="mb-4">
+                    <v-img alt="Patient Image" :src="checkAvailabilityPatientImage" cover></v-img>
+                  </v-avatar>
+                  <a-form-item label="Patient">
+                    <a-select
+                    class="w-full"
+                    ref="patientRef"
+                    v-model:value="checkAvailabilityPatient"
+                    :options="$resources.patients.data?.options"
+                    :fieldNames="{label: 'patient_name', value: 'name'}"
+                    show-search
+                    :loading="$resources.patients.list.loading"
+                    @search="(value) => {handleSearch(
+                      value, 
+                      $resources.patients, 
+                      {status: 'Active'}, 
+                      {status: 'Active'},
+                      [
+                        ['patient_name', 'like', `%${value}%`], 
+                        ['mobile', 'like', `%${value}%`], 
+                        ['custom_cpr', 'like', `%${value}%`], 
+                        ['custom_file_number', 'like', `%${value}%`]
+                      ]
+                    )}"
+                    @change="(value, option) => {
+                      checkAvailabilityPatientMobile = option.mobile
+                      checkAvailabilityPatientGender = option.sex
+                      checkAvailabilityPatientAge = calculateAge(option.dob)
+                      checkAvailabilityPatientImage = option.image
+                      checkAvailabilityDialog(option.name)
+                    }"
+                    :filterOption="false"
+                    >
+                      <template #option="{ patient_name, mobile, custom_cpr, custom_file_number }">
+                        <div class="flex flex-col">
+                          <span v-if="patient_name" class="ms-2"><strong>Name:</strong> {{ patient_name }}</span>
+                          <span v-if="custom_cpr" class="ms-2 text-xs"><strong>CPR:</strong> {{ custom_cpr }}</span>
+                          <span v-if="mobile" class="ms-2 text-xs"><strong>Mobile:</strong> {{ mobile }}</span>
+                          <span v-if="mobile" class="ms-2 text-xs"><strong>File#:</strong> {{ custom_file_number }}</span>
                         </div>
-                        <div class="text-center">
-                          {{ data.appointment_time_moment }}
+                      </template>
+                    </a-select>
+                  </a-form-item>
+                  <a-form-item label="Patient Mobile" v-if="checkAvailabilityPatient">
+                    <a-input v-model:value="checkAvailabilityPatientMobile" disabled/>
+                  </a-form-item>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-avatar v-if="checkAvailabilityPatient && checkAvailabilityPatientImage" rounded="0" size="120" class="mb-4">
+                    <v-img alt="Patient Image" :src="checkAvailabilityPatientImage" cover hidden></v-img>
+                  </v-avatar>
+                  <a-form-item label="Patient Gender" v-if="checkAvailabilityPatient">
+                    <a-input v-model:value="checkAvailabilityPatientGender" disabled/>
+                  </a-form-item>
+                  <a-form-item label="Patient Age" v-if="checkAvailabilityPatient">
+                    <a-input v-model:value="checkAvailabilityPatientAge" disabled/>
+                  </a-form-item>
+                </v-col>
+              </v-row>
+              <v-row v-if="checkAvailabilityPatient">
+                <v-col cols="12">
+                  <DataTable 
+                  :value="checkAvailabilityAppointments" 
+                  selectionMode="single" 
+                  :metaKeySelection="true" 
+                  dataKey="id" 
+                  sortField="appointment_datetime"
+                  @row-click="({ data }) => {appointmentDialog('Edit Appointment', false, data)}"
+                  :loading="checkAvailabilityLoading"
+                  >
+                    <template #empty><v-empty-state title="No available appoiontments for this patient"></v-empty-state></template>
+                    <Column header="Time" field="appointment_time">
+                      <template #body="{ data }">
+                        <div @click="() => {$emit('appointment-dialog', 'Edit Appointment', false, data)}">
+                          <div class="text-center">
+                            {{ data.appointment_date_moment }}
+                          </div>
+                          <div class="text-center">
+                            {{ data.appointment_time_moment }}
+                          </div>
                         </div>
-                      </div>
-                    </template>
-                  </Column>
-                  <Column header="Confirmed?" field="custom_confirmed">
-                    <template #body="{ data }">
-                      <div class="text-center">
-                        <i v-if="data.custom_confirmed" class="mdi mdi-check"/>
-                        <i v-else class="mdi mdi-close"/>
-                      </div>
-                    </template>
-                  </Column>
-                  <Column field="appointment_datetime" hidden></Column>
-                  <Column header="Status" field="status"></Column>
-                  <Column header="Practitioner" field="practitioner_name">
-                    <template #body="{ data }">
-                      <div class="flex align-items-center gap-2" v-if="data.practitioner_name">
-                        <v-avatar v-if="data.practitioner_image">
-                          <img
-                          class="h-100 w-100"
-                          :src="data.practitioner_image"
-                          />
-                        </v-avatar>
-                        <span>{{ data.practitioner_name }}</span>
-                      </div>
-                    </template>
-                  </Column>
-                  <Column header="Procedures" field="procedure_templates">
-                    <template #body="{ data }">
-                      <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
-                    </template>
-                  </Column>
-                  <Column header="Paid Amount" field="paid_amount">
-                    <template #body="{ data }">
-                      BD {{ data.paid_amount }}
-                    </template>
-                  </Column>
-                </DataTable>
-              </v-col>
-            </v-row>
-          </v-container>
+                      </template>
+                    </Column>
+                    <Column header="Confirmed?" field="custom_confirmed">
+                      <template #body="{ data }">
+                        <div class="text-center">
+                          <i v-if="data.custom_confirmed" class="mdi mdi-check"/>
+                          <!-- <i v-else class="mdi mdi-close"/> -->
+                        </div>
+                      </template>
+                    </Column>
+                    <Column field="appointment_datetime" hidden></Column>
+                    <Column header="Status" field="status"></Column>
+                    <Column header="Practitioner" field="practitioner_name">
+                      <template #body="{ data }">
+                        <div class="flex align-items-center gap-2" v-if="data.practitioner_name">
+                          <v-avatar v-if="data.practitioner_image">
+                            <img
+                            class="h-100 w-100"
+                            :src="data.practitioner_image"
+                            />
+                          </v-avatar>
+                          <span>{{ data.practitioner_name }}</span>
+                        </div>
+                      </template>
+                    </Column>
+                    <Column header="Procedures" field="procedure_templates">
+                      <template #body="{ data }">
+                        <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
+                      </template>
+                    </Column>
+                    <Column header="Paid Amount" field="paid_amount">
+                      <template #body="{ data }">
+                        BD {{ data.paid_amount }}
+                      </template>
+                    </Column>
+                  </DataTable>
+                </v-col>
+              </v-row>
+            </v-container>
+          </a-form>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -507,11 +532,12 @@ import { VChip } from 'vuetify/components/VChip';
 import { VEmptyState } from 'vuetify/labs/VEmptyState';
 
 import AppointmentTab from './doctor-appointment-tab.vue'
+import { VImg } from 'vuetify/components';
 
 export default {
   inject: ['$socket', '$call'],
   components: {
-    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear, VAvatar, VChip, VEmptyState,
+    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear, VAvatar, VChip, VEmptyState, VImg
   },
   resources: {
     customers() { return { 
@@ -604,7 +630,7 @@ export default {
       type: 'list', 
       doctype: 'Patient', 
       fields: [
-        'sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 
+        'sex', 'patient_name', 'name', 'custom_cpr', 'dob', 'mobile', 'email', 'blood_group', 'image',
         'inpatient_record', 'inpatient_status', 'custom_default_payment_type', 'custom_file_number'
       ], 
       filters: {status: 'Active'},
@@ -644,6 +670,10 @@ export default {
       slots: {},
       checkAvailabilityAppointments: [],
       checkAvailabilityPatient: '',
+      checkAvailabilityPatientImage: '',
+      checkAvailabilityPatientMobile: '',
+      checkAvailabilityPatientGender: '',
+      checkAvailabilityPatientAge: '',
       checkAvailabilityLoading: false,
 
       alertMessage: '',
@@ -741,7 +771,6 @@ export default {
       .then(response => {
         if(response.total_count)
           this.totalCount = response.total_count
-        console.log(response.appointments)
         const combinedAppointments = [...this.appointments, ...this.adjustAppointments(response.appointments)].reduce((acc, obj) => {
           acc.set(obj.name, obj);
           return acc;
@@ -1061,6 +1090,17 @@ export default {
         });
       });
       this.slots = data;
+    },
+    calculateAge(dob) {
+      if(dob){
+        const today = dayjs();
+        const birthDate = dayjs(dob)
+        const years = today.diff(birthDate, 'year');
+        const months = today.diff(birthDate.add(years, 'year'), 'month');
+        const days = today.diff(birthDate.add(years, 'year').add(months, 'month'), 'day');
+        return `${years} Year(s) ${months} Month(s) ${days} Day(s)`;
+      }
+      return ''
     },
     onSubmitTransferPractitioner() {
       this.lodingOverlay = true;

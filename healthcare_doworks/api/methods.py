@@ -829,7 +829,8 @@ def get_appointment_details(appointment):
 	# Get status log
 	status_log = frappe.get_all('Appointment Time Logs',
 		filters={'parent': appointment['name']},
-		fields=['status', 'time']
+		fields=['status', 'time'],
+		order_by='time'
 	)
 	appointment['status_log'] = status_log
 

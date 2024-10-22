@@ -39,3 +39,6 @@ def patient_encounter_submit(doc, method=None):
         })
         appointment.save()
     frappe.publish_realtime("patient_encounter_updated", doc)
+
+def clinical_procedure_update(doc, method=None):
+    frappe.publish_realtime("clinical_procedure_updated", doc)

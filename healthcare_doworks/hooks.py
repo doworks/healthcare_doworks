@@ -188,6 +188,9 @@ doc_events = {
         "on_update": "healthcare_doworks.api.events.patient_encounter_update",
         "on_submit": "healthcare_doworks.api.events.patient_encounter_submit"
     },
+    'Clinical Procedure':{
+        "on_update": "healthcare_doworks.api.events.clinical_procedure_update",
+    },
     'Service Request':{
         "on_update": "healthcare_doworks.api.methods.get_services"
     },
