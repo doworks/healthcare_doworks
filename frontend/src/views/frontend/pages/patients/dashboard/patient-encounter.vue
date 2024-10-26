@@ -151,10 +151,10 @@
               :image="records.practitioner.image">
               </v-avatar>
               <div class="text-start">
-                <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
-                <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
-                <p v-if="records.appointment.department" class="mb-0">Department: <span class="font-weight-bold">{{ records.appointment.department }}</span></p>
-                <p v-if="records.appointment.service_unit" class="mb-0">Room: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
+                <h4 v-if="records.appointment" :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
+                <h4 v-if="practitionerConflict || !records.appointment" class="mb-1" :class="records.appointment ? 'text-green' : ''">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
+                <p v-if="records.appointment?.department" class="mb-0">Department: <span class="font-weight-bold">{{ records.appointment.department }}</span></p>
+                <p v-if="records.appointment?.service_unit" class="mb-0">Room: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
                 <h4 class="my-2">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
                 <Tag :severity="records.current_encounter.status == 'Completed' ? 'info' : 'danger'" rounded>
                   <h5 class="m-1">{{ records.current_encounter.status || 'Draft' }}</h5>
@@ -297,10 +297,10 @@
                   :image="records.practitioner.image">
                   </v-avatar>
                   <div class="text-start">
-                    <h4 :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
-                    <h4 v-if="practitionerConflict" class="mb-1 text-green">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
-                    <p v-if="records.appointment.department" class="mb-0">Department: <span class="font-weight-bold">{{ records.appointment.department }}</span></p>
-                    <p v-if="records.appointment.service_unit" class="mb-0">Room: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
+                    <h4 v-if="records.appointment" :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
+                    <h4 v-if="practitionerConflict || !records.appointment" class="mb-1" :class="records.appointment ? 'text-green' : ''">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
+                    <p v-if="records.appointment?.department" class="mb-0">Department: <span class="font-weight-bold">{{ records.appointment.department }}</span></p>
+                    <p v-if="records.appointment?.service_unit" class="mb-0">Room: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
                     <h4 class="my-2">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
                     <Tag :severity="records.current_encounter.status == 'Completed' ? 'info' : 'danger'" rounded>
                       <h5 class="m-1">{{ records.current_encounter.status || 'Draft' }}</h5>
@@ -3029,7 +3029,7 @@ export default {
           })
           this.currentVS = response.vitalSigns[0];
         }
-        if(response.appointment.practitioner !== this.$myresources.user.practitioner){
+        if(response.appointment && response.appointment?.practitioner !== this.$myresources.user.practitioner){
           this.practitionerConflict = true
         }
         this.records = response
@@ -3210,7 +3210,7 @@ export default {
         practitioner: this.encounterForm.practitioner,
         practitioner_name: this.encounterForm.practitioner_name,
         medical_department: this.encounterForm.medical_department,
-        service_unit: this.records.appointment.service_unit,
+        service_unit: this.records.appointment?.service_unit,
         start_date: dayjs().format('YYYY-MM-DD'),
         start_time: dayjs().format('HH:mm'),
 			}

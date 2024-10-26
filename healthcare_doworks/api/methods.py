@@ -213,9 +213,11 @@ def patient_encounter_name(appointment_id):
 def patient_encounter_records(encounter_id):
 	if(frappe.db.exists('Patient Encounter', encounter_id)):
 		current_encounter = frappe.get_doc('Patient Encounter', encounter_id)
-		appointment = frappe.get_doc('Patient Appointment', current_encounter.appointment)
-		patient = frappe.get_doc('Patient', appointment.patient)
-		practitioner = frappe.get_doc('Healthcare Practitioner', appointment.practitioner)
+		appointment = None
+		if current_encounter.appointment:
+			appointment = frappe.get_doc('Patient Appointment', current_encounter.appointment)
+		patient = frappe.get_doc('Patient', current_encounter.patient)
+		practitioner = frappe.get_doc('Healthcare Practitioner', current_encounter.practitioner)
 		procedures = []
 		if frappe.db.exists('Clinical Procedure', {"custom_patient_encounter": current_encounter.name}):
 			procedures_list = frappe.db.get_list('Clinical Procedure', filters={"custom_patient_encounter": current_encounter.name}, pluck='name')
@@ -223,7 +225,7 @@ def patient_encounter_records(encounter_id):
 				procedures.append(frappe.get_doc('Clinical Procedure', procedure))
 
 		vital_signs = frappe.db.get_list('Vital Signs',
-			filters={'patient': appointment.patient},
+			filters={'patient': current_encounter.patient},
 			fields=[
 				'signs_date', 'signs_time', 'temperature', 'pulse', 'respiratory_rate', 'tongue', 'abdomen', 'name',
 				'reflexes', 'bp_systolic', 'bp_diastolic', 'vital_signs_note', 'height', 'weight', 'bmi', 'nutrition_note'
@@ -231,7 +233,7 @@ def patient_encounter_records(encounter_id):
 			order_by='signs_date desc, signs_time desc',
 		)
 		services = frappe.db.get_list('Service Request',
-			filters={'patient': appointment.patient}, 
+			filters={'patient': current_encounter.patient}, 
 			fields=[
 				'status', 'order_date', 'order_time', 'practitioner', 'practitioner_email', 'medical_department', 'referred_to_practitioner', 
 				'source_doc', 'order_group', 'sequence', 'staff_role', 'patient_care_type', 'intent', 'priority', 'quantity', 'dosage_form', 
