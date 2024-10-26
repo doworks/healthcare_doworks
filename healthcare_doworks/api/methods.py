@@ -292,7 +292,26 @@ def submit_encounter(encounter):
 		procedure_doc.submit()
 	return doc
 
+@frappe.whitelist()
+def get_annotation_history(patient):
+	encounter_records = frappe.get_all('Patient Encounter', filters={'patient': patient}, fields=['name'])
+	procedure_records = frappe.get_all('Clinical Procedure', filters={'patient': patient}, fields=['name'])
 
+	child_records = []
+	for encounter in encounter_records:
+		if frappe.db.exists('Patient Encounter', encounter['name']):
+			child_records += frappe.get_all('Health Annotation Table', filters={'parent': encounter['name']}, fields=['annotation'])
+	for procedure in procedure_records:	
+		if frappe.db.exists('Clinical Procedure', procedure['name']):
+			child_records += frappe.get_all('Health Annotation Table', filters={'parent': procedure['name']},fields=['annotation'])
+
+	annotations = []
+	for record in child_records:
+		annotations += frappe.get_all('Health Annotation', 
+								filters={'name': record['annotation']}, 
+								fields=['name', 'annotation_template', 'image', 'json', 'creation'], 
+								order_by='creation')
+	return annotations
 # Pharmacy Page
 @frappe.whitelist()
 def get_medication_requests():

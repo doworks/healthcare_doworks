@@ -2205,6 +2205,7 @@
       :doctype="annotationDoctype"
       :docname="annotationDoctype == 'Patient Encounter' ? encounterForm.name : procedureForms[selectedProcedure].name"
       :encounterType="annotationDoctype == 'Patient Encounter' ? encounterAnnotationType : ''"
+      :patient="records.patient.name"
       />
       <serviceRequestDialog 
       :isOpen="serviceRequestActive" 
@@ -2951,8 +2952,8 @@ export default {
       if(this.procedureForms.some((procedure, i) => {index = i; return procedure.name == doc.name})){
         doc.start_time = dayjs(doc.start_date + ' ' + doc.start_time)
         doc.start_date = dayjs(doc.start_date)
-
         this.procedureForms[index] = doc
+        this.records.procedures[index] = doc
       }
     })
 

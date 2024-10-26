@@ -21,7 +21,7 @@
               class="text-none" 
               text="Save"
               variant="text"
-              @click="triggerReactFunction"
+              @click="save"
             ></v-btn>
           </v-toolbar-items>
         </v-toolbar>
@@ -67,6 +67,11 @@ export default {
       type: String,
       default: '',
     },
+    patient: {
+      type: String,
+      required: true,
+      default: '',
+    },
 	},
   computed: {
     dialogVisible: {
@@ -86,6 +91,15 @@ export default {
       widgets: false,
 		};
 	},
+  watch: {
+    isOpen: {
+			handler(newValue) {
+				if(newValue){
+          this.passHistory()
+        }
+			}
+		},
+  },
 	methods: {
     updateIsOpen(value) {
       this.$emit('update:isOpen', value);
@@ -93,9 +107,9 @@ export default {
     closeDialog() {
       this.updateIsOpen(false);
     },
-    triggerReactFunction() {
+    save() {
       this.loding = true
-      const event = new CustomEvent('vueToReactEvent', {
+      const event = new CustomEvent('reactSaveAnotation', {
         detail: {
           callback: async (data) => {
             const base64Image = await this.convertBlobToBase64(data.blob);
@@ -123,6 +137,15 @@ export default {
         }
       });
       window.dispatchEvent(event);
+    },
+    passHistory() {
+      this.$call('healthcare_doworks.api.methods.get_annotation_history', { patient: this.patient }).then(response => {
+        const event = new CustomEvent('reactSetAnnotationHistory', {detail: {annotations:response}});
+        window.dispatchEvent(event);
+      }).catch(error => {
+        this.loding = false
+        this.$emit('show-alert', error.message, 'error')
+      });
     },
     async convertBlobToBase64(blob) {
       return new Promise((resolve, reject) => {

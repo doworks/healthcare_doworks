@@ -1,11 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Excalidraw, Sidebar, exportToBlob, exportToClipboard } from '@excalidraw/excalidraw';
+import { Excalidraw, Sidebar, Footer, exportToBlob, exportToClipboard } from '@excalidraw/excalidraw';
 import call from "../../utils/reactCall";
 
 import { 
   List, ListItemDecorator, ListItemButton, Tabs, TabList, Tab, TabPanel, Radio, 
   RadioGroup, Sheet, Button, Badge, Option, FormLabel, Input, Card,
 } from '@mui/joy';
+import AspectRatio from '@mui/joy/AspectRatio';
+import Box from '@mui/joy/Box';
+import Drawer from '@mui/joy/Drawer';
+import CardContent from '@mui/joy/CardContent';
+import Checkbox from '@mui/joy/Checkbox';
+import DialogTitle from '@mui/joy/DialogTitle';
+import DialogContent from '@mui/joy/DialogContent';
+import ModalClose from '@mui/joy/ModalClose';
+import Divider from '@mui/joy/Divider';
+import FormControl from '@mui/joy/FormControl';
+import FormHelperText from '@mui/joy/FormHelperText';
+import ListItem from '@mui/joy/ListItem';
+import Stack from '@mui/joy/Stack';
+import Switch from '@mui/joy/Switch';
+import Typography from '@mui/joy/Typography';
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
+import ApartmentRoundedIcon from '@mui/icons-material/ApartmentRounded';
+import MeetingRoomRoundedIcon from '@mui/icons-material/MeetingRoomRounded';
+import HotelRoundedIcon from '@mui/icons-material/HotelRounded';
+import Done from '@mui/icons-material/Done';
+
 import { tabClasses } from '@mui/joy/Tab';
 import { radioClasses } from '@mui/joy/Radio';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
@@ -16,157 +37,19 @@ const generateFileId = (img) => {
   return `${img.name}-${Date.now()}`;
 };
 
-// let ANNOTTATION_IMAGES;
-// call('frappe.client.get_list', {doctype: 'Annotation Template', fields: ['label', 'gender', 'kid', 'image']})
-// .then(response => {
-//   ANNOTTATION_IMAGES = response
-// })
-
-// const Treatments = [
-//   {
-//     name: 'Laser',
-//     color: '#1971c2'
-//   },
-//   {
-//     name: 'Mesotherapy',
-//     color: '#ffd43b'
-//   },
-//   {
-//     name: 'Botox',
-//     color: '#e03131'
-//   },
-//   {
-//     name: 'Fillers',
-//     color: '#69db7c'
-//   },
-//   {
-//     name: 'Neofound',
-//     color: '#f783ac'
-//   },
-//   {
-//     name: 'Other',
-//     color: '#868e96'
-//   },
-// ]
-
-// const LaserVariables = [
-//   {
-//     label: "Fluence", 
-//     name: "fluence", 
-//     type: "select", 
-//     options: [
-//       { value: '1', label: '1' },
-//       { value: '2', label: '2' },
-//       { value: '3', label: '3' },
-//       { value: '4', label: '4' },
-//       { value: '5', label: '5' },
-//       { value: '6', label: '6' },
-//       { value: '7', label: '7' },
-//       { value: '8', label: '8' },
-//       { value: '9', label: '9' },
-//     ]
-//   },
-//   {
-//     label: "Spot Size", 
-//     name: "spot_size", 
-//     type: "select", 
-//     options: [
-//       { value: '2', label: '2' },
-//       { value: '3', label: '3' },
-//       { value: '4', label: '4' },
-//       { value: '5', label: '5' },
-//       { value: '6', label: '6' },
-//       { value: '7', label: '7' },
-//       { value: '8', label: '8' },
-//       { value: '9', label: '9' },
-//       { value: '10', label: '10' },
-//     ]
-//   },
-//   {
-//     label: "Pulse Duration", 
-//     name: "pulse_duration", 
-//     type: "select", 
-//     options: [
-//       { value: '15s', label: '15s' },
-//       { value: '20s', label: '20s' },
-//       { value: '25s', label: '25s' },
-//       { value: '30s', label: '30s' },
-//       { value: '35s', label: '35s' },
-//       { value: '40s', label: '40s' },
-//       { value: '45s', label: '45s' },
-//     ]
-//   },
-//   {
-//     label: "Repetition Rate", 
-//     name: "repetition_rate", 
-//     type: "select", 
-//     options: [
-//       { value: '1', label: '1' },
-//       { value: '2', label: '2' },
-//       { value: '3', label: '3' },
-//       { value: '4', label: '4' },
-//     ]
-//   },
-//   {
-//     label: "No Of Pulses", 
-//     name: "no_of_pulses", 
-//     type: "select", 
-//     options: [
-//       { value: '1', label: '1' },
-//       { value: '2', label: '2' },
-//       { value: '3', label: '3' },
-//     ]
-//   }
-// ]
-
-// const InjectableVars = [
-//   {
-//     label: 'Injectable',
-//     name: 'injectable',
-//     type: 'select',
-//     options: [
-//       { value: 'Botox', label: 'Botox' },
-//       { value: 'Fillers', label: 'Fillers' },
-//       { value: 'Aethoxysklerol', label: 'Aethoxysklerol' },
-//     ]
-//   },
-//   { 
-//     label: 'Lot No', 
-//     name: 'lot_no',
-//     type: 'data' 
-//   },
-//   {
-//     label: 'Units',
-//     name: 'units',
-//     type: 'select',
-//     options: [
-//       { value: '1u', label: '1u' },
-//       { value: '2u', label: '2u' },
-//       { value: '3u', label: '3u' },
-//     ]
-//   },
-//   {
-//     label: 'ML',
-//     name: 'ml',
-//     type: 'select',
-//     options: [
-//       { value: '2ml', label: '2ml' },
-//       { value: '3ml', label: '3ml' },
-//     ]
-//   },
-// ]
-
 const ExcalidrawWrapper = () => {
   const [index, setIndex] = useState(0);
   const [excalidrawAPI, setExcalidrawAPI] = useState(null);
   const [drawingsSidebar, setDrawingsSidebar] = useState(true);
   const [treatmentSidebar, setTreatmentSidebar] = useState(false);
+  const [historyOpen, setHistoryOpen] = React.useState(false);
   const [selectedTreatment, setSelectedTreatment] = useState('')
   const [newElement, setNewElement] = useState('')
   const [selectedElement, setSelectedElement] = useState('')
   const [variables, setVariables] = useState({})
   const [images, setImages] = useState({male:[], female:[]});
   const [treatments, setTreatments] = useState([]);
+  const [annotationHistory, setAnnotationHistory] = useState([]);
   const [annotationsTemplate, setAnnotationsTemplate] = useState('');
   useEffect(() => {
     call('healthcare_doworks.api.methods.annotations_records')
@@ -217,11 +100,21 @@ const ExcalidrawWrapper = () => {
       callback({annotationsTemplate, url, jsonText, blob})
     };
 
-    window.addEventListener('vueToReactEvent', handleSave);
+    const setAnnotationHistoryState = async (event) => {
+      const { annotations } = event.detail;
+      setAnnotationHistory(annotations.map(value => {
+        value.data = JSON.parse(value.json)
+        return value
+      }))
+    };
+
+    window.addEventListener('reactSaveAnotation', handleSave);
+    window.addEventListener('reactSetAnnotationHistory', setAnnotationHistoryState);
 
     // Clean up the event listener on unmount
     return () => {
-      window.removeEventListener('vueToReactEvent', handleSave);
+      window.removeEventListener('reactSaveAnotation', handleSave);
+      window.removeEventListener('reactSetAnnotationHistory', setAnnotationHistoryState);
     };
 
   }, [excalidrawAPI, annotationsTemplate]);
@@ -266,7 +159,6 @@ const ExcalidrawWrapper = () => {
   const handleExcaliPointerDown = (activeTool, pointerDownState) => {
     const thisElement = pointerDownState.hit.element;
     if (thisElement && thisElement.type === 'freedraw') {
-      console.log('Element selected:', thisElement);
       setVariables({...variables, [thisElement.customData.type]: thisElement.customData})
       setSelectedElement(thisElement)
       setSelectedTreatment(thisElement.customData.type)
@@ -297,6 +189,19 @@ const ExcalidrawWrapper = () => {
     // excalidrawAPI.refresh()
   };
 
+  const importAnnotation = (annotation) => {
+    if (!excalidrawAPI) return;
+    
+    console.log(annotation)
+    for (const [key, value] of Object.entries(annotation.data.files)) {
+      excalidrawAPI.addFiles([value]);
+    }
+    excalidrawAPI.updateScene(annotation.data);
+    excalidrawAPI.scrollToContent()
+    excalidrawAPI.refresh()
+    setHistoryOpen(false)
+  };
+
   const handleImageClick = async (img, array, gender) => {
     if (!excalidrawAPI) return;
 
@@ -323,11 +228,14 @@ const ExcalidrawWrapper = () => {
           dataURL: dataURL,
           created: Date.now(),
         }]);
-        const newArray = array.map(val => {
-          if (val.image === img.image) val.id = fileId;
-          return val;
-        });
-        setImages({ ...images, [gender]: newArray });
+        if(array){
+          const newArray = array.map(val => {
+            if (val.image === img.image) val.id = fileId;
+            return val;
+          });
+
+          setImages({ ...images, [gender]: newArray });
+        }
       }
 
       const scaleFactor = canvasHeight / image.height;
@@ -584,6 +492,66 @@ const ExcalidrawWrapper = () => {
               ))}
             </RadioGroup>
           </Sidebar>
+
+          <Footer>
+            <Button color="neutral" onClick={() => setHistoryOpen(true)}>
+              History
+            </Button>
+            <Drawer
+              size="md"
+              variant="plain"
+              open={historyOpen}
+              onClose={() => setHistoryOpen(false)}
+              slotProps={{
+                root: { sx: { zIndex: 3000 } },
+                content: {
+                  sx: {
+                    bgcolor: 'transparent',
+                    p: { md: 3, sm: 0 },
+                    boxShadow: 'none'
+                  },
+                },
+              }}
+            >
+              <Sheet
+                sx={{
+                  borderRadius: 'md',
+                  p: 2,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  height: '100%',
+                  overflow: 'auto',
+                }}
+              >
+                <DialogTitle>History</DialogTitle>
+                <ModalClose />
+                <Divider sx={{ mt: 'auto' }} />
+                <DialogContent sx={{ gap: 2 }}>
+                  <List style={{height: 'calc(100vh - 175px)',overflowY: 'auto'}}>
+                    {annotationHistory.map((value, index, array) => (
+                      <ListItemButton key={index} onClick={() => {importAnnotation(value)}}>
+                        <ListItemDecorator>
+                          <img src={value.image} alt={value.name} style={{ width: '50px', height: '50px', marginRight: '15px' }} />
+                        </ListItemDecorator>
+                        {value.creation}
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </DialogContent>
+
+                {/* <Divider sx={{ mt: 'auto' }} />
+                <Stack
+                  direction="row"
+                  useFlexGap
+                  spacing={1}
+                  sx={{ justifyContent: 'space-between' }}
+                >
+                  <Button onClick={() => setHistoryOpen(false)}>Show 165 properties</Button>
+                </Stack> */}
+              </Sheet>
+            </Drawer>
+          </Footer>
         </Excalidraw>
       </div>
     </div>

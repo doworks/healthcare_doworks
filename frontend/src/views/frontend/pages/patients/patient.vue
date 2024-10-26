@@ -1150,7 +1150,7 @@
     :isOpen="vsDialogOpen" 
     @update:isOpen="vsDialogOpen = $event" 
     @show-alert="showAlert" 
-    :vitalSigns="selectedVitalSigns"
+    :name="selectedVitalSigns?.name"
     />
     <v-overlay :model-value="loadingOverlay" class="align-center justify-center">
       <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>

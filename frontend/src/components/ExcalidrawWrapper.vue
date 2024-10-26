@@ -44,6 +44,9 @@ onBeforeUnmount(() => {
 .excalidraw-wrapper.leftdrawer-open .App-menu_top__left{
   padding-left: 240px
 }
+.excalidraw-wrapper .layer-ui__wrapper__footer .footer-center{
+  justify-content: center;
+}
 /* .excalidraw-wrapper.leftdrawer-open .layer-ui__wrapper__footer-left{
   padding-left: 240px
 } */
