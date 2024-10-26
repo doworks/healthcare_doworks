@@ -882,13 +882,14 @@ export default {
       });
     },
     appointmentDialog(formType, isNew, row) {
+      console.log(this.$myresources.user.branch)
       if(isNew){
         this.appointmentForm.name = '';
 				this.appointmentForm.duration = this.$resources.appointmentTypes.data.options[0].default_duration;
 				this.appointmentForm.appointment_type = this.$resources.appointmentTypes.data.options[0].appointment_type;
 				this.appointmentForm.appointment_for = this.$resources.appointmentTypes.data.options[0].allow_booking_for;
 				this.appointmentForm.custom_appointment_category = 'First Time';
-        this.appointmentForm.custom_branch = '';
+        this.appointmentForm.custom_branch = this.$myresources.user.branch;
         this.appointmentForm.procedure_templates = [];
         this.appointmentForm.custom_payment_type = '';
         this.appointmentForm.custom_confirmed = 0;

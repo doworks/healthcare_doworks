@@ -18,10 +18,12 @@ import json
 def fetch_resources():
 	user = frappe.get_doc('User', frappe.session.user)
 	user_practitioner = frappe.db.get_value('Healthcare Practitioner', {'user_id': user.name}, ['name', 'practitioner_name', 'image', 'department'])
+	branch = frappe.db.get_value('Employee', {'user_id': frappe.session.user}, ['branch'])
 	return {
 		'user': {'name': user.full_name, 
 		   'user': user.name, 
 		   'image': user.user_image, 
+		   'branch': branch,
 		   'practitioner': user_practitioner[0] if user_practitioner is not None else None, 
 		   'practitioner_name': user_practitioner[1] if user_practitioner is not None else None, 
 		   'practitioner_image': user_practitioner[2] if user_practitioner is not None else None, 

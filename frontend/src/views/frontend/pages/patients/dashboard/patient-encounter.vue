@@ -2224,13 +2224,13 @@
       :isOpen="appointmentNoteActive" 
       @update:isOpen="appointmentNoteActive = $event" 
       @show-alert="showAlert" 
-      :appointmentId="records.appointment.name"
+      :appointmentId="records.appointment?.name"
       />
       <appointmentInvoiceDialog 
       :isOpen="appointmentInvoiceActive" 
       @update:isOpen="appointmentInvoiceActive = $event" 
       @show-alert="showAlert" 
-      :appointment="{...this.records.appointment, invoice_items: this.records.appointment.custom_invoice_items}"
+      :appointment="{...this.records.appointment, invoice_items: this.records.appointment?.custom_invoice_items}"
       />
       <v-dialog v-model="consentFormDialog" width="auto">
         <v-toolbar color="red-accent-4" :style="{borderTopRightRadius: '12px', borderTopLeftRadius: '12px'}">
