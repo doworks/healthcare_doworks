@@ -389,7 +389,7 @@
 			</Column>
 		</DataTable>
 		<ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = null"/>
-		<OverlayPanel ref="op">
+		<Popover ref="op">
 			<div class="flex flex-column gap-3 w-min-96">
 				<div v-if="selectedRow.notes">
 					<span class="fw-semibold d-block mb-2">Appointment Notes</span>
@@ -443,14 +443,14 @@
 					</DataTable>
 				</div>
 			</div>
-		</OverlayPanel>
+		</Popover>
 	</div>
 </template>
 
 <script >
 import dayjs from 'dayjs';
 import colors from '@/assets/json/colors.json';
-import { FilterMatchMode } from 'primevue/api';
+import { FilterMatchMode } from '@primevue/core/api';
 
 import { VAvatar } from 'vuetify/components/VAvatar';
 import { VChip } from 'vuetify/components/VChip';

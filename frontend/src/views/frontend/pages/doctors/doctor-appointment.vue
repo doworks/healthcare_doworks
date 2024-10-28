@@ -586,8 +586,14 @@ export default {
           data.options = []
         else{
           data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+
+          let defalutType = data.options.filter(value => value.appointment_type == 'Practitioner')
+          if(defalutType.length == 0)
+            defalutType[0] = data.options[0]
+
           this.appointmentForm.appointment_type = data.options[0].appointment_type
           this.appointmentForm.appointment_for = data.options[0].allow_booking_for
+          this.appointmentForm.duration = defalutType[0].default_duration
         }
         return data
       }
@@ -882,14 +888,17 @@ export default {
       });
     },
     appointmentDialog(formType, isNew, row) {
-      console.log(this.$myresources.user.branch)
       if(isNew){
+        let defalutType = this.$resources.appointmentTypes.data.options.filter(value => value.appointment_type == 'Practitioner')
+        if(defalutType.length == 0)
+          defalutType[0] = this.$resources.appointmentTypes.data.options[0]
+
         this.appointmentForm.name = '';
-				this.appointmentForm.duration = this.$resources.appointmentTypes.data.options[0].default_duration;
-				this.appointmentForm.appointment_type = this.$resources.appointmentTypes.data.options[0].appointment_type;
-				this.appointmentForm.appointment_for = this.$resources.appointmentTypes.data.options[0].allow_booking_for;
+				this.appointmentForm.duration = defalutType[0].default_duration
+				this.appointmentForm.appointment_type = defalutType[0].appointment_type;
+				this.appointmentForm.appointment_for = defalutType[0].allow_booking_for;
 				this.appointmentForm.custom_appointment_category = 'First Time';
-        this.appointmentForm.custom_branch = this.$myresources.user.branch;
+        this.appointmentForm.custom_branch = this.$myresources.user.branch || '';
         this.appointmentForm.procedure_templates = [];
         this.appointmentForm.custom_payment_type = '';
         this.appointmentForm.custom_confirmed = 0;

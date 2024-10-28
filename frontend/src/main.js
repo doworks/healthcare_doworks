@@ -28,14 +28,14 @@ import 'ant-design-vue/dist/reset.css';
 import VueFeather from 'vue-feather';
 
 // Import styles
-import 'normalize.css';
+// import 'normalize.css';
 import 'vuetify/styles'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-vue/dist/bootstrap-vue.css';
 import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
-import 'primevue/resources/themes/aura-light-blue/theme.css'
+// import 'primevue/resources/themes/aura-light-blue/theme.css'
 import 'primeicons/primeicons.css' 
 
 import '@mdi/font/css/materialdesignicons.css'
@@ -138,7 +138,7 @@ app.use(PrimeVue, {
         options: {
             prefix: 'p',
             darkModeSelector: 'system',
-            cssLayer: false
+            // cssLayer: false
         }
     }
 }).use(ConfirmationService).use(ToastService);

@@ -7,6 +7,7 @@
  "field_order": [
   "section_break_sxsw",
   "label",
+  "category",
   "gender",
   "kid",
   "image"
@@ -37,11 +38,17 @@
    "fieldname": "image",
    "fieldtype": "Attach Image",
    "label": "Image"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Select",
+   "label": "Category",
+   "options": "Full-body\nHead\nUpper-body\nArms & Hands\nLower-body\nLegs & Feet\nOther"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-08-20 10:55:57.633622",
+ "modified": "2024-10-27 09:21:05.440569",
  "modified_by": "Administrator",
  "module": "Healthcare Doworks",
  "name": "Annotation Template",

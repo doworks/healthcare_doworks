@@ -92,7 +92,7 @@
 </template>
 
 <script>
-import { FilterMatchMode } from 'primevue/api';
+import { FilterMatchMode } from '@primevue/core/api';
 import { ListView } from 'frappe-ui'
 
 export default {

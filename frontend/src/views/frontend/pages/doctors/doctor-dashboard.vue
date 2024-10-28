@@ -219,7 +219,7 @@
                 </template>
               </Column>
             </DataTable>
-            <OverlayPanel ref="op">
+            <Popover ref="op">
               <div class="flex flex-column gap-3 w-min-96">
                 <div v-if="selectedRow.notes">
                   <span class="fw-semibold d-block mb-2">Appointment Notes</span>
@@ -282,7 +282,7 @@
                   </DataTable>
                 </div>
               </div>
-            </OverlayPanel>
+            </Popover>
           </div>
         </template>
         <template #footer>
@@ -365,7 +365,7 @@ import bellImage from '@/assets/img/animations/alarm.gif';
 import maleImage from '@/assets/img/male.png';
 import femaleImage from '@/assets/img/female.png';
 
-import { FilterMatchMode } from 'primevue/api';
+import { FilterMatchMode } from '@primevue/core/api';
 
 export default {
   inject: ['$call', '$socket'],

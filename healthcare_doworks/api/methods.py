@@ -909,7 +909,7 @@ def mark_no_show_appointments():
 	appointments = frappe.db.sql("""
 		SELECT name FROM `tabPatient Appointment`
 		WHERE custom_visit_status = 'Scheduled'
-		AND TIMESTAMP(appointment_date, appointment_time) < (NOW() - INTERVAL 15 MINUTE)
+		AND TIMESTAMP(appointment_date, appointment_time) BETWEEN CURDATE() AND (NOW() - INTERVAL 15 MINUTE)
 	""", as_dict=True)
 
 	# Loop through appointments and mark as no-show

@@ -79,7 +79,7 @@
   
 <script >
 import { ListView } from 'frappe-ui'
-import { FilterMatchMode } from 'primevue/api';
+import { FilterMatchMode } from '@primevue/core/api';
 
 import {VIcon} from 'vuetify/components/VIcon';
 import {VToolbar, VToolbarItems} from 'vuetify/components/VToolbar';

@@ -173,6 +173,9 @@ export default {
         isChild: {
             type: Boolean,
             default: false,
+        },
+        callback: {
+            type: Function,
         }
 	},
     computed: {
@@ -276,6 +279,8 @@ export default {
                         life: 3000 // Duration in ms
                     });
                     this.closeDialog()
+                    if(this.callback)
+                        this.callback()
                 }).catch(error => {
                     this.$emit('show-alert', error.message, 'error')
                 });

@@ -18,7 +18,7 @@
 <script>
 import '@/assets/css/feather.css';
 import 'frappe-ui/src/style.css';
-import '@/assets/css/prime.css';
+// import '@/assets/css/prime.css';
 // import '@/assets/css/custom.css';
 import { VLayout } from 'vuetify/components/VLayout'
 import { VMain } from 'vuetify/components/VMain'

@@ -34,7 +34,7 @@
     "node-sass": "^9.0.0",
     "normalize.css": "^8.0.1",
     "primeicons": "^6.0.1",
-    "primevue": "^3.53.0",
+    "primevue": "^4.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-select": "^5.8.0",
