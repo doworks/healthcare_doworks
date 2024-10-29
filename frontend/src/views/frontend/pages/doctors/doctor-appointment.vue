@@ -92,13 +92,13 @@
               </template>
             </a-input>
           </div>
-          <v-btn class="text-none" elevation="1" @click="() => {
+          <!-- <v-btn class="text-none" elevation="1" @click="() => {
             checkAvailabilityPatient = ''
             checkAvailabilityAppointments = []
             checkAvailabilityOpen = true
           }">
             Check Availability
-          </v-btn>
+          </v-btn> -->
         </div>
         <div class="ms-xxl-auto order-1 order-xxl-2 w-fit">
           <Clock/>
@@ -107,7 +107,22 @@
       
       <!-- Toolbar Actions -->
       <v-toolbar color="blue-lighten-5">
-        <v-btn icon="mdi mdi-plus" @click="appointmentDialog('New Appointment', true)" rounded="0"></v-btn>
+        <v-tooltip location="bottom" open-delay="500">
+          <template v-slot:activator="{ props }">
+            <v-btn icon="mdi mdi-plus" v-bind="props" @click="appointmentDialog('New Appointment', true)" rounded="0"></v-btn>
+          </template>
+          Add a new appointment
+        </v-tooltip>
+        <v-tooltip location="bottom" open-delay="500">
+          <template v-slot:activator="{ props }">
+            <v-btn icon="mdi mdi-magnify" rounded="0" v-bind="props" @click="() => {
+              checkAvailabilityPatient = ''
+              checkAvailabilityAppointments = []
+              checkAvailabilityOpen = true
+            }"></v-btn>
+          </template>
+          Check appointment logs for a patient
+        </v-tooltip>
       </v-toolbar>
 
       <!-- Appointment Tab -->
@@ -143,6 +158,8 @@
             @table-page-change="pageChanged"
             @read-card="readIdCard"
             @visit-status-log="visitStatusLogDiallog"
+            @medical-history-dialog="medicalHistoryDialog"
+            @checklist-form-dialog="checklistFormDialog"
             />
           </v-window-item>
         </v-window>
@@ -179,6 +196,18 @@
     @update:isOpen="appointmentInvoiceOpen = $event" 
     @show-alert="showAlert" 
     :appointment="selectedRow"
+    />
+    <patientMedicalHistoryDialog 
+    :isOpen="medicalHistoryOpen" 
+    @update:isOpen="medicalHistoryOpen = $event" 
+    @show-alert="showAlert" 
+    :patient="patient"
+    />
+    <checklistFormListDialog 
+    :isOpen="checklistFormOpen" 
+    :appointment="selectedRow"
+    @update:isOpen="checklistFormOpen = $event" 
+    @show-alert="showAlert" 
     />
     <v-dialog v-model="serviceUnitOpen" width="auto">
       <v-card
@@ -343,9 +372,24 @@
       <v-card
         rounded="lg"
         width="auto"
-        prepend-icon="mdi mdi-door-open"
-        title="Check Availability"
       >
+        <v-card-item prepend-icon="mdi mdi-door-open" title="Check Availability">
+          <template #append>
+            <v-btn class="text-none" variant="outlined" color="primary" @click="() => {
+              appointmentDialog('New Appointment', false, {
+                patient_details: {
+                  id: checkAvailabilityPatient,
+                  gender: checkAvailabilityPatientGender,
+                  age: checkAvailabilityPatientAge,
+                  mobile: checkAvailabilityPatientMobile,
+                },
+				        patient_name: checkAvailabilityPatient,
+              })
+            }">
+              New Appointment
+            </v-btn>
+          </template>
+        </v-card-item>
         <v-card-text>
           <a-form class="w-full" layout="vertical">
             <v-container>
@@ -532,12 +576,13 @@ import { VChip } from 'vuetify/components/VChip';
 import { VEmptyState } from 'vuetify/labs/VEmptyState';
 
 import AppointmentTab from './doctor-appointment-tab.vue'
-import { VImg } from 'vuetify/components';
+import { VCardItem, VImg, VTooltip } from 'vuetify/components';
 
 export default {
   inject: ['$socket', '$call'],
   components: {
-    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear, VAvatar, VChip, VEmptyState, VImg
+    AppointmentTab, Clock, VIcon, VToolbar, VToolbarItems, VBtnToggle, VProgressLinear, VAvatar, VChip, VEmptyState, VImg,
+    VCardItem, VTooltip
   },
   resources: {
     customers() { return { 
@@ -672,8 +717,22 @@ export default {
       appointmentInvoiceOpen: false,
       visitStatusLogOpen: false,
       checkAvailabilityOpen: false,
+      medicalHistoryOpen: false,
+      checklistFormOpen: false,
       lodingOverlay: false,
       slots: {},
+
+      patient: {
+        custom_allergies_table: [],
+        custom_infected_diseases: [],
+        custom_surgical_history_table: [],
+        custom_medications: [],
+        custom_habits__social: [],
+        custom_risk_factors_table: [],
+        custom_chronic_diseases: [],
+        custom_genetic_conditions: [],
+      },
+
       checkAvailabilityAppointments: [],
       checkAvailabilityPatient: '',
       checkAvailabilityPatientImage: '',
@@ -927,6 +986,8 @@ export default {
 				this.appointmentForm.patient = row.patient_details.id;
 				this.appointmentForm.patient_name = row.patient_name;
 				this.appointmentForm.patient_sex = row.patient_details.gender;
+        this.appointmentForm.patient_mobile = row.patient_details.mobile;
+        this.appointmentForm.patient_age = row.patient_details.age;
 				this.appointmentForm.department = row.department;
 				this.appointmentForm.service_unit = row.service_unit;
         this.appointmentForm.notes = row.notes;
@@ -977,6 +1038,28 @@ export default {
       }).catch(error => {
         this.checkAvailabilityLoading = false
         this.showAlert(error.message, 'error')
+      });
+    },
+    checklistFormDialog(row) {
+      this.selectedRow = row
+      this.checklistFormOpen = true;
+    },
+    medicalHistoryDialog(row) {
+      this.$call('frappe.client.get', {doctype: 'Patient', name: row.patient_details.id})
+      .then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Patient medical history updated',
+          life: 3000 // Duration in ms
+        });
+        this.patient = response
+        this.medicalHistoryOpen = true;
+      })
+      .catch(error => {
+        this.appointmentsLoading = false;
+        this.showAlert(error.message, 'error')
+        console.error('Error fetching records:', error);
       });
     },
     paymentTypeDialog(row) {

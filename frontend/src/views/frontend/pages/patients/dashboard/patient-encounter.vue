@@ -148,7 +148,7 @@
       <div class="ps-0 mb-3 mt-md-2 d-block col-12 col-md-6 d-xl-none">
         <Card :class="['h-100',{'rounded-0': this.isAffixed}]">
           <template #content>
-            <div class="d-flex align-items-center">
+            <div class="flex">
               <v-avatar 
               v-if="records.practitioner.image"
               size="80" 
@@ -156,9 +156,9 @@
               :image="records.practitioner.image">
               </v-avatar>
               <div class="text-start">
-                <h4 v-if="records.appointment" :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
-                <h4 v-if="practitionerConflict || !records.appointment" class="mb-1" :class="records.appointment ? 'text-green' : ''">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
-                <p v-if="records.appointment?.department" class="mb-0">Department: <span class="font-weight-bold">{{ records.appointment.department }}</span></p>
+                <h4 class="mb-1">{{ encounterForm.practitioner_name }}</h4>
+                <!-- <h4 v-if="practitionerConflict || !records.appointment" class="mb-1" :class="records.appointment ? 'text-green' : ''">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4> -->
+                <p v-if="encounterForm?.department" class="mb-0">Department: <span class="font-weight-bold">{{ encounterForm.department }}</span></p>
                 <p v-if="records.appointment?.service_unit" class="mb-0">Room: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
                 <h4 class="my-2">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
                 <Tag :severity="records.current_encounter.status == 'Completed' ? 'info' : 'danger'" rounded>
@@ -294,7 +294,7 @@
           <div class="pe-0 d-none d-xl-block" style="width: 25.25%;flex: 0 0 auto;min-width: fit-content" :class="{'ps-0': this.isAffixed}">
             <Card :class="['h-100',{'rounded-0': this.isAffixed}]">
               <template #content>
-                <div class="d-flex align-items-center">
+                <div class="flex">
                   <v-avatar 
                   v-if="records.practitioner.image"
                   size="80" 
@@ -302,9 +302,9 @@
                   :image="records.practitioner.image">
                   </v-avatar>
                   <div class="text-start">
-                    <h4 v-if="records.appointment" :class="{'mb-1': true, 'text-red': practitionerConflict}">{{ records.appointment.practitioner_name }}</h4>
-                    <h4 v-if="practitionerConflict || !records.appointment" class="mb-1" :class="records.appointment ? 'text-green' : ''">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4>
-                    <p v-if="records.appointment?.department" class="mb-0">Department: <span class="font-weight-bold">{{ records.appointment.department }}</span></p>
+                    <h4 class="mb-1">{{ encounterForm.practitioner_name }}</h4>
+                    <!-- <h4 v-if="practitionerConflict || !records.appointment" class="mb-1" :class="records.appointment ? 'text-green' : ''">{{ $myresources.user.practitioner_name || $myresources.user.name }}</h4> -->
+                    <p v-if="encounterForm?.department" class="mb-0">Department: <span class="font-weight-bold">{{ encounterForm.department }}</span></p>
                     <p v-if="records.appointment?.service_unit" class="mb-0">Room: <span class="font-weight-bold">{{ records.appointment.service_unit }}</span></p>
                     <h4 class="my-2">{{ encounterForm.custom_encounter_start_time.format('h:mm A') }}</h4>
                     <Tag :severity="records.current_encounter.status == 'Completed' ? 'info' : 'danger'" rounded>
@@ -386,7 +386,7 @@
                 </SelectButton>
                 <div class="flex">
                   <h5 class="font-bold ml-2" v-if="encounterForm.custom_encounter_state == 'Procedure'">
-                    {{ procedureForms[selectedProcedure].name }}
+                    {{ procedureForms[selectedProcedure]?.name }}
                   </h5>
                   <v-btn 
                   v-if="records.current_encounter.status != 'Completed' && encounterForm.custom_encounter_state == 'Procedure'"
@@ -596,7 +596,7 @@
                                 Consent Form
                               </v-btn>
                               <v-icon
-                              v-if="!!procedureForms[selectedProcedure].custom_patient_consent_signature"
+                              v-if="!!procedureForms[selectedProcedure]?.custom_patient_consent_signature"
                               color="green"
                               icon="mdi mdi-check-decagram"
                               size="large"
@@ -639,7 +639,7 @@
                                 <v-btn class="text-none" variant="flat" color="orange" disabled>Predefined Areas</v-btn>
                                 <v-btn class="text-none" variant="flat" color="orange" disabled>Predefined Annotations</v-btn>
                                 <v-btn class="text-none" variant="flat" color="orange" @click="() => {
-                                  annotationDoctype = procedureForms[selectedProcedure].doctype; 
+                                  annotationDoctype = procedureForms[selectedProcedure]?.doctype; 
                                   procedureActive = true
                                 }">Free Drawing</v-btn>
                                 <v-btn 
@@ -654,7 +654,7 @@
                               </div>
                             </v-col>
                           </v-row>
-                          <v-row v-if="procedureForms[selectedProcedure].custom_annotations?.length > 0">
+                          <v-row v-if="procedureForms[selectedProcedure]?.custom_annotations?.length > 0">
                             <v-col>
                               <h3 class="mt-3">Annotations</h3>
                               <Galleria 
@@ -685,7 +685,7 @@
                                 selected-class="bg-success"
                                 show-arrows
                               >
-                                <v-slide-group-item v-for="(doc, index) of procedureForms[selectedProcedure].custom_annotations" :key="index">
+                                <v-slide-group-item v-for="(doc, index) of procedureForms[selectedProcedure]?.custom_annotations" :key="index">
                                   <img 
                                   :src="doc.image" 
                                   :alt="doc.name" 
@@ -724,7 +724,7 @@
                                 if(items && row)
                                   newChildRow({
                                     parentDoctype: 'Clinical Procedure',
-                                    prarentDocname: procedureForms[selectedProcedure].name,
+                                    prarentDocname: procedureForms[selectedProcedure]?.name,
                                     fieldName: 'items', 
                                     rules: {
                                       item_code: [{ required: true, message: 'Please choose an item!' }],
@@ -848,6 +848,207 @@
                                   autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'custom_post_operative_diagnosis', event.target.value)
                                 }"/>
                               </a-form-item>
+                            </v-col>
+                          </v-row>
+                          <v-divider></v-divider>
+                          <v-row>
+                            <v-col>
+                              <h5>Medications</h5>
+                              <EditableTable :columns="[
+                                {label: 'Medicine', key: 'medication'},
+                                {label: 'Frequency', key: 'dosage'},
+                                {label: 'Duration', key: 'period'},
+                                {label: 'Note', key: 'comment'},
+                              ]"
+                              :rows="encounterForm.drug_prescription"
+                              @update="(items, row, isNew) => {
+                                if(items && row)
+                                  newChildRow({
+                                    fieldName: 'drug_prescription', 
+                                    rules: {
+                                      medication: [{ required: true, message: 'Please choose a medicine!' }],
+                                      drug_code: [{ required: true, message: 'Please choose a drug code!' }],
+                                      dosage_form: [{ required: true, message: 'Please choose a dosage form!' }],
+                                      dosage: [{ required: !row.dosage_by_interval, message: 'Please choose a dosage!' }],
+                                      interval: [{ required: row.dosage_by_interval, message: 'Please choose a interval!' }],
+                                      interval_uom: [{ required: row.dosage_by_interval, message: 'Please choose a interval uom!' }],
+                                      period: [{ required: true, message: 'Please choose a period!' }],
+                                    },
+                                    items, row, isNew
+                                  })
+                              }"
+                              @delete="rows => {deleteChildRow({fieldName: 'drug_prescription', rows})}"
+                              dialogWidth="fit-content"
+                              title="Medication"
+                              >
+                                <template v-slot:dialog="{ row }">
+                                  <a-form layout="vertical">
+                                    <v-container>
+                                      <v-row>
+                                        <v-col cols="12">
+                                          <a-form-item label="Medicine">
+                                            <a-select
+                                            v-model:value="row.medication"
+                                            :options="$resources.medications.data?.options"
+                                            :fieldNames="{label: 'name', value: 'name'}"
+                                            @change="(value, option) => {
+                                              // row.strength = option.strength
+                                              // row.strength_uom = option.strength_uom
+                                              // row.dosage_form = option.dosage_form
+                                              row.dosage = option.default_prescription_dosage
+                                              row.period = option.default_prescription_duration
+                                            }"
+                                            show-search
+                                            :loading="$resources.medications.list.loading"
+                                            @search="(value) => {handleSearch(
+                                              value, 
+                                              $resources.medications, 
+                                              {name: ['like', `%${value}%`]}, 
+                                              {},
+                                            )}"
+                                            :filterOption="false"
+                                            ></a-select>
+                                          </a-form-item>
+                                          <!-- <a-form-item label="Drug Code">
+                                            <a-select
+                                            v-model:value="row.drug_code"
+                                            :options="$resources.items.data?.options.filter(item => item.name = row.medication)"
+                                            :fieldNames="{label: 'name', value: 'name'}"
+                                            show-search
+                                            :loading="$resources.items.list.loading"
+                                            @search="(value) => {handleSearch(
+                                              value, 
+                                              $resources.items, 
+                                              {name: ['like', `%${value}%`]}, 
+                                              {},
+                                            )}"
+                                            :filterOption="false"
+                                            ></a-select>
+                                          </a-form-item> -->
+                                          <!-- <a-form-item label="Drug Name / Description">
+                                            <a-input v-model:value="row.drug_name" disabled/>
+                                          </a-form-item> -->
+                                          <!-- <a-form-item label="Strength">
+                                            <a-input v-model:value="row.strength" disabled/>
+                                          </a-form-item> -->
+                                          <!-- <a-form-item label="Strength UOM">
+                                            <a-input v-model:value="row.strength_uom" disabled/>
+                                          </a-form-item> -->
+                                          <!-- <a-form-item label="Dosage Form">
+                                            <a-select
+                                            v-model:value="row.dosage_form"
+                                            :options="$resources.dosageForms.data?.options"
+                                            :fieldNames="{label: 'name', value: 'name'}"
+                                            show-search
+                                            :loading="$resources.dosageForms.list.loading"
+                                            @search="(value) => {handleSearch(
+                                              value, 
+                                              $resources.dosageForms, 
+                                              {name: ['like', `%${value}%`]}, 
+                                              {},
+                                            )}"
+                                            :filterOption="false"
+                                            ></a-select>
+                                          </a-form-item> -->
+                                          <!-- <a-checkbox v-model:checked="row.dosage_by_interval">Dosage by Time Interval</a-checkbox> -->
+                                          <a-form-item label="Frequency">
+                                            <a-select
+                                            v-model:value="row.dosage"
+                                            :options="$resources.dosages.data?.options"
+                                            :fieldNames="{label: 'name', value: 'name'}"
+                                            show-search
+                                            :loading="$resources.dosages.list.loading"
+                                            @search="(value) => {handleSearch(
+                                              value, 
+                                              $resources.dosages, 
+                                              {name: ['like', `%${value}%`]}, 
+                                              {},
+                                            )}"
+                                            :filterOption="false"
+                                            ></a-select>
+                                          </a-form-item>
+                                          <!-- <a-form-item label="Interval" v-if="row.dosage_by_interval">
+                                            <a-input v-model:value="row.interval"/>
+                                          </a-form-item>
+                                          <a-form-item label="Interval UOM" v-if="row.dosage_by_interval">
+                                            <a-select
+                                            v-model:value="row.interval_uom"
+                                            :options="[{label: '', value: ''}, {label: 'Hour', value: 'Hour'}, {label: 'Day', value: 'Day'}]"
+                                            ></a-select>
+                                          </a-form-item> -->
+                                          <a-form-item label="Duration">
+                                            <a-select
+                                            v-model:value="row.period"
+                                            :options="$resources.prescriptionDurations.data?.options"
+                                            :fieldNames="{label: 'name', value: 'name'}"
+                                            show-search
+                                            :loading="$resources.prescriptionDurations.list.loading"
+                                            @search="(value) => {handleSearch(
+                                              value, 
+                                              $resources.prescriptionDurations, 
+                                              {name: ['like', `%${value}%`]}, 
+                                              {},
+                                            )}"
+                                            :filterOption="false"
+                                            ></a-select>
+                                          </a-form-item>
+                                          <!-- <a-form-item label="Number Of Repeats Allowed">
+                                            <a-input v-model:value="row.number_of_repeats_allowed"/>
+                                          </a-form-item> -->
+                                        </v-col>
+                                      </v-row>
+                                      <!-- <v-divider></v-divider>
+                                      <v-row>
+                                        <v-col cols="12" lg="6">
+                                          <a-form-item label="Intent">
+                                            <a-select
+                                            v-model:value="row.intent"
+                                            :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Intent')"
+                                            :fieldNames="{label: 'name', value: 'name'}"
+                                            show-search
+                                            :loading="$resources.codeValues.list.loading"
+                                            @search="(value) => {handleSearch(
+                                              value, 
+                                              $resources.codeValues, 
+                                              {name: ['like', `%${value}%`]}, 
+                                              {},
+                                            )}"
+                                            :filterOption="false"
+                                            ></a-select>
+                                          </a-form-item>
+                                          <a-form-item label="Priority">
+                                            <a-select
+                                            v-model:value="row.priority"
+                                            :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Priority')"
+                                            :fieldNames="{label: 'name', value: 'name'}"
+                                            show-search
+                                            :loading="$resources.codeValues.list.loading"
+                                            @search="(value) => {handleSearch(
+                                              value, 
+                                              $resources.codeValues, 
+                                              {name: ['like', `%${value}%`]}, 
+                                              {},
+                                            )}"
+                                            :filterOption="false"
+                                            ></a-select>
+                                          </a-form-item>
+                                          <a-form-item label="Medication Request" v-if="row.medication_request">
+                                            <a-input v-model:value="row.medication_request" disabled/>
+                                          </a-form-item>
+                                        </v-col>
+                                      </v-row> -->
+                                      <v-divider></v-divider>
+                                      <v-row>
+                                        <v-col>
+                                          <a-form-item label="Note">
+                                            <a-textarea v-model:value="row.comment" :rows="4"/>
+                                          </a-form-item>
+                                        </v-col>
+                                      </v-row>
+                                    </v-container>
+                                  </a-form>
+                                </template>
+                              </EditableTable>
                             </v-col>
                           </v-row>
                         </v-container>
@@ -2385,6 +2586,7 @@
       @update:isOpen="vitalSignsActive = $event" 
       @show-alert="showAlert" 
       :appointment="records.appointment"
+      :callback="fetchRecords"
       />
       <patientEncounterDialog 
       :isOpen="pastVisitsActive" 
@@ -2420,7 +2622,7 @@
       @update:isOpen="procedureActive = $event" 
       @show-alert="showAlert" 
       :doctype="annotationDoctype"
-      :docname="annotationDoctype == 'Patient Encounter' ? encounterForm.name : procedureForms[selectedProcedure].name"
+      :docname="annotationDoctype == 'Patient Encounter' ? encounterForm.name : procedureForms[selectedProcedure]?.name"
       :encounterType="annotationDoctype == 'Patient Encounter' ? encounterAnnotationType : ''"
       :patient="records.patient.name"
       />
@@ -3374,18 +3576,46 @@ export default {
             this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', this.encounterForm.custom_encounter_state)
           }
 
-          this.$call('frappe.client.delete', {doctype: 'Clinical Procedure', name: this.procedureForms[this.selectedProcedure].name})
+          this.$call('frappe.client.delete', {doctype: 'Clinical Procedure', name: this.procedureForms[this.selectedProcedure]?.name})
           .then(response => {
-            this.procedureForms.splice(this.selectedProcedure, 1)
-
             this.$toast.add({ 
               severity: 'success', 
               summary: 'Deleted', 
-              detail: 'Procedure: ' + this.procedureForms[this.selectedProcedure].name + ' was deleted successfully', 
+              detail: 'Procedure: ' + this.procedureForms[this.selectedProcedure]?.name + ' was deleted successfully', 
               life: 3000 
             });
+
             this.selectedProcedure = 0
-            this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', this.encounterForm.custom_encounter_state)
+
+            this.procedureForms = [{
+              doctype: 'Clinical Procedure',
+              name: '',
+              custom_patient_consent_signature: '',
+
+              custom_patient_encounter: '',
+              procedure_template: '',
+              
+              patient: '',
+              patient_name: '',
+              patient_sex: '',
+              patient_age: '',
+              inpatient_record: '',
+              notes: '',
+              practitioner: '',
+              practitioner_name: '',
+              medical_department: '',
+              service_unit: '',
+              start_date: dayjs(),
+              start_time: dayjs(),
+              sample: '',
+
+              custom_pre_operative_diagnosis: '',
+              custom_post_operative_diagnosis: '',
+
+              custom_annotations: [],
+            }]
+
+            this.fetchRecords()
           }).catch(error => {
             this.showAlert(error.message, 'error')
           })
@@ -3404,7 +3634,7 @@ export default {
       }
     },
     setStepperValue({event, value}) {
-      if(value === 'Procedure' && !this.procedureForms[this.selectedProcedure].name){
+      if(value === 'Procedure' && !this.procedureForms[this.selectedProcedure]?.name){
         if(this.records.current_encounter.status != 'Completed'){
           this.encounterForm.custom_encounter_state = this.previousState
           this.newProcedure(event)
@@ -3484,9 +3714,9 @@ export default {
       if(this.procedureOperativeNote)
         noteRow = '<strong>Operative Note:</strong> ' + this.procedureOperativeNote
       this.procedureForms[this.selectedProcedure].custom_general_data = procedureRow + indicationRow + findingRow + noteRow
-      this.procedureForms[this.selectedProcedure].custom_general_data = this.procedureForms[this.selectedProcedure].custom_general_data.replace(/\n/g, '<br>')
-      this.$refs.quillEditor.pasteHTML(this.procedureForms[this.selectedProcedure].custom_general_data)
-      this.autoSave('Clinical Procedure', this.procedureForms[this.selectedProcedure].name, 'custom_general_data', this.$refs.quillEditor.getHTML())
+      this.procedureForms[this.selectedProcedure].custom_general_data = this.procedureForms[this.selectedProcedure]?.custom_general_data.replace(/\n/g, '<br>')
+      this.$refs.quillEditor.pasteHTML(this.procedureForms[this.selectedProcedure]?.custom_general_data)
+      this.autoSave('Clinical Procedure', this.procedureForms[this.selectedProcedure]?.name, 'custom_general_data', this.$refs.quillEditor.getHTML())
       this.sergicalProcedureActive = false
     },
     addDoc(form, callback){
@@ -3500,7 +3730,7 @@ export default {
     },
     showConsentForm() {
       this.$call('healthcare_doworks.api.methods.get_print_html', 
-      {doctype: 'Clinical Procedure', docname: this.procedureForms[this.selectedProcedure].name, print_format: 'Consent Form'})
+      {doctype: 'Clinical Procedure', docname: this.procedureForms[this.selectedProcedure]?.name, print_format: 'Consent Form'})
       .then(response => {
         this.consentFormHtml = response
         this.consentFormDialog = true
@@ -3517,7 +3747,7 @@ export default {
       const signature = this.$refs.consentForm.saveSignature();
 
       this.$call('healthcare_doworks.api.methods.upload_signature', 
-        {docname: this.procedureForms[this.selectedProcedure].name, doctype: 'Clinical Procedure', file_data: signature}
+        {docname: this.procedureForms[this.selectedProcedure]?.name, doctype: 'Clinical Procedure', file_data: signature}
       )
       .then(response => {
         this.procedureForms[this.selectedProcedure].custom_patient_consent_signature = true

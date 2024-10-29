@@ -114,6 +114,9 @@ export default {
     name: {
       type: String,
       default: '',
+    },
+    callback: {
+      type: Function
     }
 	},
   resources: {
@@ -280,6 +283,9 @@ export default {
             });
             this.lodingOverlay = false;
             this.closeDialog()
+
+            if(this.callback)
+              this.callback()
           }).catch(error => {
             this.$emit('show-alert', error.message, 'error')
           });
@@ -295,6 +301,9 @@ export default {
             });
             this.lodingOverlay = false;
             this.closeDialog()
+
+            if(this.callback)
+              this.callback()
           }).catch(error => {
             this.$emit('show-alert', error.message, 'error')
           });

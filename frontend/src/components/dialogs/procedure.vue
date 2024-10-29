@@ -1,5 +1,20 @@
 <template>
   <div class="text-center pa-4">
+    <!-- <ConfirmDialog id="confirm">
+      <template #container="{ message, acceptCallback, rejectCallback }">
+        <div class="flex flex-col items-center p-8 bg-surface-0 dark:bg-surface-900 rounded">
+          <div class="rounded-full bg-black text-primary-contrast inline-flex justify-center items-center h-24 w-24 -mt-20">
+            <i class="pi pi-question"></i>
+          </div>
+          <span class="font-bold text-2xl block mb-2 mt-6">{{ message.header }}</span>
+          <p class="mb-0">{{ message.message }}</p>
+          <div class="flex items-center gap-2 mt-6">
+            <Button label="Cancel" severity="secondary" outlined @click="rejectCallback" class="w-32"></Button>
+            <Button label="Close" severity="danger" @click="acceptCallback" class="w-32"></Button>
+          </div>
+        </div>
+      </template>
+    </ConfirmDialog> -->
     <v-dialog
       v-model="dialogVisible"
       transition="dialog-bottom-transition"
@@ -9,7 +24,7 @@
         <v-toolbar color="yellow-darken-1">
           <v-btn
             icon="mdi mdi-close"
-            @click="dialogVisible = false"
+            @click="confirmClose"
           ></v-btn>
 
           <v-toolbar-title>Procedure</v-toolbar-title>
@@ -137,6 +152,25 @@ export default {
         }
       });
       window.dispatchEvent(event);
+    },
+    confirmClose(event) {
+      this.$confirm.require({
+        target: event.currentTarget,
+        header: 'Are you sure?',
+        message: 'If you close the window everything will discarded',
+        icon: 'pi pi-info-circle',
+        acceptLabel: 'Close',
+        rejectLabel: 'Cancel',
+        acceptProps: {
+          severity: 'danger'
+        },
+        rejectProps: {
+          severity: 'secondary'
+        },
+        accept: () => {
+          this.dialogVisible = false
+        },
+      });
     },
     passHistory() {
       this.$call('healthcare_doworks.api.methods.get_annotation_history', { patient: this.patient }).then(response => {

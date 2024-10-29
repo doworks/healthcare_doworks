@@ -122,8 +122,7 @@ def get_checklist_form_items(template):
 @frappe.whitelist()
 def reschedule_appointment(form, children={}):
 	appointment = frappe.get_doc('Patient Appointment', form['name'])
-	appointment.custom_visit_status = 'Cancelled'
-	appointment.status = 'Cancelled'
+	appointment.status = 'Rescheduled'
 	appointment.save()
 
 	form['name'] = ''
@@ -483,8 +482,16 @@ def save_patient_history(patient='',
 
 @frappe.whitelist()
 def patient(patient=''):
-	doc = frappe.get_doc('Patient', patient)
-	return {'doc': doc}
+	doc = frappe.get_doc('Patient', patient).as_dict()
+	children = {}
+	children['custom_allergies_table'] = doc.pop('custom_allergies_table')
+	children['custom_habits__social'] = doc.pop('custom_habits__social')
+	children['custom_infected_diseases'] = doc.pop('custom_infected_diseases')
+	children['custom_medications'] = doc.pop('custom_medications')
+	children['custom_risk_factors_table'] = doc.pop('custom_risk_factors_table')
+	children['custom_surgical_history_table'] = doc.pop('custom_surgical_history_table')
+	children['patient_relation'] = doc.pop('patient_relation')
+	return {'doc': doc, 'children': children}
 
 @frappe.whitelist()
 def pos_payment_method(pos_profile):

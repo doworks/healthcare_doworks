@@ -11,7 +11,7 @@
                 v-model:selection="selectedSigns" 
                 :metaKeySelection="true"
                 selectionMode="multiple" 
-                :value="this.$resources.vitalSigns.data" 
+                :value="$resources.vitalSigns.data" 
                 dataKey="name" 
                 tableStyle="min-width: 50rem"
                 :rowClass="rowClass"
@@ -21,8 +21,8 @@
                         <div class="p-3 flex flex-col">
                             <h5 class="mb-4 text-center">No Vital Signs</h5>
                             <v-btn prepend-icon="pi pi-plus" rounded="lg" elevation="1" class="self-center text-none" @click="() => {
-                                this.selectedRow = null
-                                this.vsDialogOpen = true
+                                selectedRow = null
+                                vsDialogOpen = true
                             }">
                                 Add Vital Signs
                             </v-btn>
@@ -61,6 +61,7 @@
         @show-alert="(message, type) => {$emit('show-alert', message, type)}" 
         :appointment="appointment" 
         :name="selectedRow"
+        :callback="$resources.vitalSigns.reload"
         />
     </div>
 </template>

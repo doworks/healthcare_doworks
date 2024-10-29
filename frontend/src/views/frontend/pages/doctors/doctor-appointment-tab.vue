@@ -302,11 +302,31 @@
 						<v-btn 
 						v-if="tab == 'arrived'" 
 						variant="text" 
+						color="pink"
+						icon="mdi mdi-medical-bag" 
+						@click="(event) => { 
+							event.stopPropagation()
+							$emit('medical-history-dialog', data)
+						}">
+						</v-btn>
+						<v-btn 
+						v-if="tab == 'arrived'" 
+						variant="text" 
 						color="blue"
 						icon="mdi mdi-pulse" 
 						@click="(event) => { 
 							event.stopPropagation()
 							$emit('vital-sign-dialog', data)
+						}">
+						</v-btn>
+						<v-btn 
+						v-if="tab == 'arrived'" 
+						variant="text" 
+						color="purple"
+						icon="mdi mdi-format-list-checks" 
+						@click="(event) => { 
+							event.stopPropagation()
+							$emit('checklist-form-dialog', data)
 						}">
 						</v-btn>
 						<v-btn 
@@ -573,7 +593,7 @@ export default {
 						...(this.tab !== 'transferred' ? [{label: 'Transferred', command: ({ item }) => this.updateStatus(item)}] : []),
 					]
 				},
-				...(this.$route.name == 'appointments' ? [{
+				...(this.$route.name == 'appointments' && (this.tab == 'scheduled' || this.tab !== 'no show') ? [{
 					label: 'Visit Logs',
 					icon: 'mdi mdi-timetable',
 					disabled: this.selectedRow?.status_log.length == 0,

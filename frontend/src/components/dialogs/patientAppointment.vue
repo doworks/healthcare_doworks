@@ -69,7 +69,7 @@
                 <a-form-item label="Patient" name="patient">
                   <a-input-group class="w-full max-w-full" style="display: flex" compact>
                     <a-select
-                    class="w-full"
+                    style="width: 100%; max-width: calc(100% - 45.78px)"
                     ref="patientRef"
                     v-model:value="appointmentForm.patient_name"
                     :options="$resources.patients.data?.options"
@@ -98,6 +98,7 @@
                       ]
                     )}"
                     :filterOption="false"
+                    :disabled="form.type === 'Reschedule Appointment'"
                     >
                       <template #option="{ patient_name, mobile, custom_cpr, custom_file_number }">
                         <div class="flex flex-col">
@@ -108,7 +109,7 @@
                         </div>
                       </template>
                     </a-select>
-                    <a-button ref="addPatientRef" type="primary" @click="newPatientOpen = true"><i class="mdi mdi-plus" /></a-button>
+                    <a-button ref="addPatientRef" type="primary" @click="newPatientOpen = true" :disabled="form.type === 'Reschedule Appointment'"><i class="mdi mdi-plus" /></a-button>
                   </a-input-group>      
                 </a-form-item>
                 <a-form-item label="Patient Mobile" v-if="appointmentForm.patient">
@@ -131,6 +132,10 @@
                   <a-select
                   v-model:value="appointmentForm.custom_appointment_category"
                   :options="categoryOptions"
+                  @change="(value) => {
+                    appointmentForm.procedure_templates = []
+                    appointmentForm.duration = 0
+                  }"
                   ></a-select>
                 </a-form-item>
                 <a-form-item 
@@ -151,6 +156,12 @@
                     {name: ['like', `%${value}%`]}, 
                     {},
                   )}"
+                  @select="(value, option) => {
+                    appointmentForm.duration += option.custom_default_duration
+                  }"
+                  @deselect="(value, option) => {
+                    appointmentForm.duration -= option.custom_default_duration
+                  }"
                   :filterOption="false"
                   :disabled="appointmentForm.type == 'Edit Appointment'"
                   ></a-select>
@@ -161,12 +172,13 @@
                   :options="$resources.appointmentTypes.data?.options"
                   @change="(value, option) => {
                     appointmentForm.appointment_for = option.allow_booking_for;
-                    appointmentForm.duration = option.default_duration;
                     appointmentForm.practitioner = '';
                     appointmentForm.practitioner_name = '';
                     appointmentForm.department = '';
                     appointmentForm.service_unit = '';
                     appointmentForm.appointment_time = '';
+                    if(appointmentForm.custom_appointment_category != 'Procedure')
+                      appointmentForm.duration = option.default_duration;
                   }"
                   :fieldNames="{label: 'appointment_type', value: 'name'}"
                   show-search
@@ -415,10 +427,21 @@
           variant="tonal"
           @click="onSubmit()"
           type="submit"
+          :disabled="lodingOverlay"
           ></v-btn>
         </v-card-actions>
       </a-form>
     </v-card>
+    <v-overlay
+      :model-value="lodingOverlay"
+      class="align-center justify-center"
+    >
+      <v-progress-circular
+        color="primary"
+        size="64"
+        indeterminate
+      ></v-progress-circular>
+    </v-overlay>
     <patientQuickDialog :isOpen="newPatientOpen" @update:isOpen="newPatientOpen = $event" @submitted="patientSubmitted"/>
   </v-dialog>
 </template>
@@ -586,7 +609,7 @@ export default {
     clinicalProcedureTemplates() { return { 
       type: 'list', 
       doctype: 'Clinical Procedure Template', 
-      fields: ['name', 'template', 'medical_department'], 
+      fields: ['name', 'template', 'medical_department', 'custom_default_duration'], 
       auto: true,
       orderBy: 'name',
       pageLength: 30,
@@ -748,8 +771,9 @@ export default {
           });
         }
         else if(form.type === 'Reschedule Appointment'){
-          children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value.template}))}
-          this.$call('healthcare_doworks.api.methods.reschedule_appointment', {form, children})
+          // children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value.template}))}
+          form.status = 'Rescheduled'
+          this.$call('healthcare_doworks.api.methods.edit_doc', {form, children})
           .then(response => {
             this.$toast.add({
               severity: 'success',

@@ -43,6 +43,7 @@
     @show-alert="(message, type) => {$emit('show-alert', message, type)}" 
     :appointment="appointment" 
     :name="selectedRow"
+    :callback="$resources.checklistForms.reload"
     />
   </div>
 </template>
