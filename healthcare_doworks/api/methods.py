@@ -228,7 +228,7 @@ def patient_encounter_records(encounter_id):
 		vital_signs = frappe.db.get_list('Vital Signs',
 			filters={'patient': current_encounter.patient},
 			fields=[
-				'signs_date', 'signs_time', 'temperature', 'pulse', 'respiratory_rate', 'tongue', 'abdomen', 'name',
+				'signs_date', 'signs_time', 'temperature', 'pulse', 'respiratory_rate', 'tongue', 'abdomen', 'name', 'appointment',
 				'reflexes', 'bp_systolic', 'bp_diastolic', 'vital_signs_note', 'height', 'weight', 'bmi', 'nutrition_note'
 			],
 			order_by='signs_date desc, signs_time desc',
@@ -270,6 +270,8 @@ def patient_encounter_records(encounter_id):
 					else:
 						obj['type'] = 'unknown'
 					attachments.append(obj)
+			doc = doc.as_dict()
+			doc['procedures'] = frappe.get_list('Clinical Procedure', filters={'custom_patient_encounter': doc['name']}, pluck='procedure_template')
 			encounter_docs.append(doc)
 			if encounter == current_encounter.name:
 				encounters.remove(encounter)

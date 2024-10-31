@@ -82,7 +82,7 @@
                     format="DD/MM/YYYY" 
                     class="w-full" 
                     @change="(date, dateString) => {
-                      age = get_age(date)
+                      age = getAge(date)
                       const day = dateString.split('/')[0]
                       const month = dateString.split('/')[1]
                       const year = dateString.split('/')[2]
@@ -805,7 +805,7 @@ export default {
         console.log(response)
         if(response.doc.dob){
           response.doc.dob = dayjs(response.doc.dob)
-          this.age = this.get_age(response.doc.dob)
+          this.age = this.getAge(response.doc.dob)
         }
         if(response.doc.custom_expiration_date)
           response.doc.custom_expiration_date = dayjs(response.doc.custom_expiration_date)
@@ -827,7 +827,7 @@ export default {
       (this.form.middle_name ? ' ' + this.form.middle_name : '') + 
       (this.form.last_name ? ' ' + this.form.last_name : '')
     },
-    get_age(birth) {
+    getAge(birth) {
       let ageMS = Date.parse(Date()) - Date.parse(birth);
       let age = new Date();
       age.setTime(ageMS);

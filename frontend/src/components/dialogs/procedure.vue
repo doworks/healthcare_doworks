@@ -1,6 +1,6 @@
 <template>
   <div class="text-center pa-4">
-    <!-- <ConfirmDialog id="confirm">
+    <ConfirmDialog group="discard-annotation" >
       <template #container="{ message, acceptCallback, rejectCallback }">
         <div class="flex flex-col items-center p-8 bg-surface-0 dark:bg-surface-900 rounded">
           <div class="rounded-full bg-black text-primary-contrast inline-flex justify-center items-center h-24 w-24 -mt-20">
@@ -14,7 +14,7 @@
           </div>
         </div>
       </template>
-    </ConfirmDialog> -->
+    </ConfirmDialog>
     <v-dialog
       v-model="dialogVisible"
       transition="dialog-bottom-transition"
@@ -156,6 +156,7 @@ export default {
     confirmClose(event) {
       this.$confirm.require({
         target: event.currentTarget,
+        group: 'discard-annotation',
         header: 'Are you sure?',
         message: 'If you close the window everything will discarded',
         icon: 'pi pi-info-circle',
@@ -196,3 +197,9 @@ export default {
 	},
 };
 </script>
+
+<style>
+.p-dialog-mask.p-overlay-mask.p-overlay-mask-enter{
+  z-index: 3000 !important;
+}
+</style>

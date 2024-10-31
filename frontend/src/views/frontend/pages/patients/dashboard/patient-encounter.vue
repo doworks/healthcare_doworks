@@ -17,7 +17,7 @@
     >
       <div v-html="alertMessage"></div>
     </v-alert>
-    <ConfirmDialog group="headless">
+    <ConfirmDialog group="new-procedure">
       <template #container="{ message, acceptCallback, rejectCallback }">
         <div class="rounded p-4">
           <span>{{ message.message }}</span>
@@ -50,7 +50,7 @@
         </div>
       </template>
     </ConfirmDialog>
-    <ConfirmPopup></ConfirmPopup>
+    <ConfirmPopup group="delete-procedure"></ConfirmPopup>
     <Popover ref="op">
       <div class="flex flex-col min-w-80">
         <span class="font-medium block mb-2">Procedures</span>
@@ -137,7 +137,7 @@
                 <div class="text-start d-flex flex-column">
                   <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
                   <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
-                  <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex?.slice(0, 1) || '')}}</p>
+                  <p class="mb-1">{{ records.patient.dob + getAge(records.patient.dob) + (records.patient.sex?.slice(0, 1) || '')}}</p>
                   <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
                 </div>
               </a>
@@ -189,7 +189,7 @@
                     <div class="text-start d-flex flex-column">
                       <h5 class="mb-0">{{ records.patient.patient_name }}</h5>
                       <h6 class="mb-1">{{ records.patient.custom_cpr }}</h6>
-                      <p class="mb-1">{{ records.patient.dob + records.patient.age + (records.patient.sex?.slice(0, 1) || '')}}</p>
+                      <p class="mb-1">{{ records.patient.dob + getAge(records.patient.dob) + (records.patient.sex?.slice(0, 1) || '')}}</p>
                       <p class="mb-0"><i class="pi pi-mobile align-middle"></i>{{ records.patient.mobile }}</p>
                     </div>
                   </a>
@@ -202,61 +202,96 @@
               <template #content>
                 <v-slide-group mobile-breakpoint="sm">
                   <v-slide-group-item>
-                    <div class="vital-sign-container align-self-center">
-                      <div class="mb-2 gap-2 d-flex align-items-center">
-                        <i class="pi pi-heart" style="font-size: 1.5rem"></i>
-                        <h6 class="my-0 fw-normal">SYS</h6>
+                    <div class="vital-sign-container flex flex-col gap-5 align-self-center">
+                      <div>
+                        <div class="mb-2 gap-2 d-flex align-items-center">
+                          <i class="pi pi-heart" style="font-size: 1.5rem"></i>
+                          <h6 class="my-0 fw-normal">SYS</h6>
+                        </div>
+                        <div class="d-flex gap-1 align-items-center justify-content-center">
+                          <h6 class="fw-normal mb-0">{{currentVS?.bp_systolic || '-'}}</h6> <small class="align-self-end" v-if="currentVS?.bp_systolic">mm Hg</small>
+                        </div>
                       </div>
-                      <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h6 class="fw-normal mb-0">{{currentVS.bp_systolic || '-'}}</h6> <small class="align-self-end" v-if="currentVS.bp_systolic">mm Hg</small>
+                      <div>
+                        <div class="mb-2 gap-2 d-flex align-items-center">
+                          <i class="pi pi-heart" style="font-size: 1.5rem"></i>
+                          <h6 class="my-0 fw-normal">DIA</h6>
+                        </div>
+                        <div class="d-flex gap-1 align-items-center justify-content-center">
+                          <h6 class="fw-normal mb-0">{{currentVS?.bp_diastolic || '-'}}</h6> <small class="align-self-end" v-if="currentVS?.bp_diastolic">mm Hg</small>
+                        </div>
                       </div>
                     </div>
                   </v-slide-group-item>
                   <Divider layout="vertical"/>
                   <v-slide-group-item>
-                    <div class="vital-sign-container align-self-center">
-                      <div class="mb-2 gap-2 d-flex align-items-center">
-                        <i class="pi pi-heart" style="font-size: 1.5rem"></i>
-                        <h6 class="my-0 fw-normal">DIA</h6>
+                    <div class="vital-sign-container flex flex-col pt-1 pb-3 gap-3 align-self-center">
+                      <div class="pb-3">
+                        <div class="gap-1 d-flex align-items-center">
+                          <i class="mdi mdi-pulse" style="font-size: 2.5rem"></i>
+                          <h6 class="my-0 fw-normal">Pulse</h6>
+                        </div>
+                        <div class="d-flex gap-1 align-items-center justify-content-center relative -top-2.5">
+                          <h6 class="fw-normal mb-0">{{currentVS?.pulse || '-'}}</h6> <small class="align-self-end" v-if="currentVS?.pulse">BPM</small>
+                        </div>
                       </div>
-                      <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h6 class="fw-normal mb-0">{{currentVS.bp_diastolic || '-'}}</h6> <small class="align-self-end" v-if="currentVS.bp_diastolic">mm Hg</small>
-                      </div>
-                    </div>
-                  </v-slide-group-item>
-                  <Divider layout="vertical"/>
-                  <v-slide-group-item>
-                    <div class="vital-sign-container align-self-center">
-                      <div class="mb-2 gap-1 d-flex align-items-center">
-                        <img style="width: 30px;" :src="soundImage"/>
-                        <h6 class="my-0 fw-normal">Pulse</h6>
-                      </div>
-                      <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h6 class="fw-normal mb-0">{{currentVS.pulse || '-'}}</h6> <small class="align-self-end" v-if="currentVS.pulse">BPM</small>
-                      </div>
-                    </div>
-                  </v-slide-group-item>
-                  <Divider layout="vertical" />
-                  <v-slide-group-item>
-                    <div class="vital-sign-container align-self-center">
-                      <div class="mb-2 gap-2 d-flex align-items-center">
-                        <img style="width: 25px;" :src="lungsImage"/>
-                        <h6 class="my-0 fw-normal">Risp</h6>
-                      </div>
-                      <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h6 class="fw-normal mb-0">{{currentVS.respiratory_rate || '-'}}</h6> <small class="align-self-end" v-if="currentVS.respiratory_rate">BPM</small>
+
+                      <div class="pb-2">
+                        <div class="gap-2 d-flex align-items-center">
+                          <i class="mdi mdi-lungs" style="font-size: 1.5rem"></i>
+                          <h6 class="my-0 fw-normal">Resp</h6>
+                        </div>
+                        <div class="d-flex gap-1 align-items-center justify-content-center">
+                          <h6 class="fw-normal mb-0">{{currentVS?.respiratory_rate || '-'}}</h6> <small class="align-self-end" v-if="currentVS?.respiratory_rate">BPM</small>
+                        </div>
                       </div>
                     </div>
                   </v-slide-group-item>
                   <Divider layout="vertical" />
                   <v-slide-group-item>
-                    <div class="vital-sign-container align-self-center">
-                      <div class="mb-2 gap-1 d-flex align-items-center">
-                        <img style="width: 30px;" :src="celsiusImage"/>
-                        <h6 class="my-0 fw-normal">Temp</h6>
+                    <div class="vital-sign-container flex flex-col gap-[20px] pb-3.5 align-self-center">
+                      <div class="pb-3">
+                        <div class="gap-1 d-flex align-items-center">
+                          <i class="mdi mdi-thermometer" style="font-size: 2rem"></i>
+                          <h6 class="my-0 fw-normal">Temp</h6>
+                        </div>
+                        <div class="d-flex gap-1 align-items-center justify-content-center relative -top-2">
+                          <h6 class="fw-normal mb-0">{{(currentVS?.temperature || '-') + '\u00B0'}}</h6> <small class="align-self-end" v-if="currentVS?.temperature">C</small>
+                        </div>
                       </div>
-                      <div class="d-flex gap-1 align-items-center justify-content-center">
-                        <h6 class="fw-normal mb-0">{{currentVS.temperature + '\u00B0' || '-'}}</h6> <small class="align-self-end" v-if="currentVS.temperature">C</small>
+
+                      <div>
+                        <div class="gap-1 d-flex align-items-center">
+                          <img style="width: 18px;" :src="stomachImage"/>
+                          <h6 class="ml-1 my-0 fw-normal">Abdomen</h6>
+                        </div>
+                        <div class="d-flex gap-1 align-items-center justify-content-center">
+                          <h6 class="fw-normal mb-0">{{currentVS?.abdomen || '-'}}</h6>
+                        </div>
+                      </div>
+                    </div>
+                  </v-slide-group-item>
+                  <Divider layout="vertical" />
+                  <v-slide-group-item>
+                    <div class="vital-sign-container flex flex-col gap-5 align-self-center">
+                      <div>
+                        <div class="gap-1 d-flex align-items-center">
+                          <img style="width: 18px;" :src="kneeImage"/>
+                          <h6 class="ml-1 my-0 fw-normal">Reflexes</h6>
+                        </div>
+                        <div class="d-flex gap-1 align-items-center justify-content-center">
+                          <h6 class="fw-normal mb-0">{{currentVS?.reflexes || '-'}}</h6>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div class="gap-1 d-flex align-items-center">
+                          <img style="width: 18px;" :src="tongueImage"/>
+                          <h6 class="ml-1 my-0 fw-normal">Tongue</h6>
+                        </div>
+                        <div class="d-flex gap-1 align-items-center justify-content-center">
+                          <h6 class="fw-normal mb-0">{{currentVS?.tongue || '-'}}</h6>
+                        </div>
                       </div>
                     </div>
                   </v-slide-group-item>
@@ -336,7 +371,14 @@
                 <Column field="encounter_date" header="Date"></Column>
                 <Column field="practitioner_name" header="Practitioner"></Column>
                 <Column field="custom_appointment_category" header="Type"></Column>
-                <Column field="reasons" header="Reason"></Column>
+                <Column header="Reason">
+                  <template #body="{ data }">
+                    {{ data.custom_appointment_category == 'Procedure' ? 
+                      data.procedures?.join(', ') : 
+                      data.symptoms?.map(semptom => semptom.complaint).join(', ') 
+                    }}
+                  </template>
+                </Column>
               </DataTable>
             </template>
           </Card>
@@ -627,7 +669,7 @@
                               :options="quillEditorOptions" 
                               style="height: 300px"
                               @blur="event => {
-                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'custom_general_data', event.target.value)
+                                autoSave('Clinical Procedure', procedureForms[selectedProcedure].name, 'custom_general_data', procedureForms[selectedProcedure].custom_general_data)
                               }"
                               />
                             </v-col>
@@ -2309,11 +2351,48 @@
                                     <h5>General Data</h5>
                                     <div v-html="procedure.custom_general_data"></div>
                                   </v-col>
-                                  <v-col v-if="procedure.custom_pre_operative_diagnosis">
-                                    <h5>Differential Diagnosis</h5>
-                                    <h6 class="m-0">
-                                      {{ procedure.custom_pre_operative_diagnosis }}
-                                    </h6>
+                                  <v-col v-if="procedure.custom_annotations.length > 0">
+                                    <h5>Annotations</h5>
+                                    <Galleria 
+                                    :value="procedure.custom_annotations" 
+                                    :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
+                                    :numVisible="5" 
+                                    :circular="true" 
+                                    containerStyle="max-width: 850px" 
+                                    :showItemNavigators="true" 
+                                    :showThumbnails="false"
+                                    :fullScreen="true"
+                                    v-model:visible="showInvestigationAnnotations"
+                                    v-model:activeIndex="activeIndex"
+                                    >
+                                      <template #item="slotProps">
+                                        <img 
+                                        :src="slotProps.item.image" 
+                                        :alt="slotProps.item.name" 
+                                        style="height: 100%;"
+                                        />
+                                      </template>
+                                      <template #thumbnail="slotProps">
+                                        <img :src="slotProps.item.image" :alt="slotProps.item.name" style="display: block" />
+                                      </template>
+                                    </Galleria>
+                                    <v-slide-group
+                                      class="pa-4"
+                                      selected-class="bg-success"
+                                      show-arrows
+                                    >
+                                      <v-slide-group-item 
+                                      v-for="(doc, index) of procedure.custom_annotations" 
+                                      :key="index"
+                                      >
+                                        <img 
+                                        :src="doc.image" 
+                                        :alt="doc.name" 
+                                        style="cursor: pointer; height: 100px" 
+                                        @click="() => {activeIndex = index; showInvestigationAnnotations = true}"
+                                        />
+                                      </v-slide-group-item>
+                                    </v-slide-group>
                                   </v-col>
                                 </v-row>
                               </v-container>
@@ -2790,9 +2869,12 @@ import { Form } from 'ant-design-vue';
 
 import encounterRecords from '@/assets/json/encounterrecords.json'
 import pdfSignature from '@/components/pdfSignature.vue';
-import soundImage from '@/assets/img/sound.png';
-import lungsImage from '@/assets/img/lungs.png';
-import celsiusImage from '@/assets/img/celsius.png';
+// import soundImage from '@/assets/img/sound.png';
+// import lungsImage from '@/assets/img/lungs.png';
+// import celsiusImage from '@/assets/img/celsius.png';
+import kneeImage from '@/assets/img/knee.png';
+import stomachImage from '@/assets/img/stomach.png';
+import tongueImage from '@/assets/img/tongue.png';
 
 import Accordion from 'primevue/accordion';
 import AccordionPanel from 'primevue/accordionpanel';
@@ -3234,9 +3316,9 @@ export default {
   data() {
     return {
       gifUrl:gifUrl,
-      lungsImage:lungsImage,
-      celsiusImage:celsiusImage,
-      soundImage:soundImage,
+      kneeImage:kneeImage,
+      stomachImage:stomachImage,
+      tongueImage:tongueImage,
 
       quillEditorOptions: {
         theme: 'snow',
@@ -3463,7 +3545,7 @@ export default {
             value.signs_date = dayjs(value.signs_date).format('DD/MM/YYYY')
             return value
           })
-          this.currentVS = response.vitalSigns[0];
+          this.currentVS = response.vitalSigns.filter(vs => vs.appointment == response.appointment.name)[0];
         }
         if(response.appointment && response.appointment?.practitioner !== this.$myresources.user.practitioner){
           this.practitionerConflict = true
@@ -3495,7 +3577,6 @@ export default {
       });
     },
     autoSave(doctype, name, fieldname, value) {
-      
       this.$call('frappe.client.set_value', {doctype, name, fieldname, value})
       .then(response => {
         this.$toast.add({ severity: 'success', summary: 'Saved', life: 3000 });
@@ -3559,10 +3640,17 @@ export default {
     confirmDelete(event) {
       this.$confirm.require({
         target: event.currentTarget,
+        group: 'delete-procedure',
         message: 'Are you sure you want to delete this procedure?',
         icon: 'pi pi-info-circle',
         acceptLabel: 'Delete',
         rejectLabel: 'Cancel',
+        acceptProps: {
+          severity: 'danger'
+        },
+        rejectProps: {
+          severity: 'secondary'
+        },
         accept: () => {
           if(this.procedureForms.length == 1){
             if(this.encounterForm.custom_appointment_category == 'Procedure' || this.encounterForm.custom_appointment_category == 'First Time'){
@@ -3652,7 +3740,7 @@ export default {
     newProcedure(event) {
       this.$confirm.require({
         target: event.currentTarget,
-        group: 'headless',
+        group: 'new-procedure',
         message: 'Do you want to create a new clinical procedure?',
         accept: () => {
           this.previousState = 'Procedure';
@@ -3718,6 +3806,13 @@ export default {
       this.$refs.quillEditor.pasteHTML(this.procedureForms[this.selectedProcedure]?.custom_general_data)
       this.autoSave('Clinical Procedure', this.procedureForms[this.selectedProcedure]?.name, 'custom_general_data', this.$refs.quillEditor.getHTML())
       this.sergicalProcedureActive = false
+    },
+    getAge(birth) {
+      let ageMS = Date.parse(Date()) - Date.parse(birth);
+      let age = new Date();
+      age.setTime(ageMS);
+      let years = age.getFullYear() - 1970;
+      return years + ' Yrs';
     },
     addDoc(form, callback){
       this.$call('healthcare_doworks.api.methods.new_doc', {form})
