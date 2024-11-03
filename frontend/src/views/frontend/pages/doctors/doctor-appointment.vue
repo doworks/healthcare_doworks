@@ -53,7 +53,7 @@
             @change="(value) => {selectedDates = getDatesInBetween(value[0], value[1]); fetchRecords()}"
             />
             <v-btn-toggle class="mt-1" v-model="dateFilterType" color="blue" mandatory density="compact">
-              <v-btn size="small" class="text-none"  value="span">Timespans</v-btn>
+              <v-btn size="small" class="text-none" @click="resetDates" value="span">Timespans</v-btn>
               <v-btn size="small" class="text-none"  value="single">Single</v-btn>
               <v-btn size="small" class="text-none"  value="range">Range</v-btn>
             </v-btn-toggle>
@@ -189,7 +189,7 @@
     :isOpen="appointmentNoteOpen" 
     @update:isOpen="appointmentNoteOpen = $event" 
     @show-alert="showAlert" 
-    :appointmentId="selectedRow.name"
+    :appointmentId="selectedRow?.name"
     />
     <appointmentInvoiceDialog 
     :isOpen="appointmentInvoiceOpen" 
@@ -463,12 +463,13 @@
                   dataKey="id" 
                   sortField="appointment_datetime"
                   @row-click="({ data }) => {appointmentDialog('Edit Appointment', false, data)}"
+                  @row-contextmenu="handleAvailabilityRowContextMenu"
                   :loading="checkAvailabilityLoading"
                   >
                     <template #empty><v-empty-state title="No available appoiontments for this patient"></v-empty-state></template>
                     <Column header="Time" field="appointment_time">
                       <template #body="{ data }">
-                        <div @click="() => {$emit('appointment-dialog', 'Edit Appointment', false, data)}">
+                        <div @click="() => {appointmentDialog('Edit Appointment', false, data)}">
                           <div class="text-center">
                             {{ data.appointment_date_moment }}
                           </div>
@@ -517,6 +518,7 @@
             </v-container>
           </a-form>
         </v-card-text>
+        <ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = {name: '', patient_details: {id: ''}}"/>
       </v-card>
     </v-dialog>
     <!-- / Page Dialogs -->
@@ -768,6 +770,42 @@ export default {
       progressValue: 0,
     };
   },
+  computed: {
+    contextItems() {
+			return [
+				{
+					label: 'Reschedule Appointment',
+					icon: 'mdi mdi-clock-outline',
+					command: () => {this.appointmentDialog('Edit Appointment', false, this.selectedRow)}
+				},
+				{
+					label: 'Billing Items',
+					icon: 'mdi mdi-invoice-text-outline',
+					command: () => {this.appointmentDialog(this.selectedRow)}
+				},
+				{
+					label: 'ID Card Reading',
+					icon: 'mdi mdi-card-account-details-outline',
+					command: () => {this.readIdCard(this.selectedRow)}
+				},
+				{
+					label: 'Update Room',
+					icon: 'mdi mdi-door-open',
+					command: () => {this.serviceUnitDialog(this.selectedRow)}
+				},
+				{
+					label: 'Update Payment Type',
+					icon: 'pi pi-wallet',
+					command: () => {this.paymentTypeDialog(this.selectedRow)}
+				},
+				{
+					label: 'Tranfer To Practitioner',
+					icon: 'mdi mdi-transit-transfer',
+					command: () => {this.transferPractitionerDialog(this.selectedRow)}
+				},
+      ]		
+		},
+  },
   created() {
     // this.$socket.on('patient_appointments_chunk', (chunk) => {
     //   this.appointmentsLoading = true;
@@ -817,8 +855,8 @@ export default {
   },
 
   mounted() {
-    this.selectedDates = ref([dayjs()]),
-    this.selectedRangeDates = [dayjs().startOf('isoWeek').subtract(1, 'day'), dayjs().endOf('isoWeek').subtract(1, 'day')],
+    this.selectedDates = ref([dayjs()])
+    this.selectedRangeDates = [dayjs().startOf('isoWeek').subtract(1, 'day'), dayjs().endOf('isoWeek').subtract(1, 'day')]
     this.fetchRecords();
   },
   methods: {
@@ -827,11 +865,16 @@ export default {
       this.alertType = type;
       this.alertActive = true;
     },
-    fetchRecords() {
+    resetDates() {
+      this.selectedDates = ref([dayjs()])
+      this.selectedRangeDates = [dayjs().startOf('isoWeek').subtract(1, 'day'), dayjs().endOf('isoWeek').subtract(1, 'day')]
+    },
+    getFormatedDates() {return this.selectedDates.map(date => date.format('YYYY-MM-DD'))},
+    fetchRecords(filters={appointment_date: ['in', this.getFormatedDates()], custom_visit_status: this.tab}) {
       this.appointmentsLoading = true;
       const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
-        filters: {appointment_date: ['in', dates], custom_visit_status: this.tab}, start: this.start, limit: this.limit[this.tab]
+        filters: filters, start: this.start, limit: this.limit[this.tab]
       })
       .then(response => {
         if(response.total_count)
@@ -873,6 +916,10 @@ export default {
 
 				return d;
 			});
+		},
+    handleAvailabilityRowContextMenu({ originalEvent, data, index }) {
+			this.selectedRow = data
+			this.$refs.menu.show(originalEvent);
 		},
     spanToDate(span) {
       if(span){
@@ -1268,12 +1315,12 @@ export default {
     pageChanged(event) {
       this.start = event.first;
       const maxed = [20, 100, 500, 2500].some(val => this.groupedAppointments[this.tab].length == val)
-      if(event.rows > this.limit[this.tab] && event.rows >= this.groupedAppointments[this.tab].length && maxed){
-        this.limit[this.tab] = event.rows;
-        this.fetchRecords();
-      }
-      else
-        this.limit[this.tab] = event.rows;
+      this.limit[this.tab] = event.rows;
+      this.fetchRecords();
+      // if(event.rows > this.limit[this.tab] && event.rows >= this.groupedAppointments[this.tab].length && maxed){
+      // }
+      // else
+      //   this.limit[this.tab] = event.rows;
     },
     updateProgress() {
       this.progressValue = (this.appointments.length / this.totalRecords) * 100;

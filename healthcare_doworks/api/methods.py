@@ -137,6 +137,14 @@ def reschedule_appointment(form, children={}):
 	new_doc.insert()
 
 @frappe.whitelist()
+def get_item_texes(item):
+	taxes = []
+	item_taxes = frappe.get_all('Item Tax', filters={'parent': item}, pluck='item_tax_template')
+	for template in item_taxes:
+		taxes.append(frappe.get_all('Item Tax Template Detail', filters={'parent': template}, fields=['tax_type', 'tax_rate']))
+	return taxes
+
+@frappe.whitelist()
 def transferToPractitioner(app, practitioner):
 	doc = frappe.get_doc('Patient Appointment', app)
 	doc.practitioner = practitioner
@@ -620,41 +628,83 @@ def create_invoice(appointment, profile, payment_methods):
 		return {'insurance_invoice': insurance_invoice.name, 'customer_invoice': patient_invoice.name}
 
 @frappe.whitelist()
-def make_payment(appointment, mode_of_payment, reference_no=None, reference_date=None):
+def create_mock_invoice(appointment):
 	appointment_doc = frappe.get_doc('Patient Appointment', appointment)
-	invoices = list(d["customer_invoice"] for d in appointment_doc.as_dict()['custom_invoice_items'] if d["customer_invoice"])
-	mop = frappe.get_doc('Mode of Payment', mode_of_payment)
-	
+	patient = frappe.get_doc('Patient', appointment_doc.patient)
+	branches = frappe.db.get_all('Branch', order_by='creation', pluck='name')
+	branch = branches[0] if branches else ''
+	customer_invoice_row = False
+	for invoice_item in appointment_doc.custom_invoice_items:
+		if not invoice_item.customer_invoice and float(invoice_item.customer_amount) > 0:
+			customer_invoice_row = True
+	if customer_invoice_row:
+		invoice = frappe.new_doc('Sales Invoice')
+		invoice.patient = patient.name
+		invoice.patient_name = patient.patient_name
+		invoice.is_pos = 0
+		# invoice.pos_profile = profile
+		invoice.customer = patient.customer
+		invoice.posting_date = frappe.utils.now()
+		invoice.due_date = frappe.utils.now()
+		invoice.service_unit = appointment_doc.service_unit
+		invoice.branch = appointment_doc.custom_branch or branch or ''
+		if appointment_doc.custom_payment_type == 'Insurance':
+			invoice.selling_price_list = 'Standard Selling'
+			for invoice_item in appointment_doc.custom_invoice_items:
+				if not invoice_item.customer_invoice:
+					invoice.append('items', {
+						'item_code': invoice_item.item,
+						'item_name': invoice_item.item_name,
+						'uom': invoice_item.item_uom,
+						'qty': invoice_item.quantity,
+						'rate': invoice_item.rate,
+						'amount': invoice_item.amount,
+					})
+		else:
+			invoice.selling_price_list = 'Insurance Price' or 'Standard Selling'
+			for invoice_item in appointment_doc.custom_invoice_items:
+				if not invoice_item.customer_invoice:
+					invoice.append('items', {
+						'item_code': invoice_item.item,
+						'item_name': invoice_item.item_name,
+						'uom': invoice_item.item_uom,
+						'qty': invoice_item.quantity,
+						'rate': float(invoice_item.customer_amount) / float(invoice_item.quantity),
+						'amount': invoice_item.customer_amount,
+					})
+		invoice.set_missing_values()
+		invoice.calculate_taxes_and_totals()
+		invoice.run_method("before_validate")
+		invoice.run_method("validate")
+		invoice.run_method("before_insert")  # Only for new docs
+		invoice.run_method("before_save")
+
+		return invoice
+
+@frappe.whitelist()
+def get_payment_amount(invoices):
 	for invoice in invoices:
 		invoice_doc = frappe.get_doc('Sales Invoice', invoice)
-		if invoice_doc.status != 'Paid':
-			payment_entry = frappe.new_doc('Payment Entry')
-			payment_entry.mode_of_payment = mode_of_payment
-			payment_entry.party_type = 'Customer'
-			payment_entry.party = invoice_doc.customer
-			payment_entry.party_name = invoice_doc.customer_name
-			payment_entry.paid_amount = invoice_doc.grand_total
+		
 
-			payment_entry.paid_to = mop.accounts[0].default_account
-			payment_entry.received_amount = invoice_doc.grand_total
-			payment_entry.source_exchange_rate = 1
-			payment_entry.target_exchange_rate = 1
-
-			payment_entry.append('references', {
-				'reference_doctype': 'Sales Invoice',
-				'reference_name': invoice,
-				'due_date': invoice_doc.due_date,
-				'total_amount': invoice_doc.grand_total,
-				'outstanding_amount': invoice_doc.outstanding_amount,
-				'allocated_amount': invoice_doc.outstanding_amount
+@frappe.whitelist()
+def make_payment(appointment, invoices, profile, payment_methods):
+	for invoice in invoices:
+		invoice_doc = frappe.get_doc('Sales Invoice', invoice)
+		invoice_doc.pos_profile = profile
+		for method in payment_methods:
+			invoice_doc.append('payments', {
+				'default': method.get('default', 0),
+				'mode_of_payment': method.get('mode_of_payment', ''),
+				'amount': method.get('amount', 0),
+				'reference_no': method.get('reference_no', '')
 			})
-			if reference_no:
-				payment_entry.reference_no = reference_no
-			if reference_date:
-				payment_entry.reference_date = reference_date
-
-			payment_entry.save()
-			payment_entry.submit()
+		invoice_doc.save()
+		invoice_doc.submit()
+	appointment_doc = frappe.get_doc('Patient Appointment', appointment)
+	for invoice_item in appointment_doc.custom_invoice_items:
+		invoice_item.paid = frappe.db.get_value('Sales Invoice', invoice_item.customer_invoice, 'status')
+	appointment_doc.save()
 
 @frappe.whitelist()
 def get_invoice_items(**args):

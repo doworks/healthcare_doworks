@@ -154,7 +154,7 @@ app.use(FrappeUI)
 router.beforeEach(async (to, from, next) => {
     try {
         if (!auth.isLoggedIn && !to.meta.isLoginPage) {
-            window.location.href = '/login';
+            window.location.href = `${window.location.origin}/login`;
             return;
         } else if (auth.isLoggedIn && to.meta.isLoginPage) {
             return next({ name: 'Home' });

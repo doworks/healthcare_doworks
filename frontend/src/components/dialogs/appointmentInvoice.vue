@@ -82,8 +82,8 @@
                         @search="(value) => {handleSearch(
                           value, 
                           $resources.items, 
-                          {item_name: ['like', `%${value}%`]}, 
-                          {},
+                          {item_group: ['!=', 'New Procedures'], item_name: ['like', `%${value}%`]}, 
+                          {item_group: ['!=', 'New Procedures']},
                         )}"
                         :filterOption="false"
                         ></a-select>
@@ -369,7 +369,7 @@ export default {
       type: 'list', 
       doctype: 'Item', 
       fields: ['name', 'item_code', 'item_name', 'weight_uom'], 
-      filters: {},
+      filters: {item_group: ['!=', 'New Procedures']},
       auto: true,
       orderBy: 'name',
       pageLength: 10,
@@ -425,19 +425,21 @@ export default {
           label: 'Create Invoices',
           icon: 'pi pi-plus',
           command: () => {
-            this.posProfile = '';
-            this.paymentMethods = []
-            this.salesInvoiceOpen = true
+            this.getPrices()
+            // this.posProfile = '';
+            // this.paymentMethods = []
+            // this.salesInvoiceOpen = true
           }
         }] : []),
-        // {
+        // ...(this.invoiceItems.some(value => value.customer_invoice && !value.paid) ? [{
         //   label: 'Make Payment',
         //   icon: 'mdi mdi-credit-card-outline',
         //   command: () => {
-        //     this.paymentType = '';
-        //     this.modeOfPaymentOpen = true
+        //     this.posProfile = '';
+        //     this.paymentMethods = []
+        //     this.salesInvoiceOpen = true
         //   }
-        // },
+        // }] : []),
       ]
     }
   },
@@ -454,31 +456,12 @@ export default {
       paymentMethods: [],
       paymentAmount: 0,
       invoiceItems: this.appointment.invoice_items || [],
-      // actions: [
-      //   ...(this.invoiceItems.some(value => !value.customer_invoice) ? [{
-      //     label: 'Create Invoices',
-      //     icon: 'pi pi-plus',
-      //     command: () => {
-      //       this.posProfile = '';
-      //       this.paymentMethods = []
-      //       this.salesInvoiceOpen = true
-      //     }
-      //   }] : []),
-      //   {
-      //     label: 'Make Payment',
-      //     icon: 'mdi mdi-credit-card-outline',
-      //     command: () => {
-      //       this.paymentType = '';
-      //       this.modeOfPaymentOpen = true
-      //     }
-      //   },
-      // ],
     };
   },
   mounted() {
     // console.log(this.appointment)
-    this.posProfile = '';
-    this.paymentType = '';
+    // this.posProfile = '';
+    // this.paymentType = '';
   },
   watch: {
     appointment: {
@@ -522,6 +505,17 @@ export default {
           }
         });
     },
+    getPrices() {
+      this.$call('healthcare_doworks.api.methods.create_mock_invoice', {appointment: this.appointment.name})
+      .then(response => {
+        console.log(response)
+        this.posProfile = '';
+        this.paymentMethods = []
+        this.salesInvoiceOpen = true
+      }).catch(error => {
+        this.$emit('show-alert', error.message, 'error')
+      });
+    },
     onCellEditComplete(event) {
       let { data, newValue, field } = event;
       data[field] = newValue;
@@ -537,6 +531,7 @@ export default {
         this.lodingOverlay = false;
         this.salesInvoiceOpen = false
         if(response)
+          console.log(response)
           this.$toast.add({
             severity: 'success',
             summary: 'Success',
@@ -559,9 +554,9 @@ export default {
       this.lodingOverlay = true;
       this.$call('healthcare_doworks.api.methods.make_payment', {
         appointment: this.appointment.name,
-        mode_of_payment: this.modeOfPayment,
-        reference_no: this.referenceNo,
-        reference_date: this.referenceDate
+        invoices: this.invoiceItems.filter(item => item.customer_invoice && !item.paid),
+        profile: this.posProfile,
+        payment_methods: this.paymentMethods
       })
       .then(response => {
         this.lodingOverlay = false;

@@ -377,6 +377,15 @@
 						}">
 						</v-btn>
 						<v-btn 
+						v-if="isIOS"
+						variant="text" 
+						icon="mdi mdi-dots-vertical" 
+						@click="(event) => { 
+							event.stopPropagation()
+							handleRowContextMenu({originalEvent: event, data})
+						}">
+						</v-btn>
+						<v-btn 
 							v-if="data.notes || data.visit_notes.length > 0" 
 							size="small" 
 							variant="text" 
@@ -661,6 +670,9 @@ export default {
 					command: () => {this.$emit('transfer-practitioner-dialog', this.selectedRow)}
 				},
       		]		
+		},
+		isIOS() {
+			return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 		},
 	},
 	mounted() {
