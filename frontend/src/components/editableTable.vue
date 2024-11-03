@@ -30,7 +30,12 @@
         :columns="columns"
         :rows="items"
         :options="{
-          onRowClick: editRow,
+          onRowClick: (row) => {
+            if(onRowClick)
+              onRowClick(row)
+            else
+              editRow(row)
+          },
           selectable: true,
           showTooltip: true,
           resizeColumn: true,
@@ -110,6 +115,9 @@ export default {
     dialogWidth: {
       type: String,
       default: '450px'
+    },
+    onRowClick: {
+      type: Function
     }
   },
   components: { ListView },

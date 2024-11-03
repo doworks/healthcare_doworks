@@ -50,6 +50,8 @@
                 }"
                 @delete="rows => {deleteChildRow({fieldName: 'custom_invoice_items', rows})}"
                 title="Invoice Items"
+                :onRowClick="onInvoiceRowClick"
+                ref="invoiceItems"
                 >
                   <template v-slot:dialog="{ row }">
                     <a-form layout="vertical">
@@ -60,12 +62,14 @@
                         @change="(value, option) => {
                           row.item_name = option.item_name;
                           row.item_uom = option.weight_uom;
-                          row.rate = parseFloat(option.item_price.filter(value => value.price_list == 'Standard Selling')[0].price_list_rate);
+                          row.rate = parseFloat(option.item_price.filter(value => value.price_list == 'Standard Selling')[0]?.price_list_rate) || 0;
                           if(appointment.custom_payment_type == 'Insurance' && option.item_price.some(value => value.price_list == 'Insurance Price')){
-                            row.rate = option.item_price.filter(value => value.price_list == 'Insurance Price')[0].price_list_rate;
+                            row.rate = option.item_price.filter(value => value.price_list == 'Insurance Price')[0]?.price_list_rate || 0;
                           }
                           if(!row.quantity)
-                            row.quantity = 1;
+                            row.quantity = parseFloat(1);
+                          else
+                            row.quantity = parseFloat(row.quantity);
                           row.amount = parseFloat(row.rate) * parseFloat(row.quantity);
                           if(appointment.custom_payment_type == 'Insurance'){
                             row.customer_amount = 0;
@@ -165,6 +169,34 @@
           <v-divider class="m-0"></v-divider>
             <v-card-text>
               <a-form layout="vertical">
+                <a-form-item label="Tax Template">
+                  <a-select
+                  v-model:value="taxTemplate"
+                  :options="$resources.taxTemplates.data?.options"
+                  @change="value => {getPrices(value)}"
+                  :fieldNames="{label: 'name', value: 'name'}"
+                  style="min-width: 400px; max-width: 600px;"
+                  show-search
+                  :loading="$resources.taxTemplates.list.loading"
+                  @search="(value) => {handleSearch(
+                    value, 
+                    $resources.taxTemplates, 
+                    {name: ['like', `%${value}%`]}, 
+                    {},
+                  )}"
+                  :filterOption="false"
+                  ></a-select>
+                </a-form-item>
+                <a-form-item label="Total (BHD)" v-if="mockInvoice?.total" >
+                  <a-input class="w-full" disabled v-model:value="mockInvoice.total"/>
+                </a-form-item>
+                <a-form-item label="Total Taxes and Charges (BHD)" v-if="mockInvoice?.total" >
+                  <a-input class="w-full" disabled v-model:value="mockInvoice.total_taxes_and_charges"/>
+                </a-form-item>
+                <a-form-item label="Outstanding Amount (BHD)" v-if="mockInvoice?.outstanding_amount" >
+                  <a-input class="w-full" disabled v-model:value="mockInvoice.outstanding_amount"/>
+                </a-form-item>
+                <v-divider class="m-0"></v-divider>
                 <a-form-item label="POS Profile">
                   <a-select
                   v-model:value="posProfile"
@@ -183,14 +215,14 @@
                   :filterOption="false"
                   ></a-select>
                 </a-form-item>
-                <a-form-item label="Amount" v-if="paymentMethods.length > 0" >
+                <!-- <a-form-item label="Amount" v-if="paymentMethods.length > 0" >
                   <a-input-number 
                   class="w-full" 
                   :controls="false" 
                   disabled
                   v-model:value="paymentAmount"
                   />
-                </a-form-item>
+                </a-form-item> -->
                 <DataTable 
                 v-if="paymentMethods.length > 0" 
                 :value="paymentMethods" editMode="cell" 
@@ -407,6 +439,22 @@ export default {
         return data
       }
     }},
+    taxTemplates() { return { 
+      type: 'list', 
+      doctype: 'Sales Taxes and Charges Template', 
+      fields: ['name'], 
+      auto: true,
+      orderBy: 'name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
   },
   computed: {
     dialogVisible: {
@@ -425,10 +473,11 @@ export default {
           label: 'Create Invoices',
           icon: 'pi pi-plus',
           command: () => {
-            this.getPrices()
-            // this.posProfile = '';
-            // this.paymentMethods = []
-            // this.salesInvoiceOpen = true
+            // this.getPrices()
+            this.posProfile = '';
+            this.paymentMethods = []
+            this.taxTemplate = '';
+            this.salesInvoiceOpen = true
           }
         }] : []),
         // ...(this.invoiceItems.some(value => value.customer_invoice && !value.paid) ? [{
@@ -448,13 +497,16 @@ export default {
       lodingOverlay: false,
       modeOfPaymentOpen: false,
       salesInvoiceOpen: false,
+      editRow: true,
       modeOfPayment: null,
       paymentType: '',
       referenceNo: '',
       referenceDate: '',
       posProfile: '',
+      taxTemplate: '',
       paymentMethods: [],
       paymentAmount: 0,
+      mockInvoice: {},
       invoiceItems: this.appointment.invoice_items || [],
     };
   },
@@ -480,15 +532,15 @@ export default {
       this.updateIsOpen(false);
     },
     getPaymentMethods(value) {
-      if(value)
+      if(value){
+        this.lodingOverlay = true;
         this.$call('healthcare_doworks.api.methods.pos_payment_method', {
           pos_profile: value
         }).then(response => {
-          
+          this.lodingOverlay = false;
           this.paymentMethods = response.map(value => {
             if(value.default){
-              value.amount = this.invoiceItems.filter(val => !val.customer_invoice)
-              .reduce((total, val) => total + (parseFloat(val.amount) - (val.insurance_amount ? parseFloat(val.insurance_amount) : 0)), 0)
+              value.amount = this.mockInvoice.outstanding_amount
               this.paymentAmount = value.amount
             }
             else
@@ -496,23 +548,19 @@ export default {
             return value
           })
         }).catch(error => {
-          console.error(error);
-          let message = error.message.split('\n');
-          message = message.find(line => line.includes('frappe.exceptions'));
-          if(message){
-            const firstSpaceIndex = message.indexOf(' ');
-            this.$emit('show-alert', message.substring(firstSpaceIndex + 1, 10000))
-          }
+          this.lodingOverlay = false;
+          this.$emit('show-alert', error.message, 'error')
         });
+      }
     },
-    getPrices() {
-      this.$call('healthcare_doworks.api.methods.create_mock_invoice', {appointment: this.appointment.name})
+    getPrices(value) {
+      this.lodingOverlay = true;
+      this.$call('healthcare_doworks.api.methods.create_mock_invoice', {appointment: this.appointment.name, tax: value})
       .then(response => {
-        console.log(response)
-        this.posProfile = '';
-        this.paymentMethods = []
-        this.salesInvoiceOpen = true
+        this.lodingOverlay = false;
+        this.mockInvoice = response
       }).catch(error => {
+        this.lodingOverlay = false;
         this.$emit('show-alert', error.message, 'error')
       });
     },
@@ -525,13 +573,13 @@ export default {
       this.$call('healthcare_doworks.api.methods.create_invoice', {
         appointment: this.appointment.name,
         profile: this.posProfile,
-        payment_methods: this.paymentMethods
+        payment_methods: this.paymentMethods,
+        tax: this.taxTemplate
       })
       .then(response => {
         this.lodingOverlay = false;
         this.salesInvoiceOpen = false
         if(response)
-          console.log(response)
           this.$toast.add({
             severity: 'success',
             summary: 'Success',
@@ -547,6 +595,7 @@ export default {
             return value
           })
       }).catch(error => {
+        this.lodingOverlay = false;
         this.$emit('show-alert', error.message, 'error')
       });
     },
@@ -570,6 +619,14 @@ export default {
       }).catch(error => {
         this.$emit('show-alert', error.message, 'error')
       });
+    },
+    onInvoiceRowClick(row) {
+      if(row.customer_invoice){
+        window.open(`/app/sales-invoice/${row.customer_invoice}`)
+      }
+      else{
+        this.$refs.invoiceItems.editRow(row)
+      }
     },
     autoSave(doctype, name, fieldname, value) {
       if(this.isNew) return;

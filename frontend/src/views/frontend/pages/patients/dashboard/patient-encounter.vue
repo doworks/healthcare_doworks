@@ -3,7 +3,7 @@
     <v-alert
       v-if="alertActive && alertType === 'error'"
       type="error"
-      position="absolute"
+      position="fixed"
       location="top center"
       color="red-lighten-3"
       style="z-index: 5000; margin-top: 15px"

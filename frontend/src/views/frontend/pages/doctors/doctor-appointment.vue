@@ -4,7 +4,7 @@
     <v-alert
       v-if="alertActive && alertType === 'error'"
       type="error"
-      position="absolute"
+      position="fixed"
       location="top center"
       color="red-lighten-3"
       style="z-index: 3000; margin-top: 15px"
@@ -128,9 +128,9 @@
       <!-- Appointment Tab -->
       <v-tabs v-model="tab" align-tabs="center" color="indigo" bg-color="white" show-arrows>
         <v-tab v-for="(value, key) in groupedAppointments" :key="key" :value="key" @click="() => {
-          if(this.groupedAppointments[key].length <= 0){
-            this.fetchRecords();
-          }
+          // if(this.groupedAppointments[key].length <= 0){
+          // }
+          this.fetchRecords();
         }">
           {{ key }}
           <v-badge :color="totalCount[key] > 0 ? 'green' : 'indigo'" :content="totalCount[key]" inline></v-badge>

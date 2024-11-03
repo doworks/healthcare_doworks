@@ -3,7 +3,7 @@
   <div class="main-wrapper mr-3 h-full overflow-hidden">
     <v-alert
       v-if="alertVisible"
-      position="absolute"
+      position="fixed"
       location="top center"
       color="red-lighten-3"
       icon="$error"

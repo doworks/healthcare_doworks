@@ -511,7 +511,7 @@ def pos_payment_method(pos_profile):
 	)
 
 @frappe.whitelist()
-def create_invoice(appointment, profile, payment_methods):
+def create_invoice(appointment, profile, payment_methods, tax):
 	appointment_doc = frappe.get_doc('Patient Appointment', appointment)
 	patient = frappe.get_doc('Patient', appointment_doc.patient)
 	branches = frappe.db.get_all('Branch', order_by='creation', pluck='name')
@@ -531,6 +531,7 @@ def create_invoice(appointment, profile, payment_methods):
 		invoice.is_pos = 1
 		invoice.pos_profile = profile
 		invoice.customer = patient.customer
+		invoice.taxes_and_charges = tax
 		invoice.posting_date = frappe.utils.now()
 		invoice.due_date = frappe.utils.now()
 		invoice.service_unit = appointment_doc.service_unit
@@ -568,6 +569,7 @@ def create_invoice(appointment, profile, payment_methods):
 			patient_invoice.is_pos = 1
 			patient_invoice.pos_profile = profile
 			patient_invoice.customer = patient.customer
+			patient_invoice.taxes_and_charges = tax
 			patient_invoice.posting_date = frappe.utils.now()
 			patient_invoice.due_date = frappe.utils.now()
 			patient_invoice.service_unit = appointment_doc.service_unit
@@ -599,6 +601,7 @@ def create_invoice(appointment, profile, payment_methods):
 			insurance_invoice.patient_name = patient.patient_name
 			insurance_invoice.is_pos = 0
 			insurance_invoice.customer = patient.custom_insurance_company_name
+			insurance_invoice.taxes_and_charges = tax
 			insurance_invoice.posting_date = frappe.utils.now()
 			insurance_invoice.due_date = frappe.utils.now()
 			insurance_invoice.service_unit = appointment_doc.service_unit
@@ -628,7 +631,7 @@ def create_invoice(appointment, profile, payment_methods):
 		return {'insurance_invoice': insurance_invoice.name, 'customer_invoice': patient_invoice.name}
 
 @frappe.whitelist()
-def create_mock_invoice(appointment):
+def create_mock_invoice(appointment, tax):
 	appointment_doc = frappe.get_doc('Patient Appointment', appointment)
 	patient = frappe.get_doc('Patient', appointment_doc.patient)
 	branches = frappe.db.get_all('Branch', order_by='creation', pluck='name')
@@ -647,6 +650,7 @@ def create_mock_invoice(appointment):
 		invoice.posting_date = frappe.utils.now()
 		invoice.due_date = frappe.utils.now()
 		invoice.service_unit = appointment_doc.service_unit
+		invoice.taxes_and_charges = tax
 		invoice.branch = appointment_doc.custom_branch or branch or ''
 		if appointment_doc.custom_payment_type == 'Insurance':
 			invoice.selling_price_list = 'Standard Selling'
@@ -674,11 +678,6 @@ def create_mock_invoice(appointment):
 					})
 		invoice.set_missing_values()
 		invoice.calculate_taxes_and_totals()
-		invoice.run_method("before_validate")
-		invoice.run_method("validate")
-		invoice.run_method("before_insert")  # Only for new docs
-		invoice.run_method("before_save")
-
 		return invoice
 
 @frappe.whitelist()
