@@ -134,7 +134,12 @@
 			:showClearButton="false" 
 			>
 				<template #body="{ data }">
-					<v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
+					<div v-if="data.procedure_templates.length > 0">
+						<v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
+					</div>
+					<div v-else>
+						{{ data.notes }}
+					</div>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-select
@@ -600,6 +605,7 @@ export default {
 						...(this.tab !== 'in room' ? [{label: 'In Room', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'completed' ? [{label: 'Completed', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'transferred' ? [{label: 'Transferred', command: ({ item }) => this.updateStatus(item)}] : []),
+						...(this.tab !== 'cancelled' ? [{label: 'Cancelled', command: ({ item }) => this.updateStatus(item)}] : []),
 					]
 				},
 				...(this.$route.name == 'appointments' && (this.tab == 'scheduled' || this.tab !== 'no show') ? [{
@@ -668,6 +674,16 @@ export default {
 					label: 'Tranfer To Practitioner',
 					icon: 'mdi mdi-transit-transfer',
 					command: () => {this.$emit('transfer-practitioner-dialog', this.selectedRow)}
+				},
+				{
+					label: 'Cancel',
+					icon: 'mdi mdi-cancel',
+					command: () => {this.cancelAppointment()}
+				},
+				{
+					label: 'Delete',
+					icon: 'mdi mdi-delete',
+					command: () => {this.deleteAppointment()}
 				},
       		]		
 		},
@@ -891,6 +907,32 @@ export default {
 			this.$call('healthcare_doworks.api.methods.patient_encounter_name', {appointment_id: this.selectedRow.name})
 			.then(response => {
 				this.$router.push({ name: 'patient-encounter', params: { encounterId: response } });
+			}).catch(error => {
+				this.$emit('show-alert', error.message, 'error')
+			});
+		},
+		cancelAppointment() {
+			this.$call('frappe.client.set_value', 
+			{doctype: 'Patient Appointment', name: this.selectedRow.name, fieldname: {status: 'Cancelled', custom_visit_status: 'Cancelled'}}
+			).then(response => {
+				this.$toast.add({
+					severity: 'success',
+					summary: 'Success',
+					detail: 'Appointment cancelled',
+					life: 3000 // Duration in ms
+				});
+			}).catch(error => {
+				this.$emit('show-alert', error.message, 'error')
+			});
+		},
+		deleteAppointment() {
+			this.$call('frappe.client.delete', {doctype: 'Patient Appointment', name: this.selectedRow.name}).then(response => {
+				this.$toast.add({
+					severity: 'success',
+					summary: 'Success',
+					detail: 'Appointment deleted',
+					life: 3000 // Duration in ms
+				});
 			}).catch(error => {
 				this.$emit('show-alert', error.message, 'error')
 			});

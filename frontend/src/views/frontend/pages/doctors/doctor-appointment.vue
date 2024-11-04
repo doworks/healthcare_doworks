@@ -518,7 +518,14 @@
             </v-container>
           </a-form>
         </v-card-text>
-        <ContextMenu ref="menu" :model="contextItems" @hide="selectedRow = {name: '', patient_details: {id: ''}}"/>
+        <ContextMenu 
+        :pt="{
+          root: {style: {zIndex: 3000}}
+        }" 
+        ref="menu" 
+        :model="contextItems" 
+        @hide="selectedRow = {name: '', patient_details: {id: ''}}"
+        />
       </v-card>
     </v-dialog>
     <!-- / Page Dialogs -->
