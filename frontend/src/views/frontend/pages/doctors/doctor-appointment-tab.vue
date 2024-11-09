@@ -9,7 +9,7 @@
 		filterDisplay="row"
 		resizableColumns
 		:sortOrder="1"
-		:rows="20"
+		:rows="100"
 		:rowsPerPageOptions="[20, 100, 500, 2500]"
 		:value="filteredData"
 		selectionMode="single" 
@@ -109,7 +109,8 @@
 			style="width: 10%"
 			>
 				<template #body="{ data }">
-					<v-chip class="ma-2" label size="small" :color="getSeverity(data.status)">{{ data.status }}</v-chip>
+					<v-chip v-if="tab == 'scheduled' || tab == 'no show'" class="ma-2" label size="small" :color="data.custom_confirmed ? 'green' : 'red'">{{ data.custom_confirmed ? 'Confirmed' : 'Unconfirmed' }}</v-chip>
+					<v-chip v-else class="ma-2" label size="small" :color="getSeverity(data.status)">{{ data.status }}</v-chip>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-select
@@ -599,6 +600,10 @@ export default {
 					label: 'Status',
 					icon: 'mdi mdi-clipboard-edit-outline',
 					items: [
+						...(this.selectedRow?.custom_confirmed ? [{label: 'Unconfirmed', command: ({ item }) => this.changeConfirmation(0)}] : 
+							[{label: 'Confirmed', command: ({ item }) => this.changeConfirmation(1)}]
+						),
+						...(this.tab !== 'cancelled' ? [{label: 'Cancelled', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'scheduled' ? [{label: 'Scheduled', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'arrived' ? [{label: 'Arrived', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'ready' ? [{label: 'Ready', command: ({ item }) => this.updateStatus(item)}] : []),
@@ -907,6 +912,20 @@ export default {
 			this.$call('healthcare_doworks.api.methods.patient_encounter_name', {appointment_id: this.selectedRow.name})
 			.then(response => {
 				this.$router.push({ name: 'patient-encounter', params: { encounterId: response } });
+			}).catch(error => {
+				this.$emit('show-alert', error.message, 'error')
+			});
+		},
+		changeConfirmation(value) {
+			this.$call('frappe.client.set_value', 
+			{doctype: 'Patient Appointment', name: this.selectedRow.name, fieldname: 'custom_confirmed', value}
+			).then(response => {
+				this.$toast.add({
+					severity: 'success',
+					summary: 'Success',
+					detail: 'Appointment saved',
+					life: 3000 // Duration in ms
+				});
 			}).catch(error => {
 				this.$emit('show-alert', error.message, 'error')
 			});

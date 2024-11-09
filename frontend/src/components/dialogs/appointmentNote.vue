@@ -69,7 +69,7 @@
           class="text-none"
           color="blue"
           
-          text="submit"
+          text="Save"
           variant="tonal"
           @click="onSubmit()"
           type="submit"

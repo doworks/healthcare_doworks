@@ -2,7 +2,7 @@
   <v-dialog v-model="dialogVisible" width="auto" scrollable>
     <v-card rounded="lg">
       <v-card-title class="d-flex justify-space-between align-center">
-        <div class="text-h5 text-medium-emphasis ps-2">New Patient</div>
+        <div class="text-h5 text-medium-emphasis ps-2">BIOCOM</div>
         <v-btn icon="mdi mdi-close" variant="text" @click="closeDialog"></v-btn>
       </v-card-title>
       <v-divider class="m-0"></v-divider>
@@ -10,44 +10,54 @@
         <a-form layout="vertical" :model="form" :rules="rules">
           <v-container>
             <v-row>
-              <v-col cols="12" md="6">
-                <a-form-item label="First Name" name="first_name" >
-                  <a-input v-model:value="form.first_name" @change="updateFullName"/>
-                </a-form-item>
-                <a-form-item label="Middle Name (optional)" name="middle_name">
-                  <a-input v-model:value="form.middle_name" @change="updateFullName"/>
-                </a-form-item>
-                <a-form-item label="Last Name" name="last_name" >
-                  <a-input v-model:value="form.last_name" @change="updateFullName"/>
-                </a-form-item>
-                <a-form-item label="Full Name" name="patient_name" >
-                  <a-input v-model:value="form.patient_name" disabled/>
-                </a-form-item>
-              </v-col>
-              <v-col cols="12" md="6">
-                <a-form-item label="CPR" name="custom_cpr" >
-                  <a-input v-model:value="form.custom_cpr"/>
-                </a-form-item>
-                <a-form-item label="Gender" name="sex">
-                  <a-select 
-                  v-model:value="form.sex" 
-                  :options="$resources.genders.data?.options" 
-                  :fieldNames="{label: 'gender', value: 'name'}"
-                  allowClear
-                  show-search
-                    :loading="$resources.genders.list.loading"
-                    @search="(value) => {handleSearch(
-                      value, 
-                      $resources.genders, 
-                      {gender: ['like', `%${value}%`]}, 
-                      {},
-                    )}"
-                    :filterOption="false"
-                  ></a-select>
-                </a-form-item>
-                <a-form-item label="Mobile" name="mobile">
-                  <a-input v-model:value="form.mobile"/>
-                </a-form-item>
+              <v-col cols="12">
+                <DataTable :value="sales" tableStyle="min-width: 50rem">
+                  <ColumnGroup type="header">
+                    <Row>
+                      <Column header="Datw" :rowspan="2" />
+                      <Column header="Pressure" :rowspan="2" />
+                      <Column :rowspan="2" />
+                    </Row>
+                    <Row>
+                      <Column header="Left" :colspan="2" />
+                      <Column header="Right" :colspan="2" />
+                    </Row>
+                    <Row>
+                      <Column header="Before" field="lastYearSale"/>
+                      <Column header="After" field="thisYearSale"/>
+                      <Column header="Before" field="lastYearProfit"/>
+                      <Column header="After" field="thisYearProfit"/>
+                    </Row>
+                  </ColumnGroup>
+                  <Column field="product" />
+                  <Column field="lastYearSale">
+                      <template #body="slotProps">
+                          {{slotProps.data.lastYearSale}}%
+                      </template>
+                  </Column>
+                  <Column field="thisYearSale">
+                      <template #body="slotProps">
+                          {{slotProps.data.thisYearSale}}%
+                      </template>
+                  </Column>
+                  <Column field="lastYearProfit">
+                      <template #body="slotProps">
+                          {{formatCurrency(slotProps.data.lastYearProfit)}}
+                      </template>
+                  </Column>
+                  <Column field="thisYearProfit">
+                      <template #body="slotProps">
+                          {{formatCurrency(slotProps.data.thisYearProfit)}}
+                      </template>
+                  </Column>
+                  <ColumnGroup type="footer">
+                      <Row>
+                          <Column footer="Totals:" :colspan="3" footerStyle="text-align:right"/>
+                          <Column :footer="lastYearTotal" />
+                          <Column :footer="thisYearTotal" />
+                      </Row>
+                  </ColumnGroup>
+              </DataTable>
               </v-col>
             </v-row> 
           </v-container>
@@ -124,32 +134,17 @@ export default {
     return {
       lodingOverlay: false,
       form: {
-        doctype: 'Patient',
-        first_name: '',
-        middle_name: '',
-        last_name: '',
-        patient_name: '',
-        sex: '',
-        mobile: '',
+
       },
       rules: {
-        first_name: [{ required: true, message: 'Please type a first name!' }],
-        sex: [{ required: true, message: 'Please choose a gender!' }],
+
       },
     };
   },
   watch: {
     isOpen(newVal) {
       if (newVal) {
-        this.form = {
-          doctype: 'Patient',
-          first_name: '',
-          middle_name: '',
-          last_name: '',
-          patient_name: '',
-          sex: '',
-          mobile: '',
-        }
+
       }
     },
   },

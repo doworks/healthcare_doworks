@@ -130,7 +130,7 @@
           class="text-none"
           color="blue"
           
-          text="submit"
+          text="Save"
           variant="tonal"
           @click="onSubmitServiceUnit()"
           ></v-btn>
@@ -173,7 +173,7 @@
           class="text-none"
           color="blue"
           
-          text="Submit"
+          text="Save"
           variant="tonal"
           @click="onSubmitTransferPractitioner()"
           ></v-btn>
@@ -246,7 +246,7 @@
           class="text-none"
           color="blue"
           
-          text="submit"
+          text="Save"
           variant="tonal"
           @click="onSubmitPaymentType()"
           ></v-btn>

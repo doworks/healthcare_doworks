@@ -229,7 +229,7 @@
             <v-btn
             class="text-none"
             color="blue"
-            text="Submit"
+            text="Save"
             variant="tonal"
             @click="onSubmit()"
             type="submit"

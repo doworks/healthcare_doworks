@@ -8,6 +8,7 @@
  "engine": "InnoDB",
  "field_order": [
   "form_template",
+  "date",
   "appointment",
   "checklist_items"
  ],
@@ -29,11 +30,16 @@
    "fieldtype": "Link",
    "label": "Appointment",
    "options": "Patient Appointment"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-14 15:21:49.798160",
+ "modified": "2024-11-04 13:59:38.793443",
  "modified_by": "Administrator",
  "module": "Healthcare Doworks",
  "name": "Checklist Form",

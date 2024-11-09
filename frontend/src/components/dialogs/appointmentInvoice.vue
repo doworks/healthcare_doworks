@@ -86,11 +86,18 @@
                         @search="(value) => {handleSearch(
                           value, 
                           $resources.items, 
-                          {item_group: ['!=', 'New Procedures'], item_name: ['like', `%${value}%`]}, 
-                          {item_group: ['!=', 'New Procedures']},
+                          {item_name: ['like', `%${value}%`]}, 
+                          {},
                         )}"
                         :filterOption="false"
-                        ></a-select>
+                        >
+                          <template #option="{ item_name, item_group, description }">
+                            <div class="flex flex-col">
+                              <span v-if="item_name" class="ms-2"><strong>{{ item_name }}</strong></span>
+                              <span v-if="item_group || description" class="ms-2">{{ item_group + (item_group && description ? ', ' : '') + description }}</span>
+                            </div>
+                          </template>
+                        </a-select>
                       </a-form-item>
                       <a-form-item label="Quantity">
                         <a-input-number 
@@ -270,7 +277,7 @@
               class="text-none"
               color="blue"
               
-              text="submit"
+              text="Save"
               variant="tonal"
               @click="onSubmitInvoice"
               ></v-btn>
@@ -330,7 +337,7 @@
               class="text-none"
               color="blue"
               
-              text="submit"
+              text="Save"
               variant="tonal"
               @click="onSubmitPayment"
               ></v-btn>
@@ -347,7 +354,7 @@
         <v-btn
         class="text-none"
         color="blue"
-        text="Submit"
+        text="Save"
         variant="tonal"
         @click="onSubmit()"
         type="submit"
@@ -400,7 +407,7 @@ export default {
     items() { return { 
       type: 'list', 
       doctype: 'Item', 
-      fields: ['name', 'item_code', 'item_name', 'weight_uom'], 
+      fields: ['name', 'item_code', 'item_name', 'weight_uom', 'item_group', 'description'], 
       filters: {item_group: ['!=', 'New Procedures']},
       auto: true,
       orderBy: 'name',

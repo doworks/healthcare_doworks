@@ -95,8 +95,8 @@
                   <a-form-item label="Status" name="Status" >
                     <a-input v-model:value="form.status" defaultValue="Active" disabled/>
                   </a-form-item>
-                  <a-form-item label="Identification Number (UID)" name="uid">
-                    <a-input v-model:value="form.uid" />
+                  <a-form-item label="File Number" name="custom_file_number">
+                    <a-input v-model:value="form.custom_file_number" />
                   </a-form-item>
                   <a-form-item label="Inpatient Record" name="inpatient_record" >
                     <a-select 

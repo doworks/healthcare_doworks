@@ -65,6 +65,7 @@ import AppointmentNoteDialog from '@/components/dialogs/appointmentNote.vue'
 import AppointmentInvoiceDialog from '@/components/dialogs/appointmentInvoice.vue'
 import ChecklistFormDialog from '@/components/dialogs/checklistForm.vue'
 import ChecklistFormListDialog from '@/components/dialogs/checklistForm-list.vue'
+import BiocomDialog from '@/components/dialogs/biocom.vue'
 						  // My App End //
 
 
@@ -101,6 +102,7 @@ app.component('appointmentNoteDialog',AppointmentNoteDialog)
 app.component('appointmentInvoiceDialog',AppointmentInvoiceDialog)
 app.component('checklistFormDialog',ChecklistFormDialog)
 app.component('checklistFormListDialog',ChecklistFormListDialog)
+app.component('biocomDialog',BiocomDialog)
 // Use other UI libraries and plugins
 app.use(Antd);
 

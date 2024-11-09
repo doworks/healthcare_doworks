@@ -209,6 +209,12 @@
     @update:isOpen="checklistFormOpen = $event" 
     @show-alert="showAlert" 
     />
+    <biocomDialog 
+    :isOpen="biocomOpen" 
+    :appointment="selectedRow?.name"
+    @update:isOpen="biocomOpen = $event" 
+    @show-alert="showAlert" 
+    />
     <v-dialog v-model="serviceUnitOpen" width="auto">
       <v-card
         rounded="lg"
@@ -245,7 +251,7 @@
           class="text-none"
           color="blue"
           
-          text="submit"
+          text="Save"
           variant="tonal"
           @click="onSubmitServiceUnit()"
           ></v-btn>
@@ -288,7 +294,7 @@
           class="text-none"
           color="blue"
           
-          text="Submit"
+          text="Save"
           variant="tonal"
           @click="onSubmitTransferPractitioner()"
           ></v-btn>
@@ -361,7 +367,7 @@
           class="text-none"
           color="blue"
           
-          text="submit"
+          text="Save"
           variant="tonal"
           @click="onSubmitPaymentType()"
           ></v-btn>
@@ -373,7 +379,7 @@
         rounded="lg"
         width="auto"
       >
-        <v-card-item prepend-icon="mdi mdi-door-open" title="Check Availability">
+        <v-card-item prepend-icon="mdi mdi-door-open" title="Appointment History">
           <template #append>
             <v-btn class="text-none" variant="outlined" color="primary" @click="() => {
               appointmentDialog('New Appointment', false, {
@@ -488,7 +494,7 @@
                       </template>
                     </Column>
                     <Column field="appointment_datetime" hidden></Column>
-                    <Column header="Status" field="status"></Column>
+                    <Column header="Status" field="custom_visit_status"></Column>
                     <Column header="Practitioner" field="practitioner_name">
                       <template #body="{ data }">
                         <div class="flex align-items-center gap-2" v-if="data.practitioner_name">
@@ -504,7 +510,12 @@
                     </Column>
                     <Column header="Procedures" field="procedure_templates">
                       <template #body="{ data }">
-                        <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
+                        <div v-if="data.procedure_templates.length > 0">
+                          <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
+                        </div>
+                        <div v-else>
+                          {{ data.notes }}
+                        </div>
                       </template>
                     </Column>
                     <Column header="Paid Amount" field="paid_amount">
@@ -728,6 +739,7 @@ export default {
       checkAvailabilityOpen: false,
       medicalHistoryOpen: false,
       checklistFormOpen: false,
+      biocomOpen: false,
       lodingOverlay: false,
       slots: {},
 
@@ -877,11 +889,11 @@ export default {
       this.selectedRangeDates = [dayjs().startOf('isoWeek').subtract(1, 'day'), dayjs().endOf('isoWeek').subtract(1, 'day')]
     },
     getFormatedDates() {return this.selectedDates.map(date => date.format('YYYY-MM-DD'))},
-    fetchRecords(filters={appointment_date: ['in', this.getFormatedDates()], custom_visit_status: this.tab}) {
+    fetchRecords(filters={appointment_date: ['in', this.getFormatedDates()], custom_visit_status: this.tab}, orFilters=undefined) {
       this.appointmentsLoading = true;
       const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
-        filters: filters, start: this.start, limit: this.limit[this.tab]
+        filters: filters, start: this.start, limit: this.limit[this.tab], or_filters: orFilters
       })
       .then(response => {
         if(response.total_count)
@@ -1023,7 +1035,8 @@ export default {
 				this.appointmentForm.department = '';
 				this.appointmentForm.service_unit = '';
         this.appointmentForm.notes = '';
-        this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
+        this.appointmentForm.appointment_date = dayjs(this.selectedDates[0]);
+        this.appointmentForm.appointment_time = undefined;
 			}
 			else{
         this.appointmentForm.name = row.name;
@@ -1415,8 +1428,8 @@ export default {
   			let custom_cpr = ''
   			if (data['cpr']){
   				custom_cpr = data['cpr'].toString()
-  				if(custom_cpr.length == 9)
-  					custom_cpr = "0" + custom_cpr
+  				// if(custom_cpr.length == 9)
+  				// 	custom_cpr = "0" + custom_cpr
           form.custom_cpr = custom_cpr
   			}
         
@@ -1433,9 +1446,8 @@ export default {
           form.dob = data['birthdate'].toString().substr(0,4) + "-" + data['birthdate'].toString().substr(4,2) + "-" + data['birthdate'].toString().substr(6,2)
   				// console.log(birthdate)
   			// mobile number
-  			let mobile = ''
-  			if (data['contact_no'])
-  				form.mobile = "+" + data['contact_no']
+  			if (data['nationality'] == 'BAHRAIN')
+  				form.mobile = "+973"
         
   			// address
   			let address_cpr = ""

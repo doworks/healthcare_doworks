@@ -74,7 +74,7 @@
                 
             <v-card-actions class="my-2 d-flex justify-end">
               <v-btn class="text-none" text="Cancel" @click="closeDialog"></v-btn>
-              <v-btn class="text-none" color="blue" text="submit" variant="tonal" @click="onSubmit()" type="submit"></v-btn>
+              <v-btn class="text-none" color="blue" text="Save" variant="tonal" @click="onSubmit()" type="submit"></v-btn>
             </v-card-actions>
           </a-form>
         </v-card>
