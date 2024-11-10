@@ -1490,12 +1490,40 @@ export default {
         console.log(imageDate)
         
   			// upload images
-  			if (imageDate['image'])
-  				form.image = "+" + imageDate['image']
+  			if (imageDate['image']){
+          try {
+            const response = await this.$call("frappe.client.attach_file", {
+              filedata: imageDate['image'],
+              filename: `${row.patient}_image.jpg`,
+              doctype: "Patient",  // Target doctype
+              docname: row.patient,  // Target document
+              is_private: 1,  // Set privacy
+              decode_base64: true
+            });
+            
+            form.image = response.file_url
+          } catch (error) {
+            this.showAlert(error.message, 'error')
+          }
+        }
         
   			// upload signature
-  			if (imageDate['signature'])
-  				form.signature_image = "+" +imageDate['signature']
+  			if (imageDate['signature']){
+          try {
+            const response = await this.$call("frappe.client.attach_file", {
+              filedata: imageDate['signature'],
+              filename: `${row.patient}_signature.jpg`,
+              doctype: "Patient",  // Target doctype
+              docname: row.patient,  // Target document
+              is_private: 1,  // Set privacy
+              decode_base64: true
+            });
+            
+            form.signature_image = response.file_url
+          } catch (error) {
+            this.showAlert(error.message, 'error')
+          }
+        }
       
         this.$call('healthcare_doworks.api.methods.edit_doc', {form})
         .then(response => {

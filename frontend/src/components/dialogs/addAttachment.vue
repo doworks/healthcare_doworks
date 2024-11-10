@@ -222,6 +222,7 @@ export default {
             }
         },
         beforeSend(event) {
+            console.log(event)
             if(this.isChild){
                 event.formData.append('doctype', this.parentType);
                 event.formData.append('docname', this.parent);
