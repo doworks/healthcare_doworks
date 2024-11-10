@@ -1,4 +1,6 @@
 import frappe
+import datetime
+from frappe.utils import flt, format_date, get_link_to_form, get_time, getdate
 from healthcare.healthcare.doctype.patient_appointment.patient_appointment import PatientAppointment
 
 class CustomPatientAppointment(PatientAppointment):
@@ -12,6 +14,65 @@ class CustomPatientAppointment(PatientAppointment):
 		self.set_title()
 		self.update_event()
 		self.set_postition_in_queue()
+
+	def insert_calendar_event(self):
+		if not self.practitioner:
+			return
+
+		starts_on = datetime.datetime.combine(
+			getdate(self.appointment_date), get_time(self.appointment_time)
+		)
+		ends_on = starts_on + datetime.timedelta(minutes=flt(self.duration))
+		google_calendar = frappe.db.get_value(
+			"Healthcare Practitioner", self.practitioner, "google_calendar"
+		)
+		if not google_calendar:
+			google_calendar = frappe.db.get_single_value("Healthcare Settings", "default_google_calendar")
+
+		if self.appointment_type:
+			color = frappe.db.get_value("Appointment Type", self.appointment_type, "color")
+		else:
+			color = ""
+
+		event = frappe.get_doc(
+			{
+				"doctype": "Event",
+				"subject": f"{self.title} - {self.company}",
+				"event_type": "Public",
+				"color": color,
+				"send_reminder": 1,
+				"starts_on": starts_on,
+				"ends_on": ends_on,
+				"status": "Open",
+				"all_day": 0,
+				"sync_with_google_calendar": 1 if self.add_video_conferencing and google_calendar else 0,
+				"add_video_conferencing": 1 if self.add_video_conferencing and google_calendar else 0,
+				"google_calendar": google_calendar,
+				"description": f"{self.title} - {self.company}",
+				"pulled_from_google_calendar": 0,
+			}
+		)
+		participants = []
+
+		participants.append(
+			{"reference_doctype": "Healthcare Practitioner", "reference_docname": self.practitioner}
+		)
+		participants.append({"reference_doctype": "Patient", "reference_docname": self.patient})
+
+		event.update({"event_participants": participants})
+
+		event.insert(ignore_permissions=True)
+
+		event.reload()
+		if self.add_video_conferencing and not event.google_meet_link:
+			frappe.msgprint(
+				_("Could not add conferencing to this Appointment, please contact System Manager"),
+				indicator="error",
+				alert=True,
+			)
+
+		self.db_set({"event": event.name, "google_meet_link": event.google_meet_link})
+		self.notify_update()
 
 	def set_status():
 		pass

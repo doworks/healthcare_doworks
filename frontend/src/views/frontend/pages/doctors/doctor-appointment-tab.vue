@@ -656,6 +656,11 @@ export default {
 					command: () => this.$emit('checklist-form-dialog', this.selectedRow)
 				}] : []),
 				{
+					label: 'BIOCOM',
+					icon: 'mdi mdi-format-list-checks',
+					command: () => this.$emit('biocom-dialog', this.selectedRow)
+				},
+				{
 					label: 'Update Room',
 					icon: 'mdi mdi-door-open',
 					command: () => {this.$emit('service-unit-dialog', this.selectedRow)}

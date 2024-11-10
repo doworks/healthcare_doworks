@@ -708,7 +708,7 @@ def make_payment(appointment, invoices, profile, payment_methods):
 
 @frappe.whitelist()
 def get_invoice_items(**args):
-	items = frappe.get_list(args['doctype'], fields=args['fields'], filters=args['filters'], order_by=args['order_by'], limit=args['limit'])
+	items = frappe.get_list(args['doctype'], fields=args['fields'], filters=args['filters'], or_filters=args['or_filters'], order_by=args['order_by'], limit=args['limit'])
 	for item in items:
 		item.item_price = frappe.get_list('Item Price', fields=['price_list', 'price_list_rate'], filters={'item_code': item.name})
 	return items

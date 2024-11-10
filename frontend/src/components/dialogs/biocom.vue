@@ -14,9 +14,9 @@
                 <DataTable :value="sales" tableStyle="min-width: 50rem">
                   <ColumnGroup type="header">
                     <Row>
-                      <Column header="Datw" :rowspan="2" />
-                      <Column header="Pressure" :rowspan="2" />
-                      <Column :rowspan="2" />
+                      <Column header="Date" :rowspan="3" />
+                      <Column header="Pressure" :rowspan="3" />
+                      <Column :rowspan="3" />
                     </Row>
                     <Row>
                       <Column header="Left" :colspan="2" />
@@ -50,13 +50,6 @@
                           {{formatCurrency(slotProps.data.thisYearProfit)}}
                       </template>
                   </Column>
-                  <ColumnGroup type="footer">
-                      <Row>
-                          <Column footer="Totals:" :colspan="3" footerStyle="text-align:right"/>
-                          <Column :footer="lastYearTotal" />
-                          <Column :footer="thisYearTotal" />
-                      </Row>
-                  </ColumnGroup>
               </DataTable>
               </v-col>
             </v-row> 

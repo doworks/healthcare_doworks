@@ -160,6 +160,7 @@
             @visit-status-log="visitStatusLogDiallog"
             @medical-history-dialog="medicalHistoryDialog"
             @checklist-form-dialog="checklistFormDialog"
+            @biocom-dialog="biocomDialog"
             />
           </v-window-item>
         </v-window>
@@ -722,7 +723,7 @@ export default {
     return {
       tab: 'Scheduled',
       start: 0,
-      limit: {Scheduled: 20, Arrived: 20, Ready: 20, 'In Room': 20, Completed: 20, 'No Show': 20},
+      limit: {Scheduled: 100, Arrived: 100, Ready: 100, 'In Room': 100, Completed: 100, 'No Show': 100},
       appointments: [],
       groupedAppointments: {Scheduled:[], Arrived:[], Ready:[], 'In Room':[], Completed:[], 'No Show':[],},
       searchValue: '',
@@ -795,7 +796,7 @@ export default {
 				{
 					label: 'Reschedule Appointment',
 					icon: 'mdi mdi-clock-outline',
-					command: () => {this.appointmentDialog('Edit Appointment', false, this.selectedRow)}
+					command: () => {this.appointmentDialog('Reschedule Appointment', false, this.selectedRow)}
 				},
 				{
 					label: 'Billing Items',
@@ -1110,6 +1111,10 @@ export default {
     checklistFormDialog(row) {
       this.selectedRow = row
       this.checklistFormOpen = true;
+    },
+    biocomDialog(row) {
+      this.selectedRow = row
+      this.biocomOpen = true;
     },
     medicalHistoryDialog(row) {
       this.$call('frappe.client.get', {doctype: 'Patient', name: row.patient_details.id})
@@ -1482,14 +1487,15 @@ export default {
    			data_string = data_string.slice(1,-2);
    			console.info("Before parse:" + data_string)
   			let imageDate = JSON.parse(data_string);
+        console.log(imageDate)
         
   			// upload images
   			if (imageDate['image'])
-  				form.custom_personal_picture = "+" + imageDate['image']
+  				form.image = "+" + imageDate['image']
         
   			// upload signature
   			if (imageDate['signature'])
-  				form.custom_signature_picture = "+" +imageDate['signature']
+  				form.signature_image = "+" +imageDate['signature']
       
         this.$call('healthcare_doworks.api.methods.edit_doc', {form})
         .then(response => {

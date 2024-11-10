@@ -86,15 +86,23 @@
                         @search="(value) => {handleSearch(
                           value, 
                           $resources.items, 
-                          {item_name: ['like', `%${value}%`]}, 
+                          {}, 
                           {},
+                          [
+                            ['name', 'like', `%${value}%`],
+                            ['item_code', 'like', `%${value}%`], 
+                            ['item_name', 'like', `%${value}%`], 
+                            ['item_group', 'like', `%${value}%`], 
+                          ]
                         )}"
                         :filterOption="false"
                         >
-                          <template #option="{ item_name, item_group, description }">
+                          <template #option="{ item_code, item_name, item_group, description }">
                             <div class="flex flex-col">
-                              <span v-if="item_name" class="ms-2"><strong>{{ item_name }}</strong></span>
-                              <span v-if="item_group || description" class="ms-2">{{ item_group + (item_group && description ? ', ' : '') + description }}</span>
+                              <span v-if="item_name" class="ms-2"><strong>{{ item_code }}</strong></span>
+                              <span v-if="item_name || item_group || description" class="ms-2">
+                                {{ item_name + (item_name && item_group ? ', ' : '') + item_group + (item_group && description ? ', ' : '') + description }}
+                              </span>
                             </div>
                           </template>
                         </a-select>
@@ -408,7 +416,8 @@ export default {
       type: 'list', 
       doctype: 'Item', 
       fields: ['name', 'item_code', 'item_name', 'weight_uom', 'item_group', 'description'], 
-      filters: {item_group: ['!=', 'New Procedures']},
+      filters: {},
+      orFilters: [],
       auto: true,
       orderBy: 'name',
       pageLength: 10,
