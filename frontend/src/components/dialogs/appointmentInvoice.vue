@@ -240,7 +240,8 @@
                 </a-form-item> -->
                 <DataTable 
                 v-if="paymentMethods.length > 0" 
-                :value="paymentMethods" editMode="cell" 
+                :value="paymentMethods" 
+                editMode="cell" 
                 @cell-edit-complete="onCellEditComplete"
                 :pt="{
                   table: { style: 'min-width: 50rem' },

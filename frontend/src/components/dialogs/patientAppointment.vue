@@ -318,8 +318,10 @@
                 v-if="appointmentForm.type != 'Edit Appointment'"
                 class="mb-3 w-full" 
                 v-model:checked="freeBooking" 
-                @change="() => {
+                @change="(event) => {
                   appointmentForm.custom_is_walked_in = false
+                  if(event.target.checked)
+                    timeToDayjs()
                 }"
                 >
                   Free Booking?
@@ -773,6 +775,7 @@ export default {
         else if(form.type === 'Reschedule Appointment'){
           // children = {custom_procedure_templates: form.procedure_templates.map(value => ({template: value.template}))}
           form.status = 'Rescheduled'
+          form.custom_visit_appointment_status = 'Scheduled'
           this.$call('healthcare_doworks.api.methods.edit_doc', {form, children})
           .then(response => {
             this.$toast.add({
@@ -804,6 +807,11 @@ export default {
       else if(this.appointmentForm.patient) {
         this.popoverVisible = true; // Show the popover if data is already loaded
       }
+    },
+    timeToDayjs() {
+      console.log(this.appointmentForm.appointment_time)
+      if(this.appointmentForm.appointment_time)
+        this.appointmentForm.appointment_time = dayjs(this.appointmentForm.appointment_time, "HH:mm:ss");
     },
     handleMouseLeave() {
       this.popoverVisible = false

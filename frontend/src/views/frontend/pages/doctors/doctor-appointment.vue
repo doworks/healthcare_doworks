@@ -212,7 +212,7 @@
     />
     <biocomDialog 
     :isOpen="biocomOpen" 
-    :appointment="selectedRow?.name"
+    :appointment="selectedRow"
     @update:isOpen="biocomOpen = $event" 
     @show-alert="showAlert" 
     />
@@ -918,6 +918,7 @@ export default {
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
         d.notes = this.stripHtml(d.notes)
+        d.age = this.calculateAge(d.dob)
 
         d.visit_notes = d.visit_notes?.map(note => {
           note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
@@ -1356,6 +1357,7 @@ export default {
       return tempDiv.textContent || tempDiv.innerText || "";
     },
     async readIdCard(row) {
+      console.log(row)
       try {
         this.lodingOverlay = true;
         const response = await axios.get('http://localhost:5000/card', {timeout: 3000});
@@ -1451,8 +1453,12 @@ export default {
           form.dob = data['birthdate'].toString().substr(0,4) + "-" + data['birthdate'].toString().substr(4,2) + "-" + data['birthdate'].toString().substr(6,2)
   				// console.log(birthdate)
   			// mobile number
-  			if (data['nationality'] == 'BAHRAIN')
-  				form.mobile = "+973"
+  			if (data['nationality'] == 'BAHRAIN'){
+          if (!row.patient_details.mobile.startsWith("+973"))
+            form.mobile = "+973 " + row.patient_details.mobile;
+          else
+            form.mobile = row.patient_details.mobile;
+        }
         
   			// address
   			let address_cpr = ""
@@ -1487,7 +1493,6 @@ export default {
    			data_string = data_string.slice(1,-2);
    			console.info("Before parse:" + data_string)
   			let imageDate = JSON.parse(data_string);
-        console.log(imageDate)
         
   			// upload images
   			if (imageDate['image']){
@@ -1495,9 +1500,9 @@ export default {
             const response = await this.$call("frappe.client.attach_file", {
               filedata: imageDate['image'],
               filename: `${row.patient}_image.jpg`,
-              doctype: "Patient",  // Target doctype
-              docname: row.patient,  // Target document
-              is_private: 1,  // Set privacy
+              doctype: "Patient",  
+              docname: row.patient,  
+              is_private: 1,  
               decode_base64: true
             });
             
@@ -1534,6 +1539,7 @@ export default {
             detail: 'Patient saved',
             life: 3000 // Duration in ms
           });
+          this.fetchRecords()
           const url = this.$router.resolve({
             name: 'patient',
             params: { patientId: response.name }
