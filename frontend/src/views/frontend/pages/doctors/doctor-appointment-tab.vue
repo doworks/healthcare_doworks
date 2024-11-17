@@ -886,12 +886,12 @@ export default {
 			});
 		},
 		renderPatientDetails(data) {
-			let age = `Age: ${ data.patient_age?.split(' ')[0] } | `
+			let age = `Age: ${ data.patient_details.age?.split(' ')[0] } | `
 			let file = `File: ${ data.patient_details.file_number } | `
 			let cpr = `CPR: ${ data.patient_details.cpr } | `
 			let mobile = `${ data.patient_details.mobile } | `
 			let details = ''
-			if(data.patient_age)
+			if(data.patient_details.age)
 				details += age
 			if(data.patient_details.file_number)
 				details += file

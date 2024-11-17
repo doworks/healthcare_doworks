@@ -900,7 +900,7 @@ export default {
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
         d.notes = this.stripHtml(d.notes)
-        d.age = this.calculateAge(d.dob)
+        d.patient_details.age = this.calculateAge(d.dob)
 
         d.visit_notes = d.visit_notes?.map(note => {
           note.dayDate = dayjs(note.time).format('DD/MM/YYYY')

@@ -508,7 +508,7 @@ def patient(patient=''):
 def invoices(**args):
 	invoices_list = frappe.get_list('Sales Invoice', filters=args['filters'], fields=['name', 'posting_date', 'grand_total', 'paid_amount', 'status'], order_by='posting_date desc')
 	for invoice in invoices_list:
-		items = frappe.get_list('Sales Invoice Item', filters={'parent': invoice.name}, pluck='item_name')
+		items = frappe.get_all('Sales Invoice Item', filters={'parent': invoice.name}, pluck='item_name')
 		invoice['services'] = ", ".join(items)
 	return invoices_list
 
