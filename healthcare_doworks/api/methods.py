@@ -75,10 +75,10 @@ def fetch_patient_appointments(filters=None, or_filters=None, start=0, limit=50)
 	return dic
 
 @frappe.whitelist()
-def check_availability(patient):
+def check_availability(**args):
 	appointments = frappe.get_list(
 		'Patient Appointment',
-		filters={'patient': patient},
+		filters=args['filters'],
 		fields=[
 			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
 			'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner', 'appointment_datetime',
@@ -138,7 +138,7 @@ def reschedule_appointment(form, children={}):
 	new_doc.insert()
 
 @frappe.whitelist()
-def get_item_texes(item):
+def get_item_taxes(item):
 	taxes = []
 	item_taxes = frappe.get_all('Item Tax', filters={'parent': item}, pluck='item_tax_template')
 	for template in item_taxes:
@@ -238,7 +238,7 @@ def patient_encounter_records(encounter_id):
 			filters={'patient': current_encounter.patient},
 			fields=[
 				'signs_date', 'signs_time', 'temperature', 'pulse', 'respiratory_rate', 'tongue', 'abdomen', 'name', 'appointment',
-				'reflexes', 'bp_systolic', 'bp_diastolic', 'vital_signs_note', 'height', 'weight', 'bmi', 'nutrition_note'
+				'reflexes', 'bp_systolic', 'bp_diastolic', 'vital_signs_note', 'height', 'weight', 'bmi', 'nutrition_note', 'custom_saturation_rate'
 			],
 			order_by='signs_date desc, signs_time desc',
 		)
@@ -505,6 +505,14 @@ def patient(patient=''):
 	return {'doc': doc, 'children': children}
 
 @frappe.whitelist()
+def invoices(**args):
+	invoices_list = frappe.get_list('Sales Invoice', filters=args['filters'], fields=['name', 'posting_date', 'grand_total', 'paid_amount', 'status'], order_by='posting_date desc')
+	for invoice in invoices_list:
+		items = frappe.get_list('Sales Invoice Item', filters={'parent': invoice.name}, pluck='item_name')
+		invoice['services'] = ", ".join(items)
+	return invoices_list
+
+@frappe.whitelist()
 def pos_payment_method(pos_profile):
 	return frappe.get_all('POS Payment Method',
         fields=['default', 'mode_of_payment'],
@@ -680,12 +688,6 @@ def create_mock_invoice(appointment, tax):
 		invoice.set_missing_values()
 		invoice.calculate_taxes_and_totals()
 		return invoice
-
-@frappe.whitelist()
-def get_payment_amount(invoices):
-	for invoice in invoices:
-		invoice_doc = frappe.get_doc('Sales Invoice', invoice)
-		
 
 @frappe.whitelist()
 def make_payment(appointment, invoices, profile, payment_methods):
@@ -893,22 +895,26 @@ def get_appointment_details(appointment):
 		note['names'] = []
 		if note['for'] == 'Users':
 			users = frappe.get_all('User Multitable', filters={'parent': note.name}, fields=['user'])
-			if not (note['from'] in from_options or any(user['user'] == frappe.session.user for user in users)):
+			if not (note['from'] in from_options or any(user['user'] == frappe.session.user for user in users) or len(users) == 0):
 				continue
 			note['users'] = users
+			if len(users) == 0:
+				note['names'] = ''
 			for user in note['users']:
 				note['names'].append(frappe.db.get_value('User', user.user, 'full_name'))
 		else:
 			roles = frappe.get_all('Role Multitable', filters={'parent': note.name}, fields=['role'])
-			if not (note['from'] in from_options or any(role['role'] in frappe.get_roles(frappe.session.user) for role in roles)):
+			if not (note['from'] in from_options or any(role['role'] in frappe.get_roles(frappe.session.user) for role in roles) or len(roles) == 0):
 				continue
 			note['roles'] = roles
+			if len(roles) == 0:
+				note['names'] = ''
 			for role in note['roles']:
 				note['names'].append(frappe.db.get_value('Role', role.role, 'role_name'))
 
 		note['names'] = ', '.join(note['names'])
 
-	appointment['visit_notes'] = visit_notes
+	appointment['visit_notes'] = [note for note in visit_notes if note['names'] != []]
 
 	# Get status log
 	status_log = frappe.get_all('Appointment Time Logs',

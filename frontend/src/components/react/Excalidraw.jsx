@@ -77,28 +77,31 @@ const ExcalidrawWrapper = () => {
       if (!excalidrawAPI) {
         return
       }
+  
       const elements = excalidrawAPI.getSceneElements();
       if (!elements || !elements.length) {
-        return
+        return;
       }
+  
+      // Export as Blob
       const blob = await exportToBlob({
         elements,
         appState: excalidrawAPI.getAppState(),
         files: excalidrawAPI.getFiles(),
         mimeType: 'image/jpeg'
       });
-      await exportToClipboard({
+  
+      // Create JSON directly instead of relying on clipboard
+      const jsonText = JSON.stringify({
         elements,
-        appState: excalidrawAPI.getAppState(),
         files: excalidrawAPI.getFiles(),
-        type: 'json'
-      })
+      });
+  
       const { callback } = event.detail;
-      const jsonText = await navigator.clipboard.readText();
       const url = URL.createObjectURL(blob);
-
-      callback({annotationsTemplate, url, jsonText, blob})
-    };
+  
+      callback({ annotationsTemplate, url, jsonText, blob });
+  };
 
     const setAnnotationHistoryState = async (event) => {
       const { annotations } = event.detail;

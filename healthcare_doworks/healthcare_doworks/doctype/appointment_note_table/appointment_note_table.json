@@ -35,7 +35,8 @@
   },
   {
    "fieldname": "from",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "From",
    "options": "User"
   },
@@ -64,7 +65,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-10-21 11:27:57.334887",
+ "modified": "2024-11-12 06:42:52.082459",
  "modified_by": "Administrator",
  "module": "Healthcare Doworks",
  "name": "Appointment Note Table",

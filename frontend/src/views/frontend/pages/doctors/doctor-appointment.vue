@@ -540,17 +540,6 @@
         />
       </v-card>
     </v-dialog>
-    <!-- / Page Dialogs -->
-    <v-overlay
-      :model-value="lodingOverlay"
-      class="align-center justify-center"
-    >
-      <v-progress-circular
-        color="primary"
-        size="64"
-        indeterminate
-      ></v-progress-circular>
-    </v-overlay>
     <v-dialog v-model="visitStatusLogOpen" width="450">
       <v-card
         rounded="lg"
@@ -568,15 +557,8 @@
       </v-card>
     </v-dialog>
     <!-- / Page Dialogs -->
-    <v-overlay
-      :model-value="lodingOverlay"
-      class="align-center justify-center"
-    >
-      <v-progress-circular
-        color="primary"
-        size="64"
-        indeterminate
-      ></v-progress-circular>
+    <v-overlay :model-value="lodingOverlay" class="align-center justify-center">
+      <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>
     </v-overlay>
   </div>
 </template>
@@ -1100,7 +1082,7 @@ export default {
 		},
     checkAvailabilityDialog() {
       this.checkAvailabilityLoading = true
-      this.$call('healthcare_doworks.api.methods.check_availability', { patient: this.checkAvailabilityPatient })
+      this.$call('healthcare_doworks.api.methods.check_availability', { filters: { patient: this.checkAvailabilityPatient } })
       .then((response) => {
         this.checkAvailabilityAppointments = this.adjustAppointments(response)
         this.checkAvailabilityLoading = false

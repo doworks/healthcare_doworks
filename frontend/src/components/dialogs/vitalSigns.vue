@@ -16,6 +16,7 @@
                                         v-model:value="form.signs_date"
                                         format="DD/MM/YYYY" 
                                         style="z-index: 3000"
+                                        class="w-full"
                                     />
                                 </a-form-item>
                             </v-col>
@@ -69,6 +70,9 @@
                                         v-model:value="form.reflexes"
                                         :options="reflexesOptions"
                                     ></a-select>
+                                </a-form-item>
+                                <a-form-item label="Saturation Rate" name="custom_saturation_rate" >
+                                    <a-input v-model:value="form.custom_saturation_rate"/>
                                 </a-form-item>
                                 <a-form-item label="Blood Pressure (systolic)" name="bp_systolic" >
                                     <a-input v-model:value="form.bp_systolic" @change="setBloodPressure"/>
@@ -206,6 +210,7 @@ export default {
                 temperature: '',
                 pulse: '',
                 respiratory_rate: '',
+                custom_saturation_rate: '',
                 tongue: '',
                 abdomen: '',
                 reflexes: '',

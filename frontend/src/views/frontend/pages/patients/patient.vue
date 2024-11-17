@@ -29,7 +29,7 @@
           <v-tab v-if="!isNew" value="medicalHestory">Medical History</v-tab>
           <v-tab v-if="!isNew" value="records">Medical Records</v-tab>
         </v-tabs>
-        <v-btn v-if="tab == 'details' || tab == 'insurance'" class="ml-auto text-none" color="purple" variant="outlined" @click="saveNew">save</v-btn>
+        <v-btn v-if="tab == 'details' || tab == 'insurance'" class="ml-auto text-none" color="purple" variant="outlined" @click="save">save</v-btn>
       </div>
 
       <v-window v-model="tab">
@@ -490,40 +490,84 @@
           <v-container fluid>
             <v-row>
               <v-col cols="12" md="6" lg="3">
-                <a-range-picker v-model:value="profileRangeFilter" format="DD/MM/YYYY" class="w-full"/>
+                <a-range-picker v-model:value="profileRangeFilter" format="DD/MM/YYYY" class="w-full" @change="setDateFilter"/>
               </v-col>
             </v-row>
             <v-row>
               <v-col cols="12" md="6">
-                <v-card id="vital-signs" variant="tonal" color="light-blue">
-                  <template v-slot:title>Vital Signs ({{ $resources.vitalSigns.data.length }})</template>
+                <v-card id="appointments" variant="tonal" color="light-blue-darken-1">
+                  <template v-slot:title>Appointments ({{ $resources.appointments.data?.length || '0' }})</template>
                   <template v-slot:text>
-                    <div :class="{'d-none': $resources.vitalSigns.data.length > 0}">
-                      <v-empty-state
-                        title="No Vital Signs"
-                      ></v-empty-state>
-                    </div>
                     <DataTable 
-                    :value="$resources.vitalSigns.data" 
+                    :value="$resources.appointments.data" 
                     selectionMode="single" 
                     :metaKeySelection="true" 
+                    @row-click="({data}) => {appointmentDialog('Edit Appointment', false, data)}"
                     dataKey="id" 
-                    @row-click="vitalSignSelect"
                     class="max-h-72 overflow-y-auto"
+                    :loading="appointmentsLoading"
                     >
-                      <Column headerStyle="width:3rem">
+                      <template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
+                      <Column header="#">
                         <template #body="slotProps">
                           {{ slotProps.index + 1 }}
                         </template>
                       </Column>
-                      <Column>
-                        <template #body="slotProps">
-                          {{ formatDate(slotProps.data.signs_date + ' ' + slotProps.data.signs_time) }}
+                      <Column header="Time" field="appointment_time">
+                        <template #body="{ data }">
+                          <div>
+                            <div>
+                              {{ data.appointment_date_moment }}
+                            </div>
+                            <div>
+                              {{ data.appointment_time_moment }}
+                            </div>
+                          </div>
                         </template>
                       </Column>
-                      <Column>
-                        <template #body="slotProps">
-                          {{ vitalSigns(slotProps.data) }}
+                      <Column header="Confirmed?" field="custom_confirmed">
+                        <template #body="{ data }">
+                          <div class="text-center">
+                            <i v-if="data.custom_confirmed" class="mdi mdi-check"/>
+                            <!-- <i v-else class="mdi mdi-close"/> -->
+                          </div>
+                        </template>
+                      </Column>
+                      <Column field="appointment_datetime" hidden></Column>
+                      <Column header="Status" field="custom_visit_status"></Column>
+                      <Column header="Practitioner" field="practitioner_name">
+                        <template #body="{ data }">
+                          <div class="flex align-items-center gap-2" v-if="data.practitioner_name">
+                            <v-avatar v-if="data.practitioner_image">
+                              <img
+                              class="h-100 w-100"
+                              :src="data.practitioner_image"
+                              />
+                            </v-avatar>
+                            <span>{{ data.practitioner_name }}</span>
+                          </div>
+                        </template>
+                      </Column>
+                      <Column header="Type">
+                        <template #body="{ data }">
+                          <div>
+                            <div>
+                              {{ data.custom_appointment_category }}
+                            </div>
+                            <div v-if="data.custom_appointment_category == 'Procedure'">
+                              <div v-if="data.procedure_templates.length > 0">
+                                <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
+                              </div>
+                              <div v-else>
+                                {{ data.notes }}
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                      </Column>
+                      <Column header="Paid Amount" field="paid_amount">
+                        <template #body="{ data }">
+                          BD {{ data.paid_amount }}
                         </template>
                       </Column>
                     </DataTable>
@@ -531,14 +575,9 @@
                 </v-card>
               </v-col>
               <v-col cols="12" md="6">
-                <v-card id="consultations" variant="tonal" color="amber">
-                  <template v-slot:title>Consultations ({{ $resources.consultations.data.length }})</template>
+                <v-card id="consultations" variant="tonal" color="amber-darken-2">
+                  <template v-slot:title>Consultations ({{ $resources.consultations.data?.length || '0' }})</template>
                   <template v-slot:text>
-                    <div :class="{'d-none': $resources.consultations.data.length > 0}">
-                      <v-empty-state
-                        title="No Consultations"
-                      ></v-empty-state>
-                    </div>
                     <DataTable 
                     :value="$resources.consultations.data" 
                     selectionMode="single" 
@@ -546,33 +585,34 @@
                     dataKey="id" 
                     @row-click="({data}) => {encounterSelect(data.name)}"
                     class="max-h-72 overflow-y-auto"
+                    :loading="consultationsLoading"
                     >
-                      <Column headerStyle="width:3rem">
+                      <template #empty><v-empty-state title="No Consultations"></v-empty-state></template>
+                      <Column header="#">
                         <template #body="slotProps">
                           {{ slotProps.index + 1 }}
                         </template>
                       </Column>
-                      <Column field="creation">
-                        <template #body="slotProps">
-                          {{ formatDate(slotProps.data.creation) }}
+                      <Column header="Date">
+                        <template #body="{ data }">
+                          {{ formatDate(data.encounter_date) }}
                         </template>
                       </Column>
-                      <Column field="medical_department"></Column>
-                      <Column field="practitioner_name"></Column>
-                      <Column field="custom_appointment_category"></Column>
+                      <Column header="Practitioner" field="practitioner_name"></Column>
+                      <Column header="Type" field="custom_appointment_category"></Column>
+                      <Column header="Status">
+                        <template #body="{ data }">
+                          {{ data.status || 'Draft' }}
+                        </template>
+                      </Column>
                     </DataTable>
                   </template>
                 </v-card>
               </v-col>
               <v-col cols="12" md="6">
                 <v-card id="clinical-procedure" variant="tonal" color="purple">
-                  <template v-slot:title>Procedures ({{ $resources.procedures.data.length }})</template>
+                  <template v-slot:title>Procedures ({{ $resources.procedures.data?.length || '0' }})</template>
                   <template v-slot:text>
-                    <div :class="{'d-none': $resources.procedures.data.length > 0}">
-                      <v-empty-state
-                        title="No Clinical Procedures"
-                      ></v-empty-state>
-                    </div>
                     <DataTable 
                     :value="$resources.procedures.data" 
                     selectionMode="single" 
@@ -580,19 +620,96 @@
                     dataKey="id" 
                     @row-click="({data}) => {encounterSelect(data.custom_patient_encounter)}"
                     class="max-h-72 overflow-y-auto"
+                    :loading="proceduresLoading"
                     >
-                      <Column headerStyle="width:3rem">
+                      <template #empty><v-empty-state title="No Clinical Procedures"></v-empty-state></template>
+                      <Column header="#">
                         <template #body="slotProps">
                           {{ slotProps.index + 1 }}
                         </template>
                       </Column>
-                      <Column field="creation">
-                        <template #body="slotProps">
-                          {{ formatDate(slotProps.data.creation) }}
+                      <Column header="Start Date">
+                        <template #body="{ data }">
+                          {{ formatDate(data.start_date) }}
                         </template>
                       </Column>
-                      <Column field="medical_department"></Column>
-                      <Column field="practitioner_name"></Column>
+                      <Column header="Practitioner" field="practitioner_name"></Column>
+                      <Column header="Procedure" field="procedure_template"></Column>
+                      <Column header="Status">
+                        <template #body="{ data }">
+                          {{ data.status || 'Draft' }}
+                        </template>
+                      </Column>
+                    </DataTable>
+                  </template>
+                </v-card>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-card id="vital-signs" variant="tonal" color="green-accent-4">
+                  <template v-slot:title>Vital Signs ({{ $resources.vitalSigns.data?.length || '0' }})</template>
+                  <template v-slot:text>
+                    <DataTable 
+                    :value="$resources.vitalSigns.data" 
+                    selectionMode="single" 
+                    :metaKeySelection="true" 
+                    dataKey="id" 
+                    @row-click="vitalSignSelect"
+                    class="max-h-72 overflow-y-auto"
+                    :loading="vitalSignsLoading"
+                    >
+                      <template #empty><v-empty-state title="No Vital Signs"></v-empty-state></template>
+                      <Column header="#">
+                        <template #body="slotProps">
+                          {{ slotProps.index + 1 }}
+                        </template>
+                      </Column>
+                      <Column header="Date">
+                        <template #body="slotProps">
+                          {{ formatDate(slotProps.data.signs_date + ' ' + slotProps.data.signs_time) }}
+                        </template>
+                      </Column>
+                      <Column header="Vital Signs taken" style="width:100%">
+                        <template #body="slotProps">
+                          {{ vitalSigns(slotProps.data) }}
+                        </template>
+                      </Column>
+                      <Column header="Status">
+                        <template #body="{ data }">
+                          {{ data.docstatus == 1 ? 'Submitted' : data.docstatus == 0 ? 'Draft' : 'Cancelled' }}
+                        </template>
+                      </Column>
+                    </DataTable>
+                  </template>
+                </v-card>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-card id="vital-signs" variant="tonal" color="brown">
+                  <template v-slot:title>Invoices ({{ $resources.invoices.data?.length || '0' }})</template>
+                  <template v-slot:text>
+                    <DataTable 
+                    :value="$resources.invoices.data" 
+                    selectionMode="single" 
+                    :metaKeySelection="true" 
+                    dataKey="id" 
+                    @row-click="invoiceSelect"
+                    class="max-h-72 overflow-y-auto"
+                    :loading="invoicesLoading"
+                    >
+                      <template #empty><v-empty-state title="No invoices"></v-empty-state></template>
+                      <Column header="#">
+                        <template #body="slotProps">
+                          {{ slotProps.index + 1 }}
+                        </template>
+                      </Column>
+                      <Column header="Date">
+                        <template #body="{ data }">
+                          {{ formatDate(data.posting_date) }}
+                        </template>
+                      </Column>
+                      <Column header="Total Amount" field="grand_total"></Column>
+                      <Column header="Paid Amount" field="paid_amount"></Column>
+                      <Column header="Services" field="services"></Column>
+                      <Column header="Status" field="status"></Column>
                     </DataTable>
                   </template>
                 </v-card>
@@ -610,6 +727,13 @@
     @show-alert="showAlert" 
     :name="selectedVitalSigns?.name"
     />
+    <patientAppointmentDialog 
+    :isOpen="appointmentOpen" 
+    @update:isOpen="appointmentOpen = $event" 
+    @show-alert="showAlert" 
+    :form="appointmentForm"
+    :adjustAppointments="adjustAppointments"
+    />
     <v-overlay :model-value="loadingOverlay" class="align-center justify-center">
       <v-progress-circular color="primary" size="64" indeterminate></v-progress-circular>
     </v-overlay>
@@ -624,11 +748,12 @@ import {VTab, VTabs} from 'vuetify/components/VTabs';
 import {VWindow, VWindowItem} from 'vuetify/components/VWindow';
 import { VEmptyState } from 'vuetify/labs/VEmptyState';
 import { Form } from 'ant-design-vue';
+import { VAvatar, VChip } from 'vuetify/components';
 
 export default {
   inject: ['$socket', '$call'],
   components: {
-    VTabs, VTab, VWindow, VWindowItem, VEmptyState,
+    VTabs, VTab, VWindow, VWindowItem, VEmptyState, VChip, VAvatar,
   },
   resources: {
     genders() { return { 
@@ -679,29 +804,70 @@ export default {
     vitalSigns() { return { 
       type: 'list', 
       doctype: 'Vital Signs', 
-      fields: ['*'], 
-      filters: {patient: this.$route.params.patientId},
+      fields: ['name', 'temperature', 'signs_date', 'signs_time','pulse', 'respiratory_rate', 'custom_saturation_rate', 'bp', 'height', 'weight', 'docstatus'], 
+      filters: {patient: this.$route.params.patientId, ...(this.profileRangeFilter ? {signs_date: ['between', [this.startDate, this.endDate]]} : {})},
       auto: true,
       orderBy: 'signs_date desc',
       pageLength: 1000,
+      onSuccess(data) {
+        this.vitalSignsLoading = false
+      },
+    }},
+    appointments() { return { 
+      type: 'list', 
+      doctype: 'Patient Appointment', 
+      fields: ['*'], 
+      filters: {patient: this.$route.params.patientId, ...(this.profileRangeFilter ? {appointment_date: ['between', [this.startDate, this.endDate]]} : {})},
+      auto: true,
+      orderBy: 'appointment_date desc',
+      url:'healthcare_doworks.api.methods.check_availability',
+      pageLength: 1000,
+      transform(data) {
+        return this.adjustAppointments(data)
+      },
+      onSuccess(data) {
+        this.appointmentsLoading = false
+      },
     }},
     consultations() { return { 
       type: 'list', 
       doctype: 'Patient Encounter', 
-      fields: ['name', 'creation', 'medical_department', 'practitioner_name', 'custom_appointment_category'], 
-      filters: {patient: this.$route.params.patientId, custom_appointment_category: ['not in', 'Procedure', 'Session']},
+      fields: ['name', 'encounter_date', 'practitioner_name', 'custom_appointment_category', 'status'], 
+      filters: {
+        patient: this.$route.params.patientId, 
+        custom_appointment_category: ['!=', 'Procedure'], 
+        ...(this.profileRangeFilter ? {encounter_date: ['between', [this.startDate, this.endDate]]} : {})
+      },
       auto: true,
-      orderBy: 'creation desc',
+      orderBy: 'encounter_date desc',
       pageLength: 1000,
+      onSuccess(data) {
+        this.consultationsLoading = false
+      },
     }},
     procedures() { return { 
       type: 'list', 
       doctype: 'Clinical Procedure', 
-      fields: ['*'], 
-      filters: {patient: this.$route.params.patientId},
+      fields: ['name', 'start_date', 'practitioner_name', 'procedure_template', 'status'], 
+      filters: {patient: this.$route.params.patientId, ...(this.profileRangeFilter ? {start_date: ['between', [this.startDate, this.endDate]]} : {})},
       auto: true,
       orderBy: 'start_date desc',
       pageLength: 1000,
+      onSuccess(data) {
+        this.proceduresLoading = false
+      },
+    }},
+    invoices() { return { 
+      type: 'list', 
+      doctype: 'Sales Invoice', 
+      filters: {customer: this.$route.params.patientId, ...(this.profileRangeFilter ? {posting_date: ['between', [this.startDate, this.endDate]]} : {})},
+      auto: false,
+      orderBy: 'posting_date desc',
+      pageLength: 1000,
+      url:'healthcare_doworks.api.methods.invoices',
+      onSuccess(data) {
+        this.invoicesLoading = false
+      },
     }},
   },
   data() {
@@ -726,6 +892,7 @@ export default {
       },
       profileRangeFilter: null,
       vsDialogOpen: false,
+      appointmentOpen: false,
       selectedVitalSigns: {},
       bloodGroupOptions: [
         {label: '', value: ''},
@@ -779,6 +946,15 @@ export default {
         {label: 'Living Place', value: 'Living Place'},
         {label: 'Others', value: 'Others'},
       ],
+      startDate: null,
+      endDate: null,
+      appointmentForm: {},
+
+      vitalSignsLoading: true,
+      appointmentsLoading: true,
+      consultationsLoading: true,
+      proceduresLoading: true,
+      invoicesLoading: true
     };
   },
   created() {
@@ -802,7 +978,11 @@ export default {
       this.loadingOverlay = true;
       this.$call('healthcare_doworks.api.methods.patient', {patient: this.$route.params.patientId})
       .then(response => {
-        console.log(response)
+        let invoicesFilters = {...this.$resources.invoices.filters}
+        invoicesFilters.customer = response.doc.customer
+        this.$resources.invoices.update({filters: invoicesFilters});
+        this.$resources.invoices.reload()
+
         if(response.doc.dob){
           response.doc.dob = dayjs(response.doc.dob)
           this.age = this.getAge(response.doc.dob)
@@ -821,6 +1001,23 @@ export default {
         this.showAlert(error.message, 'error')
         console.error('Error fetching records:', error);
       });
+    },
+    setDateFilter(date) {
+      if(date){
+        this.startDate = date[0].format('YYYY-MM-DD')
+        this.endDate = date[1].format('YYYY-MM-DD')
+
+        this.$resources.appointments.reload()
+        this.$resources.consultations.reload()
+        this.$resources.procedures.reload()
+        this.$resources.vitalSigns.reload()
+        this.$resources.invoices.reload()
+      }
+      this.appointmentsLoading = true
+      this.consultationsLoading = true
+      this.proceduresLoading = true
+      this.vitalSignsLoading = true
+      this.invoicesLoading = true
     },
     updateFullName() {
       this.form.patient_name = (this.form.first_name ? this.form.first_name : '' ) + 
@@ -843,8 +1040,31 @@ export default {
     encounterSelect(encounter) {
       this.$router.push({ name: 'patient-encounter', params: { encounterId: encounter } });
     },
+    invoiceSelect({data}) { 
+      window.open(`/app/sales-invoice/${data.name}`) 
+    },
     formatDate(date) {
-      return dayjs(date).format('hh:mm A MMM DD, YYYY')
+      return dayjs(date).format('DD/MM/YYYY')
+    },
+    adjustAppointments(data) {
+			return [...(data || [])].map((d) => {
+        d.visit_notes = d.visit_notes?.map(note => {
+          note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
+          note.dayTime = dayjs(note.time).format('h:mm A')
+          return note
+        })
+        d.arriveTime = '-'
+        d.status_log?.forEach(value => {
+          value.timeFormat = dayjs(value.time).format('h:mm a    D/MM/YYYY')
+          if(value.status == 'Arrived')
+            d.arriveTime = dayjs(value.time)
+        })
+        d.appointment_date_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('D/MM/YYYY');
+				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
+				d.patient_cpr = d.patient_name + ' ' + d.patient_details?.cpr
+
+				return d;
+			});
     },
     vitalSigns(row) {
       let vitals = ''
@@ -854,6 +1074,8 @@ export default {
         vitals += 'pulse, '
       if(row.respiratory_rate)
         vitals += 'respiratory rate, '
+      if(row.custom_saturation_rate)
+        vitals += 'saturation rate, '
       if(row.bp)
         vitals += 'bood pressure, '
       if(row.height)
@@ -862,7 +1084,7 @@ export default {
         vitals += 'weight, '
       return vitals.slice(0, -2)
     },
-    saveNew() {
+    save() {
       let formClone = {...this.form}
       if(formClone.dob)
         formClone.dob = dayjs(this.form.dob).format('YYYY-MM-DD')
@@ -934,7 +1156,7 @@ export default {
             child_data: formClone
           }).then(response => {
             this.form.custom_medical_history_last_updated = dayjs()
-            this.saveNew()
+            this.save()
             this.lodingOverlay = false;
           }).catch(error => {
             this.showAlert(error.message, 'error')
@@ -949,7 +1171,7 @@ export default {
             update_data: formClone
           }).then(response => {
             this.form.custom_medical_history_last_updated = dayjs()
-            this.saveNew()
+            this.save()
             this.lodingOverlay = false;
           }).catch(error => {
             this.showAlert(error.message, 'error')
@@ -969,7 +1191,7 @@ export default {
           filters: {[filterField || 'name']: row}
         }).then(response => {
           this.form.custom_medical_history_last_updated = dayjs()
-          this.saveNew()
+          this.save()
           this.lodingOverlay = false;
         }).catch(error => {
           this.showAlert(error.message, 'error')
@@ -979,6 +1201,35 @@ export default {
         });
       })
     },
+    appointmentDialog(formType, isNew, row) {
+      this.appointmentForm.name = row.name;
+      this.appointmentForm.duration = row.duration;
+      this.appointmentForm.appointment_type = row.appointment_type;
+      this.appointmentForm.appointment_for = row.appointment_for;
+      this.appointmentForm.custom_appointment_category = row.custom_appointment_category;
+      this.appointmentForm.custom_branch = row.custom_branch;
+      this.appointmentForm.procedure_templates = row.procedure_templates;
+      this.appointmentForm.custom_payment_type = row.custom_payment_type;
+      this.appointmentForm.custom_confirmed = row.custom_confirmed;
+      this.appointmentForm.practitioner = row.practitioner;
+      this.appointmentForm.practitioner_name = row.practitioner_name;
+      this.appointmentForm.patient = row.patient_details.id;
+      this.appointmentForm.patient_name = row.patient_name;
+      this.appointmentForm.patient_sex = row.patient_details.gender;
+      this.appointmentForm.patient_mobile = row.patient_details.mobile;
+      this.appointmentForm.patient_age = row.patient_details.age;
+      this.appointmentForm.department = row.department;
+      this.appointmentForm.service_unit = row.service_unit;
+      this.appointmentForm.notes = row.notes;
+      this.appointmentForm.appointment_date = dayjs(row.appointment_date)
+      this.appointmentForm.appointment_time = row.appointment_time;
+
+      this.appointmentForm.doctype = 'Patient Appointment';
+      // this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
+			this.appointmentForm.type = formType
+      this.appointmentForm.custom_is_walked_in = false;
+			this.appointmentOpen = true
+		},
     transformData (keys, values) {
       return values.map(row => {
         const obj = {};

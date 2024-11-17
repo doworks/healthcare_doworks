@@ -238,11 +238,11 @@
 
                       <div class="pb-2">
                         <div class="gap-2 d-flex align-items-center">
-                          <i class="mdi mdi-lungs" style="font-size: 1.5rem"></i>
-                          <h6 class="my-0 fw-normal">Resp</h6>
+                          <i class="mdi mdi-water-opacity" style="font-size: 1.5rem"></i>
+                          <h6 class="my-0 fw-normal">Saturation</h6>
                         </div>
                         <div class="d-flex gap-1 align-items-center justify-content-center">
-                          <h6 class="fw-normal mb-0">{{currentVS?.respiratory_rate || '-'}}</h6> <small class="align-self-end" v-if="currentVS?.respiratory_rate">BPM</small>
+                          <h6 class="fw-normal mb-0">{{currentVS?.custom_saturation_rate || '-'}}</h6> <small class="align-self-end" v-if="currentVS?.custom_saturation_rate">%</small>
                         </div>
                       </div>
                     </div>
@@ -263,7 +263,7 @@
                       <div>
                         <div class="gap-1 d-flex align-items-center">
                           <img style="width: 18px;" :src="stomachImage"/>
-                          <h6 class="ml-1 my-0 fw-normal">Abdomen</h6>
+                          <h6 class="ml-1 my-0 fw-normal">Abd</h6>
                         </div>
                         <div class="d-flex gap-1 align-items-center justify-content-center">
                           <h6 class="fw-normal mb-0">{{currentVS?.abdomen || '-'}}</h6>
@@ -3355,6 +3355,7 @@ export default {
         name: '',
         pulse: "-",
         respiratory_rate: "-",
+        custom_saturation_rate: '-',
         bp_systolic: "-",
         bp_diastolic: "-",
         temperature: "-",
