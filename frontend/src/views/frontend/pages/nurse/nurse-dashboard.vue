@@ -502,6 +502,7 @@ export default {
       patient: {
         custom_allergies_table: [],
         custom_infected_diseases: [],
+        custom_family_history: [],
         custom_surgical_history_table: [],
         custom_medications: [],
         custom_habits__social: [],

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import PatientEncounter from '@/views/frontend/pages/patients/dashboard/patient-encounter.vue';
+import PatientEncounter from '@/views/frontend/pages/patients/dashboard/patient-encounter_dermaone.vue';
+// import PatientEncounter from '@/views/frontend/pages/patients/dashboard/patient-encounter.vue';
 import PatientEncounterList from '@/views/frontend/pages/patients/dashboard/patient-encounter-list.vue';
 import PatientList from '@/views/frontend/pages/patients/patient-list.vue';
 import Patient from '@/views/frontend/pages/patients/patient.vue';
@@ -16,6 +17,13 @@ const routes = [
     beforeEnter: (to, from, next) => {
       next('/appointments');
     },
+  },
+  {
+    path: '/login',
+    beforeEnter() {
+      // Redirect to the external login URL
+      window.location.href = '/login'; // Replace with the actual external login URL
+    }
   },
   {
     path: '/patient-encounter/',

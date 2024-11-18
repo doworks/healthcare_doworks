@@ -16,7 +16,7 @@
                     @upload="upload"
                     :multiple="true" 
                     accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    :maxFileSize="1000000"
+                    :maxFileSize="5000000"
                     >
                     
                         <template #header="{ chooseCallback, uploadCallback, clearCallback, files }">

@@ -729,6 +729,7 @@ export default {
       patient: {
         custom_allergies_table: [],
         custom_infected_diseases: [],
+        custom_family_history: [],
         custom_surgical_history_table: [],
         custom_medications: [],
         custom_habits__social: [],
@@ -900,7 +901,7 @@ export default {
     adjustAppointments(data) {
 			return [...(data || [])].map((d) => {
         d.notes = this.stripHtml(d.notes)
-        d.patient_details.age = this.calculateAge(d.dob)
+        d.patient_details.age = this.calculateAge(d.patient_details.date_of_birth)
 
         d.visit_notes = d.visit_notes?.map(note => {
           note.dayDate = dayjs(note.time).format('DD/MM/YYYY')

@@ -54,7 +54,41 @@
                                 <template v-slot:dialog="{ row }">
                                     <a-form layout="vertical">
                                         <a-form-item label="Name">
-                                            <a-input v-model:value="row.name1"/>
+                                            <a-select
+                                            v-model:value="row.name1"
+                                            :options="$resources.medicalHistories.data?.options"
+                                            :fieldNames="{label: 'medical_history_name', value: 'name'}"
+                                            style="width: 100%;"
+                                            show-search
+                                            :loading="$resources.medicalHistories.list.loading"
+                                            @search="(value) => {handleSearch(
+                                            value, 
+                                            $resources.medicalHistories, 
+                                            {medical_history_name: ['like', `%${value}%`]}, 
+                                            {},
+                                            )}"
+                                            :filterOption="false"
+                                            >
+                                            <template #dropdownRender="{ menuNode: menu }">
+                                                <v-nodes :vnodes="menu" />
+                                                <!-- <a-divider style="margin: 4px 0" />
+                                                <a-space style="padding: 4px 8px">
+                                                <a-input ref="inputRef" v-model:value="newMedicalHistory" placeholder="Please enter a medical History name" />
+                                                <a-button type="text" @click="() => {
+                                                    addDoc({doctype: 'Medical History', medical_history_name: newMedicalHistory}, doc => {
+                                                    newMedicalHistory = ''
+                                                    $resources.medicalHistories.reload()
+                                                    row.name1 = doc.name
+                                                    }); 
+                                                }">
+                                                    <template #icon>
+                                                    <i class="mdi mdi-plus"></i>
+                                                    </template>
+                                                    Add Medical History
+                                                </a-button>
+                                                </a-space> -->
+                                            </template>
+                                            </a-select>
                                         </a-form-item>
                                         <a-form-item label="Note">
                                             <a-textarea v-model:value="row.note" :rows="4" />
@@ -199,8 +233,8 @@
                             </EditableTable>
                         </v-col>
                     </v-row>
-                    <v-divider class="m-10"></v-divider>
-                    <a-form layout="vertical">
+                    <v-divider></v-divider>
+                    <!-- <a-form layout="vertical">
                         <h5 class="mb-4">Family History</h5>
                         <v-row>
                             <v-col cols="12" lg="6">
@@ -214,7 +248,65 @@
                                 </a-form-item>
                             </v-col>
                         </v-row>
-                    </a-form>
+                    </a-form> -->
+                    <v-row>
+                        <v-col cols="12" lg="6">
+                            <h5>Family History</h5>
+                            <EditableTable :columns="[
+                            {label: 'Name', key: 'name1'},
+                            {label: 'Note', key: 'note', width: '320px'},
+                            ]"
+                            :rows="familyHistory"
+                            @update="(items) => {familyHistory = items}"
+                            title="Family History"
+                            >
+                            <template v-slot:dialog="{ row }">
+                                <a-form layout="vertical">
+                                    <a-form-item label="Name">
+                                        <a-select
+                                        v-model:value="row.name1"
+                                        :options="$resources.medicalHistories.data?.options"
+                                        :fieldNames="{label: 'medical_history_name', value: 'name'}"
+                                        style="width: 100%;"
+                                        show-search
+                                        :loading="$resources.medicalHistories.list.loading"
+                                        @search="(value) => {handleSearch(
+                                        value, 
+                                        $resources.medicalHistories, 
+                                        {medical_history_name: ['like', `%${value}%`]}, 
+                                        {},
+                                        )}"
+                                        :filterOption="false"
+                                        >
+                                        <template #dropdownRender="{ menuNode: menu }">
+                                            <v-nodes :vnodes="menu" />
+                                            <!-- <a-divider style="margin: 4px 0" />
+                                            <a-space style="padding: 4px 8px">
+                                            <a-input ref="inputRef" v-model:value="newMedicalHistory" placeholder="Please enter a medical History name" />
+                                            <a-button type="text" @click="() => {
+                                                addDoc({doctype: 'Medical History', medical_history_name: newMedicalHistory}, doc => {
+                                                newMedicalHistory = ''
+                                                $resources.medicalHistories.reload()
+                                                row.name1 = doc.name
+                                                }); 
+                                            }">
+                                                <template #icon>
+                                                <i class="mdi mdi-plus"></i>
+                                                </template>
+                                                Add Medical History
+                                            </a-button>
+                                            </a-space> -->
+                                        </template>
+                                        </a-select>
+                                    </a-form-item>
+                                    <a-form-item label="Note">
+                                        <a-textarea v-model:value="row.note" :rows="4" />
+                                    </a-form-item>
+                                </a-form>
+                            </template>
+                            </EditableTable>
+                        </v-col>
+                    </v-row>
                 </v-container>
             </v-card-text>
             
@@ -251,6 +343,7 @@
 
 <script >
 import dayjs from 'dayjs';
+import { ref, defineComponent } from 'vue';
 
 import { VDivider } from 'vuetify/components/VDivider';
 import { VInfiniteScroll } from 'vuetify/components/VInfiniteScroll';
@@ -263,6 +356,17 @@ export default {
 	inject: ['$call'],
 	components: {
 		VDivider, VInfiniteScroll, VItemGroup, VItem, VOverlay, VProgressCircular,
+        VNodes: defineComponent({
+            props: {
+                vnodes: {
+                    type: Object,
+                    required: true,
+                },
+            },
+            render() {
+                return this.vnodes;
+            },
+        }),
 	},
 	props: {
 		isOpen: {
@@ -278,6 +382,23 @@ export default {
             }
         },
 	},
+    resources: {
+        medicalHistories() { return { 
+            type: 'list', 
+            doctype: 'Medical History', 
+            fields: ['name', 'medical_history_name'], 
+            auto: true, 
+            pageLength: 10,
+            url: 'frappe.desk.reportview.get', 
+            transform(data) {
+                if(data.values.length == 0)
+                    data.options = []
+                else
+                    data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+                return data
+            }
+        }},
+    },
     computed: {
         dialogVisible: {
             get() {
@@ -326,13 +447,17 @@ export default {
             medications: [],
             habits: [],
             riskFactors: [],
+            familyHistory: [],
             chronicDiseases: '',
             geneticDiseases: '',
+
+            newMedicalHistory: '',
 		};
 	},
     mounted() {
         this.allergies = this.patient.custom_allergies_table
         this.infectedDiseases = this.patient.custom_infected_diseases
+        this.familyHistory = this.patient.custom_family_history
         this.surgicalHistory = this.patient.custom_surgical_history_table.map(sur => {
             sur.dayDate = dayjs(sur.date)
             return sur
@@ -352,6 +477,7 @@ export default {
 				if(newValue){
                     this.allergies = this.patient.custom_allergies_table
                     this.infectedDiseases = this.patient.custom_infected_diseases
+                    this.familyHistory = this.patient.custom_family_history
                     this.surgicalHistory = this.patient.custom_surgical_history_table.map(sur => {
                         sur.dayDate = dayjs(sur.date)
                         return sur
@@ -384,6 +510,7 @@ export default {
                 medications: this.medications,
                 habits: this.habits,
                 risk_factors: this.riskFactors,
+                family_history: this.familyHistory,
                 chronic_diseases: this.chronicDiseases,
                 genetic_diseases: this.geneticDiseases,
             }
@@ -400,6 +527,43 @@ export default {
             }).catch(error => {
                 this.$emit('show-alert', error.message, 'error')
             });
+        },
+        addDoc(form, callback){
+            this.$call('healthcare_doworks.api.methods.new_doc', {form})
+            .then(response => {
+                callback(response)
+                this.$toast.add({ severity: 'success', summary: 'Success', detail: `New ${response.doctype} created`, life: 3000 });
+            }).catch(error => {
+                this.showAlert(error.message, 'error')
+            });
+        },
+        transformData (keys, values) {
+            return values.map(row => {
+                const obj = {};
+                keys.forEach((key, index) => {
+                    obj[key] = row[index];  // Map each key to its corresponding value
+                });
+                return obj;
+            });
+            },
+        handleSearch(query, resource, filters, initialFilters) {
+            // Clear the previous timeout to avoid spamming requests
+            clearTimeout(this.searchTimeout);
+
+            // Set a new timeout (300ms) for debouncing
+            this.searchTimeout = setTimeout(() => {
+                if (query) {
+                    // Update list resource options to fetch matching records from server
+                    resource.update({filters});
+
+                    // Fetch the updated results
+                    resource.reload();
+                } else {
+                    // If no search query, load initial records
+                    resource.update({filters: initialFilters});
+                    resource.reload();
+                }
+            }, 300);  // Debounce delay of 300ms
         },
 	},
 };

@@ -150,13 +150,13 @@ export default {
           delete row.modified
           delete row.modified_by
           this.items[this.findIndexById(row.name)] = row;
-          this.$toast.add({severity:'success', summary: 'Updated', detail: this.title + ' Updated', life: 3000});
+          // this.$toast.add({severity:'success', summary: 'Updated', detail: this.title + ' Updated', life: 3000});
         }
         else {
           isNew = true
           row.name = this.createId();
           this.items.push(row);
-          this.$toast.add({severity:'success', summary: 'Created', detail: this.title + ' Created', life: 3000});
+          // this.$toast.add({severity:'success', summary: 'Created', detail: this.title + ' Created', life: 3000});
         }
 
         this.rowDialog = false;
@@ -186,7 +186,7 @@ export default {
     deleteSelectedRows() {
       this.items = this.items.filter(val => !this.selectedRows.includes(val.name));
       this.deleteRowsDialog = false;
-      this.$toast.add({severity:'success', summary: 'Deleted', detail: 'Items Deleted', life: 3000});
+      // this.$toast.add({severity:'success', summary: 'Deleted', detail: 'Items Deleted', life: 3000});
       this.$emit('delete', this.selectedRows)
       this.selectedRows = [];
       this.$emit('update', this.items)

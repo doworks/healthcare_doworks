@@ -285,7 +285,41 @@
                   <template v-slot:dialog="{ row }">
                     <a-form layout="vertical">
                       <a-form-item label="Name">
-                        <a-input v-model:value="row.name1"/>
+                        <a-select
+                        v-model:value="row.name1"
+                        :options="$resources.medicalHistories.data?.options"
+                        :fieldNames="{label: 'medical_history_name', value: 'name'}"
+                        style="width: 100%;"
+                        show-search
+                        :loading="$resources.medicalHistories.list.loading"
+                        @search="(value) => {handleSearch(
+                          value, 
+                          $resources.medicalHistories, 
+                          {medical_history_name: ['like', `%${value}%`]}, 
+                          {},
+                        )}"
+                        :filterOption="false"
+                        >
+                          <template #dropdownRender="{ menuNode: menu }">
+                            <v-nodes :vnodes="menu" />
+                            <!-- <a-divider style="margin: 4px 0" />
+                            <a-space style="padding: 4px 8px">
+                              <a-input ref="inputRef" v-model:value="newMedicalHistory" placeholder="Please enter a medical History name" />
+                              <a-button type="text" @click="() => {
+                                addDoc({doctype: 'Medical History', medical_history_name: newMedicalHistory}, doc => {
+                                  newMedicalHistory = ''
+                                  $resources.medicalHistories.reload()
+                                  row.name1 = doc.name
+                                }); 
+                              }">
+                                <template #icon>
+                                  <i class="mdi mdi-plus"></i>
+                                </template>
+                                Add Medical History
+                              </a-button>
+                            </a-space> -->
+                          </template>
+                        </a-select>
                       </a-form-item>
                       <a-form-item label="Note">
                         <a-textarea v-model:value="row.note" :rows="4" />
@@ -462,28 +496,92 @@
                 </EditableTable>
               </v-col>
             </v-row>
-            <v-divider class="m-10"></v-divider>
-            <a-form layout="vertical">
-              <h5 class="mb-4">Family History</h5>
-              <v-row>
-                <v-col cols="12" lg="6">
-                  <a-form-item label="Chronic Diseases">
-                    <a-textarea 
-                    v-model:value="form.custom_chronic_diseases" 
-                    :rows="4" 
-                    />
-                  </a-form-item>
-                </v-col>
-                <v-col cols="12" lg="6">
-                  <a-form-item label="Genetic Diseases">
-                    <a-textarea 
-                    v-model:value="form.custom_genetic_conditions" 
-                    :rows="4" 
-                    />
-                  </a-form-item>
-                </v-col>
-              </v-row>
-            </a-form>
+            <!-- <v-divider class="m-10"></v-divider> -->
+            <!-- <a-form layout="vertical"> -->
+            <v-row>
+              <v-col cols="12" lg="6">
+                <h5>Family History</h5>
+                <EditableTable :columns="[
+                  {label: 'Name', key: 'name1'},
+                  {label: 'Note', key: 'note', width: '320px'},
+                ]"
+                :rows="children.custom_family_history"
+                @update="(items, row, isNew) => {
+                  if(items && row)
+                    newChildRow({
+                      fieldName: 'custom_family_history', 
+                      rules: {},
+                      items, row, isNew
+                    })
+                }"
+                @delete="rows => {deleteChildRow({fieldName: 'custom_family_history', rows})}"
+                title="Family History"
+                >
+                  <template v-slot:dialog="{ row }">
+                    <a-form layout="vertical">
+                      <a-form-item label="Name">
+                        <a-select
+                        v-model:value="row.name1"
+                        :options="$resources.medicalHistories.data?.options"
+                        :fieldNames="{label: 'medical_history_name', value: 'name'}"
+                        style="width: 100%;"
+                        show-search
+                        :loading="$resources.medicalHistories.list.loading"
+                        @search="(value) => {handleSearch(
+                          value, 
+                          $resources.medicalHistories, 
+                          {medical_history_name: ['like', `%${value}%`]}, 
+                          {},
+                        )}"
+                        :filterOption="false"
+                        >
+                          <template #dropdownRender="{ menuNode: menu }">
+                            <v-nodes :vnodes="menu" />
+                            <!-- <a-divider style="margin: 4px 0" />
+                            <a-space style="padding: 4px 8px">
+                              <a-input ref="inputRef" v-model:value="newMedicalHistory" placeholder="Please enter a medical History name" />
+                              <a-button type="text" @click="() => {
+                                addDoc({doctype: 'Medical History', medical_history_name: newMedicalHistory}, doc => {
+                                  newMedicalHistory = ''
+                                  $resources.medicalHistories.reload()
+                                  row.name1 = doc.name
+                                }); 
+                              }">
+                                <template #icon>
+                                  <i class="mdi mdi-plus"></i>
+                                </template>
+                                Add Medical History
+                              </a-button>
+                            </a-space> -->
+                          </template>
+                        </a-select>
+                      </a-form-item>
+                      <a-form-item label="Note">
+                        <a-textarea v-model:value="row.note" :rows="4" />
+                      </a-form-item>
+                    </a-form>
+                  </template>
+                </EditableTable>
+              </v-col>
+              <!-- <v-col cols="12" lg="6">
+                <a-form-item label="Chronic Diseases">
+                  <a-textarea 
+                  v-model:value="form.custom_chronic_diseases" 
+                  :rows="4" 
+                  />
+                </a-form-item>
+              </v-col>
+              <v-col cols="12" lg="6">
+                <a-form-item label="Genetic Diseases">
+                  <a-textarea 
+                  v-model:value="form.custom_genetic_conditions" 
+                  :rows="4" 
+                  />
+                </a-form-item>
+              </v-col> -->
+            </v-row>
+            <v-divider></v-divider>
+            <!-- </a-form> -->
           </v-container>
         </v-window-item>
         <v-window-item value="records">
@@ -741,7 +839,7 @@
 </template>
   
 <script >
-import { ref, reactive } from 'vue';
+import { ref, defineComponent } from 'vue';
 import dayjs from 'dayjs';
 import EditableTable from '@/components/editableTable.vue';
 import {VTab, VTabs} from 'vuetify/components/VTabs';
@@ -754,6 +852,17 @@ export default {
   inject: ['$socket', '$call'],
   components: {
     VTabs, VTab, VWindow, VWindowItem, VEmptyState, VChip, VAvatar,
+    VNodes: defineComponent({
+      props: {
+        vnodes: {
+          type: Object,
+          required: true,
+        },
+      },
+      render() {
+        return this.vnodes;
+      },
+    }),
   },
   resources: {
     genders() { return { 
@@ -777,6 +886,21 @@ export default {
       filters: {customer_group: 'Medical Insurance', disabled: 0},
       auto: true, 
       orderBy: 'customer_name',
+      pageLength: 10,
+      url: 'frappe.desk.reportview.get', 
+      transform(data) {
+        if(data.values.length == 0)
+          data.options = []
+        else
+          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
+        return data
+      }
+    }},
+    medicalHistories() { return { 
+      type: 'list', 
+      doctype: 'Medical History', 
+      fields: ['name', 'medical_history_name'], 
+      auto: true, 
       pageLength: 10,
       url: 'frappe.desk.reportview.get', 
       transform(data) {
@@ -885,6 +1009,7 @@ export default {
         custom_allergies_table: [],
         custom_habits__social: [],
         custom_infected_diseases: [],
+        custom_family_history: [],
         custom_medications: [],
         custom_risk_factors_table: [],
         custom_surgical_history_table: [],
@@ -954,7 +1079,9 @@ export default {
       appointmentsLoading: true,
       consultationsLoading: true,
       proceduresLoading: true,
-      invoicesLoading: true
+      invoicesLoading: true,
+
+      newMedicalHistory: '',
     };
   },
   created() {
@@ -1023,6 +1150,15 @@ export default {
       this.form.patient_name = (this.form.first_name ? this.form.first_name : '' ) + 
       (this.form.middle_name ? ' ' + this.form.middle_name : '') + 
       (this.form.last_name ? ' ' + this.form.last_name : '')
+    },
+    addDoc(form, callback){
+      this.$call('healthcare_doworks.api.methods.new_doc', {form})
+      .then(response => {
+        callback(response)
+        this.$toast.add({ severity: 'success', summary: 'Success', detail: `New ${response.doctype} created`, life: 3000 });
+      }).catch(error => {
+        this.showAlert(error.message, 'error')
+      });
     },
     getAge(birth) {
       let ageMS = Date.parse(Date()) - Date.parse(birth);

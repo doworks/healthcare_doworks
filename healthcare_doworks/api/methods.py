@@ -448,6 +448,7 @@ def save_patient_history(patient='',
 	medicaitons=None, 
 	habits=None, 
 	risk_factors=None,
+	family_history=None,
 	chronic_diseases='',
 	genetic_diseases=''):
 	doc = frappe.get_doc('Patient', patient)
@@ -462,6 +463,12 @@ def save_patient_history(patient='',
 			if 'creation' in item:
 				del item['name']
 			doc.append("custom_infected_diseases", item)
+	if family_history:
+		doc.custom_family_history = []
+		for item in family_history:
+			if 'creation' in item:
+				del item['name']
+			doc.append("custom_family_history", item)
 	if surgical_history:
 		doc.custom_surgical_history_table = []
 		for item in surgical_history:

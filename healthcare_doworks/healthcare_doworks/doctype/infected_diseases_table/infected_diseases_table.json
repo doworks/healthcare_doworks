@@ -12,9 +12,10 @@
  "fields": [
   {
    "fieldname": "name1",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Name"
+   "label": "Name",
+   "options": "Medical History"
   },
   {
    "fieldname": "note",
@@ -26,7 +27,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-05-11 13:14:43.659740",
+ "modified": "2024-11-18 03:29:30.098498",
  "modified_by": "Administrator",
  "module": "Healthcare Doworks",
  "name": "Infected Diseases Table",

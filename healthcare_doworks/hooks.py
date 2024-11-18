@@ -164,7 +164,7 @@ override_doctype_class = {
     "Patient Encounter": "healthcare_doworks.overrides.patient_encounter.CustomPatientEncounter"
 }
 
-app_include_js = "healthcare_doworks.overrides.healthcare_service_unit.js"
+# app_include_js = "healthcare_doworks.overrides.healthcare_service_unit.js"
 
 # Document Events
 # ---------------

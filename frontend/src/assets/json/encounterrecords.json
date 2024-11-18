@@ -39,6 +39,7 @@
         "blood_group": "",
         "custom_allergies_table": [],
         "custom_infected_diseases": [],
+        "custom_family_history": [],
         "custom_cpr": "",
         "custom_habits__social": [],
         "custom_medications": [],
