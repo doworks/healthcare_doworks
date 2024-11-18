@@ -303,6 +303,7 @@ def submit_encounter(encounter):
 	procedures = frappe.get_list('Clinical Procedure', filters={'custom_patient_encounter': encounter}, pluck='name')
 	for procedure in procedures:
 		procedure_doc = frappe.get_doc('Clinical Procedure', procedure)
+		procedure_doc.status = 'Completed'
 		procedure_doc.submit()
 	return doc
 

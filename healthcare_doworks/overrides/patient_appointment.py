@@ -1,6 +1,6 @@
 import frappe
 import datetime
-from frappe.utils import flt, format_date, get_link_to_form, get_time, getdate
+from frappe.utils import flt, format_date, get_link_to_form, get_time, getdate, now_datetime
 from healthcare.healthcare.doctype.patient_appointment.patient_appointment import PatientAppointment
 
 class CustomPatientAppointment(PatientAppointment):
@@ -14,6 +14,16 @@ class CustomPatientAppointment(PatientAppointment):
 		self.set_title()
 		self.update_event()
 		self.set_postition_in_queue()
+
+	def before_save(self):
+		current_value = self.get('custom_visit_status')
+		old_value = self.get_db_value('custom_visit_status')
+
+		if current_value != old_value:
+			self.append("custom_appointment_time_logs", {
+				"status": current_value,
+				"time": now_datetime()
+			})
 
 	def insert_calendar_event(self):
 		if not self.practitioner:

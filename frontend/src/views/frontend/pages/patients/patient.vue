@@ -972,7 +972,7 @@ export default {
     procedures() { return { 
       type: 'list', 
       doctype: 'Clinical Procedure', 
-      fields: ['name', 'start_date', 'practitioner_name', 'procedure_template', 'status'], 
+      fields: ['name', 'start_date', 'practitioner_name', 'procedure_template', 'custom_patient_encounter', 'status'], 
       filters: {patient: this.$route.params.patientId, ...(this.profileRangeFilter ? {start_date: ['between', [this.startDate, this.endDate]]} : {})},
       auto: true,
       orderBy: 'start_date desc',

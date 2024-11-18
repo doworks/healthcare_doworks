@@ -1342,607 +1342,608 @@
                       </v-col>
                     </v-row>
                   </v-container>
+                  
+                  <Fieldset class="mb-5" legend="Annotations" :toggleable="true">
+                    <v-container>
+                      <v-row>
+                        <v-col>
+                          <div class="d-flex gap-2">
+                            <v-btn class="text-none" variant="flat" color="yellow-darken-1" 
+                            :disabled="records.current_encounter.status == 'Completed'"
+                            @click="() => {
+                              annotationDoctype = encounterForm.doctype; 
+                              encounterAnnotationType='Investigation'; 
+                              procedureActive = true
+                            }">Investigation Annotation</v-btn>
+  
+                            <v-btn class="text-none" variant="flat" color="red-darken-1" 
+                            :disabled="records.current_encounter.status == 'Completed'"
+                            @click="() => {
+                              annotationDoctype = encounterForm.doctype; 
+                              encounterAnnotationType='Treatment'; 
+                              procedureActive = true
+                            }">Treatment Annotation</v-btn>
+                          </div>
+                        </v-col>
+                      </v-row>
+                      <v-row v-if="encounterForm.custom_annotations.some(row => row.type == 'Investigation')">
+                        <v-col>
+                          <h3 class="mt-3">Investigation Annotations</h3>
+                          <Galleria 
+                          :value="encounterForm.custom_annotations.filter(row => row.type == 'Investigation')" 
+                          :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
+                          :numVisible="5" 
+                          :circular="true" 
+                          containerStyle="max-width: 850px" 
+                          :showItemNavigators="true" 
+                          :showThumbnails="false"
+                          :fullScreen="true"
+                          v-model:visible="showInvestigationAnnotations"
+                          v-model:activeIndex="activeIndex"
+                          >
+                            <template #item="slotProps">
+                              <img 
+                              :src="slotProps.item.image" 
+                              :alt="slotProps.item.name" 
+                              style="height: 100%;"
+                              />
+                            </template>
+                            <template #thumbnail="slotProps">
+                              <img :src="slotProps.item.image" :alt="slotProps.item.name" style="display: block" />
+                            </template>
+                          </Galleria>
+                          <v-slide-group
+                            class="pa-4"
+                            selected-class="bg-success"
+                            show-arrows
+                          >
+                            <v-slide-group-item 
+                            v-for="(doc, index) of encounterForm.custom_annotations.filter(row => row.type == 'Investigation')" 
+                            :key="index"
+                            >
+                              <img 
+                              :src="doc.image" 
+                              :alt="doc.name" 
+                              style="cursor: pointer; height: 200px" 
+                              @click="() => {activeIndex = index; showInvestigationAnnotations = true}"
+                              />
+                            </v-slide-group-item>
+                          </v-slide-group>
+                        </v-col>
+                      </v-row>
+                      <v-row v-if="encounterForm.custom_annotations.some(row => row.type == 'Treatment')">
+                        <v-col>
+                          <h3 class="mt-3">Annotations</h3>
+                          <Galleria 
+                          :value="encounterForm.custom_annotations.filter(row => row.type == 'Treatment')" 
+                          :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
+                          :numVisible="5" 
+                          :circular="true" 
+                          containerStyle="max-width: 850px" 
+                          :showItemNavigators="true" 
+                          :showThumbnails="false"
+                          :fullScreen="true"
+                          v-model:visible="showTreatmentAnnotations"
+                          v-model:activeIndex="activeIndex"
+                          >
+                            <template #item="slotProps">
+                              <img 
+                              :src="slotProps.item.image" 
+                              :alt="slotProps.item.name" 
+                              style="height: 100%;"
+                              />
+                            </template>
+                            <template #thumbnail="slotProps">
+                              <img :src="slotProps.item.image" :alt="slotProps.item.name" style="display: block" />
+                            </template>
+                          </Galleria>
+                          <v-slide-group
+                            class="pa-4"
+                            selected-class="bg-success"
+                            show-arrows
+                          >
+                            <v-slide-group-item 
+                            v-for="(doc, index) of encounterForm.custom_annotations.filter(row => row.type == 'Treatment')" 
+                            :key="index"
+                            >
+                              <img 
+                              :src="doc.image" 
+                              :alt="doc.name" 
+                              style="cursor: pointer; height: 200px" 
+                              @click="() => {activeIndex = index; showTreatmentAnnotations = true}"
+                              />
+                            </v-slide-group-item>
+                          </v-slide-group>
+                        </v-col>
+                      </v-row>
+                    </v-container>
+                  </Fieldset>
+  
+                  <Fieldset legend="Plan" :toggleable="true">
+                    <v-container>
+                      <v-row>
+                        <v-col>
+                          <h5>Medications</h5>
+                          <EditableTable :columns="[
+                            {label: 'Medicine', key: 'medication'},
+                            {label: 'Frequency', key: 'dosage'},
+                            {label: 'Duration', key: 'period'},
+                            {label: 'Note', key: 'comment'},
+                          ]"
+                          :rows="encounterForm.drug_prescription"
+                          @update="(items, row, isNew) => {
+                            if(items && row)
+                              newChildRow({
+                                fieldName: 'drug_prescription', 
+                                rules: {
+                                  medication: [{ required: true, message: 'Please choose a medicine!' }],
+                                  drug_code: [{ required: true, message: 'Please choose a drug code!' }],
+                                  dosage_form: [{ required: true, message: 'Please choose a dosage form!' }],
+                                  dosage: [{ required: !row.dosage_by_interval, message: 'Please choose a dosage!' }],
+                                  interval: [{ required: row.dosage_by_interval, message: 'Please choose a interval!' }],
+                                  interval_uom: [{ required: row.dosage_by_interval, message: 'Please choose a interval uom!' }],
+                                  period: [{ required: true, message: 'Please choose a period!' }],
+                                },
+                                items, row, isNew
+                              })
+                          }"
+                          @delete="rows => {deleteChildRow({fieldName: 'drug_prescription', rows})}"
+                          dialogWidth="fit-content"
+                          title="Medication"
+                          >
+                            <template v-slot:dialog="{ row }">
+                              <a-form layout="vertical">
+                                <v-container>
+                                  <v-row>
+                                    <v-col cols="12">
+                                      <a-form-item label="Medicine">
+                                        <a-select
+                                        v-model:value="row.medication"
+                                        :options="$resources.medications.data?.options"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        @change="(value, option) => {
+                                          // row.strength = option.strength
+                                          // row.strength_uom = option.strength_uom
+                                          // row.dosage_form = option.dosage_form
+                                          row.dosage = option.default_prescription_dosage
+                                          row.period = option.default_prescription_duration
+                                        }"
+                                        show-search
+                                        :loading="$resources.medications.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.medications, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <!-- <a-form-item label="Drug Code">
+                                        <a-select
+                                        v-model:value="row.drug_code"
+                                        :options="$resources.items.data?.options.filter(item => item.name = row.medication)"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.items.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.items, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item> -->
+                                      <!-- <a-form-item label="Drug Name / Description">
+                                        <a-input v-model:value="row.drug_name" disabled/>
+                                      </a-form-item> -->
+                                      <!-- <a-form-item label="Strength">
+                                        <a-input v-model:value="row.strength" disabled/>
+                                      </a-form-item> -->
+                                      <!-- <a-form-item label="Strength UOM">
+                                        <a-input v-model:value="row.strength_uom" disabled/>
+                                      </a-form-item> -->
+                                      <!-- <a-form-item label="Dosage Form">
+                                        <a-select
+                                        v-model:value="row.dosage_form"
+                                        :options="$resources.dosageForms.data?.options"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.dosageForms.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.dosageForms, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item> -->
+                                      <!-- <a-checkbox v-model:checked="row.dosage_by_interval">Dosage by Time Interval</a-checkbox> -->
+                                      <a-form-item label="Frequency">
+                                        <a-select
+                                        v-model:value="row.dosage"
+                                        :options="$resources.dosages.data?.options"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.dosages.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.dosages, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <!-- <a-form-item label="Interval" v-if="row.dosage_by_interval">
+                                        <a-input v-model:value="row.interval"/>
+                                      </a-form-item>
+                                      <a-form-item label="Interval UOM" v-if="row.dosage_by_interval">
+                                        <a-select
+                                        v-model:value="row.interval_uom"
+                                        :options="[{label: '', value: ''}, {label: 'Hour', value: 'Hour'}, {label: 'Day', value: 'Day'}]"
+                                        ></a-select>
+                                      </a-form-item> -->
+                                      <a-form-item label="Duration">
+                                        <a-select
+                                        v-model:value="row.period"
+                                        :options="$resources.prescriptionDurations.data?.options"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.prescriptionDurations.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.prescriptionDurations, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <!-- <a-form-item label="Number Of Repeats Allowed">
+                                        <a-input v-model:value="row.number_of_repeats_allowed"/>
+                                      </a-form-item> -->
+                                    </v-col>
+                                  </v-row>
+                                  <!-- <v-divider></v-divider>
+                                  <v-row>
+                                    <v-col cols="12" lg="6">
+                                      <a-form-item label="Intent">
+                                        <a-select
+                                        v-model:value="row.intent"
+                                        :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Intent')"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.codeValues.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.codeValues, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <a-form-item label="Priority">
+                                        <a-select
+                                        v-model:value="row.priority"
+                                        :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Priority')"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.codeValues.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.codeValues, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <a-form-item label="Medication Request" v-if="row.medication_request">
+                                        <a-input v-model:value="row.medication_request" disabled/>
+                                      </a-form-item>
+                                    </v-col>
+                                  </v-row> -->
+                                  <v-divider></v-divider>
+                                  <v-row>
+                                    <v-col>
+                                      <a-form-item label="Note">
+                                        <a-textarea v-model:value="row.comment" :rows="4"/>
+                                      </a-form-item>
+                                    </v-col>
+                                  </v-row>
+                                </v-container>
+                              </a-form>
+                            </template>
+                          </EditableTable>
+                        </v-col>
+                      </v-row>
+                      <v-divider></v-divider>
+                      <v-row>
+                        <v-col>
+                          <h5>Thrapies</h5>
+                          <EditableTable :columns="[
+                            {label: 'Therapy Type', key: 'therapy_type'},
+                            {label: 'No of Sessions', key: 'no_of_sessions'},
+                          ]"
+                          :rows="encounterForm.therapies"
+                          @update="(items, row, isNew) => {
+                            if(items && row)
+                              newChildRow({
+                                fieldName: 'custom_allergies_table', 
+                                rules: {therapy_type: [{ required: true, message: 'Please choose a therapy_type!' }]},
+                                items, row, isNew
+                              })
+                          }"
+                          @delete="rows => {deleteChildRow({fieldName: 'therapies', rows})}"
+                          dialogWidth="fit-content"
+                          title="Therapy"
+                          >
+                            <template v-slot:dialog="{ row }">
+                              <a-form layout="vertical">
+                                <v-container>
+                                  <v-row>
+                                    <v-col cols="12" lg="6">
+                                      <a-form-item label="Therapy Type">
+                                        <a-select
+                                        v-model:value="row.therapy_type"
+                                        :options="$resources.therapyTypes.data?.options"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.therapyTypes.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.therapyTypes, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <a-form-item label="No of Sessions">
+                                        <a-input v-model:value="row.no_of_sessions"/>
+                                      </a-form-item>
+                                    </v-col>
+                                  </v-row>
+                                  <v-divider></v-divider>
+                                  <v-row>
+                                    <v-col cols="12" lg="6">
+                                      <a-form-item label="Patient Care Type">
+                                        <a-select
+                                        v-model:value="row.patient_care_type"
+                                        :options="$resources.patientCareTypes.data?.optins"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.patientCareTypes.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.patientCareTypes, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                    </v-col>
+                                    <v-col cols="12" lg="6">
+                                      <a-form-item label="Intent">
+                                        <a-select
+                                        v-model:value="row.intent"
+                                        :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Intent')"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.codeValues.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.codeValues, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <a-form-item label="Priority">
+                                        <a-select
+                                        v-model:value="row.priority"
+                                        :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Priority')"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.codeValues.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.codeValues, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                    </v-col>
+                                  </v-row>
+                                </v-container>
+                              </a-form>
+                            </template>
+                          </EditableTable>
+                        </v-col>
+                      </v-row>
+                      <v-divider></v-divider>
+                      <v-row>
+                        <v-col>
+                          <h5>Procedures</h5>
+                          <EditableTable :columns="[
+                            {label: 'Clinical Procedure', key: 'procedure'},
+                            {label: 'Procedure Name', key: 'procedure_name'},
+                            {label: 'Referring Practitioner', key: 'practitioner'},
+                            {label: 'Date', key: 'date'},
+                          ]"
+                          :rows="encounterForm.procedure_prescription"
+                          @update="(items, row, isNew) => {
+                            if(items && row)
+                              newChildRow({
+                                fieldName: 'procedure_prescription', 
+                                rules: {procedure: [{ required: true, message: 'Please choose a procedure!' }]},
+                                items, row, isNew
+                              })
+                          }"
+                          @delete="rows => {deleteChildRow({fieldName: 'procedure_prescription', rows})}"
+                          dialogWidth="fit-content"
+                          title="Procedure"
+                          >
+                            <template v-slot:dialog="{ row }">
+                              <a-form layout="vertical">
+                                <v-container>
+                                  <v-row>
+                                    <v-col cols="12" lg="6">
+                                      <a-form-item label="Clinical Procedure">
+                                        <a-select
+                                        v-model:value="row.procedure"
+                                        :options="$resources.clinicalProcedureTemplates.data?.options"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        @change="(value, option) => {
+                                          row.procedure_name = option.template
+                                          row.department = medical_department
+                                        }"
+                                        show-search
+                                        :loading="$resources.clinicalProcedureTemplates.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.clinicalProcedureTemplates, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <a-form-item label="Procedure Name">
+                                        <a-input v-model:value="row.procedure_name"/>
+                                      </a-form-item>
+                                      <a-form-item label="Department">
+                                        <a-select
+                                        v-model:value="row.department"
+                                        :options="$resources.departments.data?.options"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.departments.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.departments, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <a-form-item label="Referring Practitioner">
+                                        <a-select
+                                        v-model:value="row.practitioner"
+                                        :options="$resources.practitioners.data?.options"
+                                        :fieldNames="{label: 'practitioner_name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.practitioners.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.practitioners, 
+                                          {status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
+                                          {status: 'Active'},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <a-form-item label="Service Request" v-if="row.service_request">
+                                        <a-input v-model:value="row.service_request" disabled/>
+                                      </a-form-item>
+                                    </v-col>
+                                    <v-col cols="12" lg="6">
+                                      <a-form-item label="Date">
+                                        <a-date-picker v-model:value="row.date" format="DD/MM/YYYY" class="w-full"/>
+                                      </a-form-item>
+                                      <a-form-item label="Comments">
+                                        <a-textarea v-model:value="row.comments" :rows="4"/>
+                                      </a-form-item>
+                                    </v-col>
+                                  </v-row>
+                                  <v-divider></v-divider>
+                                  <v-row>
+                                    <v-col cols="12" lg="6">
+                                      <a-form-item label="Patient Care Type">
+                                        <a-select
+                                        v-model:value="row.patient_care_type"
+                                        :options="$resources.patientCareTypes.data?.options"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.patientCareTypes.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.patientCareTypes, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                    </v-col>
+                                    <v-col cols="12" lg="6">
+                                      <a-form-item label="Intent">
+                                        <a-select
+                                        v-model:value="row.intent"
+                                        :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Intent')"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.codeValues.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.codeValues, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                      <a-form-item label="Priority">
+                                        <a-select
+                                        v-model:value="row.priority"
+                                        :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Priority')"
+                                        :fieldNames="{label: 'name', value: 'name'}"
+                                        show-search
+                                        :loading="$resources.codeValues.list.loading"
+                                        @search="(value) => {handleSearch(
+                                          value, 
+                                          $resources.codeValues, 
+                                          {name: ['like', `%${value}%`]}, 
+                                          {},
+                                        )}"
+                                        :filterOption="false"
+                                        ></a-select>
+                                      </a-form-item>
+                                    </v-col>
+                                  </v-row>
+                                </v-container>
+                              </a-form>
+                            </template>
+                          </EditableTable>
+                        </v-col>
+                      </v-row>
+                      <v-divider></v-divider>
+                      <v-row>
+                        <v-col>
+                          <a-form-item label="Follow Up">
+                            <a-textarea 
+                            :disabled="records.current_encounter.status == 'Completed'"
+                            v-model:value="encounterForm.custom_follow_up" 
+                            :rows="4" 
+                            @blur="event => {
+                              autoSave('Patient Encounter', encounterForm.name, 'custom_follow_up', event.target.value)
+                            }"/>
+                          </a-form-item>
+                        </v-col>
+                      </v-row>
+                    </v-container>
+                  </Fieldset>
                 </div>
 
-                <Fieldset class="mb-5" legend="Annotations" :toggleable="true">
-                  <v-container>
-                    <v-row>
-                      <v-col>
-                        <div class="d-flex gap-2">
-                          <v-btn class="text-none" variant="flat" color="yellow-darken-1" 
-                          :disabled="records.current_encounter.status == 'Completed'"
-                          @click="() => {
-                            annotationDoctype = encounterForm.doctype; 
-                            encounterAnnotationType='Investigation'; 
-                            procedureActive = true
-                          }">Investigation Annotation</v-btn>
-
-                          <v-btn class="text-none" variant="flat" color="red-darken-1" 
-                          :disabled="records.current_encounter.status == 'Completed'"
-                          @click="() => {
-                            annotationDoctype = encounterForm.doctype; 
-                            encounterAnnotationType='Treatment'; 
-                            procedureActive = true
-                          }">Treatment Annotation</v-btn>
-                        </div>
-                      </v-col>
-                    </v-row>
-                    <v-row v-if="encounterForm.custom_annotations.some(row => row.type == 'Investigation')">
-                      <v-col>
-                        <h3 class="mt-3">Investigation Annotations</h3>
-                        <Galleria 
-                        :value="encounterForm.custom_annotations.filter(row => row.type == 'Investigation')" 
-                        :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
-                        :numVisible="5" 
-                        :circular="true" 
-                        containerStyle="max-width: 850px" 
-                        :showItemNavigators="true" 
-                        :showThumbnails="false"
-                        :fullScreen="true"
-                        v-model:visible="showInvestigationAnnotations"
-                        v-model:activeIndex="activeIndex"
-                        >
-                          <template #item="slotProps">
-                            <img 
-                            :src="slotProps.item.image" 
-                            :alt="slotProps.item.name" 
-                            style="height: 100%;"
-                            />
-                          </template>
-                          <template #thumbnail="slotProps">
-                            <img :src="slotProps.item.image" :alt="slotProps.item.name" style="display: block" />
-                          </template>
-                        </Galleria>
-                        <v-slide-group
-                          class="pa-4"
-                          selected-class="bg-success"
-                          show-arrows
-                        >
-                          <v-slide-group-item 
-                          v-for="(doc, index) of encounterForm.custom_annotations.filter(row => row.type == 'Investigation')" 
-                          :key="index"
-                          >
-                            <img 
-                            :src="doc.image" 
-                            :alt="doc.name" 
-                            style="cursor: pointer; height: 200px" 
-                            @click="() => {activeIndex = index; showInvestigationAnnotations = true}"
-                            />
-                          </v-slide-group-item>
-                        </v-slide-group>
-                      </v-col>
-                    </v-row>
-                    <v-row v-if="encounterForm.custom_annotations.some(row => row.type == 'Treatment')">
-                      <v-col>
-                        <h3 class="mt-3">Annotations</h3>
-                        <Galleria 
-                        :value="encounterForm.custom_annotations.filter(row => row.type == 'Treatment')" 
-                        :responsiveOptions="[{breakpoint: '1300px', numVisible: 4}, {breakpoint: '575px', numVisible: 1}]" 
-                        :numVisible="5" 
-                        :circular="true" 
-                        containerStyle="max-width: 850px" 
-                        :showItemNavigators="true" 
-                        :showThumbnails="false"
-                        :fullScreen="true"
-                        v-model:visible="showTreatmentAnnotations"
-                        v-model:activeIndex="activeIndex"
-                        >
-                          <template #item="slotProps">
-                            <img 
-                            :src="slotProps.item.image" 
-                            :alt="slotProps.item.name" 
-                            style="height: 100%;"
-                            />
-                          </template>
-                          <template #thumbnail="slotProps">
-                            <img :src="slotProps.item.image" :alt="slotProps.item.name" style="display: block" />
-                          </template>
-                        </Galleria>
-                        <v-slide-group
-                          class="pa-4"
-                          selected-class="bg-success"
-                          show-arrows
-                        >
-                          <v-slide-group-item 
-                          v-for="(doc, index) of encounterForm.custom_annotations.filter(row => row.type == 'Treatment')" 
-                          :key="index"
-                          >
-                            <img 
-                            :src="doc.image" 
-                            :alt="doc.name" 
-                            style="cursor: pointer; height: 200px" 
-                            @click="() => {activeIndex = index; showTreatmentAnnotations = true}"
-                            />
-                          </v-slide-group-item>
-                        </v-slide-group>
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </Fieldset>
-
-                <Fieldset legend="Plan" :toggleable="true">
-                  <v-container>
-                    <v-row>
-                      <v-col>
-                        <h5>Medications</h5>
-                        <EditableTable :columns="[
-                          {label: 'Medicine', key: 'medication'},
-                          {label: 'Frequency', key: 'dosage'},
-                          {label: 'Duration', key: 'period'},
-                          {label: 'Note', key: 'comment'},
-                        ]"
-                        :rows="encounterForm.drug_prescription"
-                        @update="(items, row, isNew) => {
-                          if(items && row)
-                            newChildRow({
-                              fieldName: 'drug_prescription', 
-                              rules: {
-                                medication: [{ required: true, message: 'Please choose a medicine!' }],
-                                drug_code: [{ required: true, message: 'Please choose a drug code!' }],
-                                dosage_form: [{ required: true, message: 'Please choose a dosage form!' }],
-                                dosage: [{ required: !row.dosage_by_interval, message: 'Please choose a dosage!' }],
-                                interval: [{ required: row.dosage_by_interval, message: 'Please choose a interval!' }],
-                                interval_uom: [{ required: row.dosage_by_interval, message: 'Please choose a interval uom!' }],
-                                period: [{ required: true, message: 'Please choose a period!' }],
-                              },
-                              items, row, isNew
-                            })
-                        }"
-                        @delete="rows => {deleteChildRow({fieldName: 'drug_prescription', rows})}"
-                        dialogWidth="fit-content"
-                        title="Medication"
-                        >
-                          <template v-slot:dialog="{ row }">
-                            <a-form layout="vertical">
-                              <v-container>
-                                <v-row>
-                                  <v-col cols="12">
-                                    <a-form-item label="Medicine">
-                                      <a-select
-                                      v-model:value="row.medication"
-                                      :options="$resources.medications.data?.options"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      @change="(value, option) => {
-                                        // row.strength = option.strength
-                                        // row.strength_uom = option.strength_uom
-                                        // row.dosage_form = option.dosage_form
-                                        row.dosage = option.default_prescription_dosage
-                                        row.period = option.default_prescription_duration
-                                      }"
-                                      show-search
-                                      :loading="$resources.medications.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.medications, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <!-- <a-form-item label="Drug Code">
-                                      <a-select
-                                      v-model:value="row.drug_code"
-                                      :options="$resources.items.data?.options.filter(item => item.name = row.medication)"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.items.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.items, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item> -->
-                                    <!-- <a-form-item label="Drug Name / Description">
-                                      <a-input v-model:value="row.drug_name" disabled/>
-                                    </a-form-item> -->
-                                    <!-- <a-form-item label="Strength">
-                                      <a-input v-model:value="row.strength" disabled/>
-                                    </a-form-item> -->
-                                    <!-- <a-form-item label="Strength UOM">
-                                      <a-input v-model:value="row.strength_uom" disabled/>
-                                    </a-form-item> -->
-                                    <!-- <a-form-item label="Dosage Form">
-                                      <a-select
-                                      v-model:value="row.dosage_form"
-                                      :options="$resources.dosageForms.data?.options"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.dosageForms.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.dosageForms, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item> -->
-                                    <!-- <a-checkbox v-model:checked="row.dosage_by_interval">Dosage by Time Interval</a-checkbox> -->
-                                    <a-form-item label="Frequency">
-                                      <a-select
-                                      v-model:value="row.dosage"
-                                      :options="$resources.dosages.data?.options"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.dosages.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.dosages, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <!-- <a-form-item label="Interval" v-if="row.dosage_by_interval">
-                                      <a-input v-model:value="row.interval"/>
-                                    </a-form-item>
-                                    <a-form-item label="Interval UOM" v-if="row.dosage_by_interval">
-                                      <a-select
-                                      v-model:value="row.interval_uom"
-                                      :options="[{label: '', value: ''}, {label: 'Hour', value: 'Hour'}, {label: 'Day', value: 'Day'}]"
-                                      ></a-select>
-                                    </a-form-item> -->
-                                    <a-form-item label="Duration">
-                                      <a-select
-                                      v-model:value="row.period"
-                                      :options="$resources.prescriptionDurations.data?.options"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.prescriptionDurations.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.prescriptionDurations, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <!-- <a-form-item label="Number Of Repeats Allowed">
-                                      <a-input v-model:value="row.number_of_repeats_allowed"/>
-                                    </a-form-item> -->
-                                  </v-col>
-                                </v-row>
-                                <!-- <v-divider></v-divider>
-                                <v-row>
-                                  <v-col cols="12" lg="6">
-                                    <a-form-item label="Intent">
-                                      <a-select
-                                      v-model:value="row.intent"
-                                      :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Intent')"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.codeValues.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.codeValues, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <a-form-item label="Priority">
-                                      <a-select
-                                      v-model:value="row.priority"
-                                      :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Priority')"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.codeValues.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.codeValues, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <a-form-item label="Medication Request" v-if="row.medication_request">
-                                      <a-input v-model:value="row.medication_request" disabled/>
-                                    </a-form-item>
-                                  </v-col>
-                                </v-row> -->
-                                <v-divider></v-divider>
-                                <v-row>
-                                  <v-col>
-                                    <a-form-item label="Note">
-                                      <a-textarea v-model:value="row.comment" :rows="4"/>
-                                    </a-form-item>
-                                  </v-col>
-                                </v-row>
-                              </v-container>
-                            </a-form>
-                          </template>
-                        </EditableTable>
-                      </v-col>
-                    </v-row>
-                    <v-divider></v-divider>
-                    <v-row>
-                      <v-col>
-                        <h5>Thrapies</h5>
-                        <EditableTable :columns="[
-                          {label: 'Therapy Type', key: 'therapy_type'},
-                          {label: 'No of Sessions', key: 'no_of_sessions'},
-                        ]"
-                        :rows="encounterForm.therapies"
-                        @update="(items, row, isNew) => {
-                          if(items && row)
-                            newChildRow({
-                              fieldName: 'custom_allergies_table', 
-                              rules: {therapy_type: [{ required: true, message: 'Please choose a therapy_type!' }]},
-                              items, row, isNew
-                            })
-                        }"
-                        @delete="rows => {deleteChildRow({fieldName: 'therapies', rows})}"
-                        dialogWidth="fit-content"
-                        title="Therapy"
-                        >
-                          <template v-slot:dialog="{ row }">
-                            <a-form layout="vertical">
-                              <v-container>
-                                <v-row>
-                                  <v-col cols="12" lg="6">
-                                    <a-form-item label="Therapy Type">
-                                      <a-select
-                                      v-model:value="row.therapy_type"
-                                      :options="$resources.therapyTypes.data?.options"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.therapyTypes.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.therapyTypes, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <a-form-item label="No of Sessions">
-                                      <a-input v-model:value="row.no_of_sessions"/>
-                                    </a-form-item>
-                                  </v-col>
-                                </v-row>
-                                <v-divider></v-divider>
-                                <v-row>
-                                  <v-col cols="12" lg="6">
-                                    <a-form-item label="Patient Care Type">
-                                      <a-select
-                                      v-model:value="row.patient_care_type"
-                                      :options="$resources.patientCareTypes.data?.optins"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.patientCareTypes.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.patientCareTypes, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                  </v-col>
-                                  <v-col cols="12" lg="6">
-                                    <a-form-item label="Intent">
-                                      <a-select
-                                      v-model:value="row.intent"
-                                      :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Intent')"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.codeValues.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.codeValues, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <a-form-item label="Priority">
-                                      <a-select
-                                      v-model:value="row.priority"
-                                      :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Priority')"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.codeValues.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.codeValues, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                  </v-col>
-                                </v-row>
-                              </v-container>
-                            </a-form>
-                          </template>
-                        </EditableTable>
-                      </v-col>
-                    </v-row>
-                    <v-divider></v-divider>
-                    <v-row>
-                      <v-col>
-                        <h5>Procedures</h5>
-                        <EditableTable :columns="[
-                          {label: 'Clinical Procedure', key: 'procedure'},
-                          {label: 'Procedure Name', key: 'procedure_name'},
-                          {label: 'Referring Practitioner', key: 'practitioner'},
-                          {label: 'Date', key: 'date'},
-                        ]"
-                        :rows="encounterForm.procedure_prescription"
-                        @update="(items, row, isNew) => {
-                          if(items && row)
-                            newChildRow({
-                              fieldName: 'procedure_prescription', 
-                              rules: {procedure: [{ required: true, message: 'Please choose a procedure!' }]},
-                              items, row, isNew
-                            })
-                        }"
-                        @delete="rows => {deleteChildRow({fieldName: 'procedure_prescription', rows})}"
-                        dialogWidth="fit-content"
-                        title="Procedure"
-                        >
-                          <template v-slot:dialog="{ row }">
-                            <a-form layout="vertical">
-                              <v-container>
-                                <v-row>
-                                  <v-col cols="12" lg="6">
-                                    <a-form-item label="Clinical Procedure">
-                                      <a-select
-                                      v-model:value="row.procedure"
-                                      :options="$resources.clinicalProcedureTemplates.data?.options"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      @change="(value, option) => {
-                                        row.procedure_name = option.template
-                                        row.department = medical_department
-                                      }"
-                                      show-search
-                                      :loading="$resources.clinicalProcedureTemplates.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.clinicalProcedureTemplates, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <a-form-item label="Procedure Name">
-                                      <a-input v-model:value="row.procedure_name"/>
-                                    </a-form-item>
-                                    <a-form-item label="Department">
-                                      <a-select
-                                      v-model:value="row.department"
-                                      :options="$resources.departments.data?.options"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.departments.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.departments, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <a-form-item label="Referring Practitioner">
-                                      <a-select
-                                      v-model:value="row.practitioner"
-                                      :options="$resources.practitioners.data?.options"
-                                      :fieldNames="{label: 'practitioner_name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.practitioners.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.practitioners, 
-                                        {status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
-                                        {status: 'Active'},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <a-form-item label="Service Request" v-if="row.service_request">
-                                      <a-input v-model:value="row.service_request" disabled/>
-                                    </a-form-item>
-                                  </v-col>
-                                  <v-col cols="12" lg="6">
-                                    <a-form-item label="Date">
-                                      <a-date-picker v-model:value="row.date" format="DD/MM/YYYY" class="w-full"/>
-                                    </a-form-item>
-                                    <a-form-item label="Comments">
-                                      <a-textarea v-model:value="row.comments" :rows="4"/>
-                                    </a-form-item>
-                                  </v-col>
-                                </v-row>
-                                <v-divider></v-divider>
-                                <v-row>
-                                  <v-col cols="12" lg="6">
-                                    <a-form-item label="Patient Care Type">
-                                      <a-select
-                                      v-model:value="row.patient_care_type"
-                                      :options="$resources.patientCareTypes.data?.options"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.patientCareTypes.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.patientCareTypes, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                  </v-col>
-                                  <v-col cols="12" lg="6">
-                                    <a-form-item label="Intent">
-                                      <a-select
-                                      v-model:value="row.intent"
-                                      :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Intent')"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.codeValues.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.codeValues, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                    <a-form-item label="Priority">
-                                      <a-select
-                                      v-model:value="row.priority"
-                                      :options="$resources.codeValues.data?.options.filter(value => value.code_system == 'Priority')"
-                                      :fieldNames="{label: 'name', value: 'name'}"
-                                      show-search
-                                      :loading="$resources.codeValues.list.loading"
-                                      @search="(value) => {handleSearch(
-                                        value, 
-                                        $resources.codeValues, 
-                                        {name: ['like', `%${value}%`]}, 
-                                        {},
-                                      )}"
-                                      :filterOption="false"
-                                      ></a-select>
-                                    </a-form-item>
-                                  </v-col>
-                                </v-row>
-                              </v-container>
-                            </a-form>
-                          </template>
-                        </EditableTable>
-                      </v-col>
-                    </v-row>
-                    <v-divider></v-divider>
-                    <v-row>
-                      <v-col>
-                        <a-form-item label="Follow Up">
-                          <a-textarea 
-                          :disabled="records.current_encounter.status == 'Completed'"
-                          v-model:value="encounterForm.custom_follow_up" 
-                          :rows="4" 
-                          @blur="event => {
-                            autoSave('Patient Encounter', encounterForm.name, 'custom_follow_up', event.target.value)
-                          }"/>
-                        </a-form-item>
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </Fieldset>
               </a-form>
               <div v-else>
                 <Accordion :value="['0', ...(procedureForms[0].name ? ['1'] : [])]" multiple>

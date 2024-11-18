@@ -603,7 +603,6 @@ export default {
 						...(this.selectedRow?.custom_confirmed ? [{label: 'Unconfirmed', command: ({ item }) => this.changeConfirmation(0)}] : 
 							[{label: 'Confirmed', command: ({ item }) => this.changeConfirmation(1)}]
 						),
-						...(this.tab !== 'cancelled' ? [{label: 'Cancelled', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'scheduled' ? [{label: 'Scheduled', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'arrived' ? [{label: 'Arrived', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'ready' ? [{label: 'Ready', command: ({ item }) => this.updateStatus(item)}] : []),
