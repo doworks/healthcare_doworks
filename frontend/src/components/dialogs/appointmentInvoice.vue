@@ -185,22 +185,11 @@
             <v-card-text>
               <a-form layout="vertical">
                 <a-form-item label="Tax Template">
-                  <a-select
-                  v-model:value="taxTemplate"
-                  :options="$resources.taxTemplates.data?.options"
-                  @change="value => {getPrices(value)}"
-                  :fieldNames="{label: 'name', value: 'name'}"
-                  style="min-width: 400px; max-width: 600px;"
-                  show-search
-                  :loading="$resources.taxTemplates.list.loading"
-                  @search="(value) => {handleSearch(
-                    value, 
-                    $resources.taxTemplates, 
-                    {name: ['like', `%${value}%`]}, 
-                    {},
-                  )}"
-                  :filterOption="false"
-                  ></a-select>
+                  <LinkField 
+                  doctype="Sales Taxes and Charges Template" 
+                  :value="taxTemplate" 
+                  @change="(data) => { taxTemplate = data }"
+                  />
                 </a-form-item>
                 <a-form-item label="Total (BHD)" v-if="mockInvoice?.total" >
                   <a-input class="w-full" disabled v-model:value="mockInvoice.total"/>
@@ -213,22 +202,11 @@
                 </a-form-item>
                 <v-divider class="m-0"></v-divider>
                 <a-form-item label="POS Profile">
-                  <a-select
-                  v-model:value="posProfile"
-                  :options="$resources.posProfiles.data?.options"
-                  @change="value => {getPaymentMethods(value)}"
-                  :fieldNames="{label: 'name', value: 'name'}"
-                  style="min-width: 400px; max-width: 600px;"
-                  show-search
-                  :loading="$resources.posProfiles.list.loading"
-                  @search="(value) => {handleSearch(
-                    value, 
-                    $resources.posProfiles, 
-                    {item_name: ['like', `%${value}%`]}, 
-                    {},
-                  )}"
-                  :filterOption="false"
-                  ></a-select>
+                  <LinkField 
+                  doctype="POS Profile" 
+                  :value="posProfile" 
+                  @change="(data) => { posProfile = data }"
+                  />
                 </a-form-item>
                 <!-- <a-form-item label="Amount" v-if="paymentMethods.length > 0" >
                   <a-input-number 
@@ -307,29 +285,18 @@
             <v-card-text>
               <a-form layout="vertical">
                 <a-form-item label="Mode of Payment">
-                  <a-select
-                  v-model:value="modeOfPayment"
-                  :options="$resources.modeOfPayments.data?.options"
-                  @change="(value, option) => {paymentType = option.type}"
-                  :fieldNames="{label: 'name', value: 'name'}"
-                  style="min-width: 400px; max-width: 600px;"
-                  show-search
-                  :loading="$resources.modeOfPayments.list.loading"
-                  @search="(value) => {handleSearch(
-                    value, 
-                    $resources.modeOfPayments, 
-                    {item_name: ['like', `%${value}%`]}, 
-                    {},
-                  )}"
-                  :filterOption="false"
-                  ></a-select>
+                  <LinkField 
+                  doctype="POS Profile" 
+                  :value="modeOfPayment" 
+                  @change="(data) => { modeOfPayment = data}"
+                  />
                 </a-form-item>
 
-                <a-form-item label="Cheque/Reference No" v-if="paymentType == 'Bank'">
+                <a-form-item label="Cheque/Reference No">
                   <a-input v-model:value="referenceNo" style="min-width: 400px; max-width: 600px;"/>
                 </a-form-item>
 
-                <a-form-item label="Cheque/Reference Date" v-if="paymentType == 'Bank'">
+                <a-form-item label="Cheque/Reference Date">
                   <a-input v-model:value="referenceDate" style="min-width: 400px; max-width: 600px;"/>
                 </a-form-item>
               </a-form>
@@ -423,54 +390,6 @@ export default {
       orderBy: 'name',
       pageLength: 10,
       url: 'healthcare_doworks.api.methods.get_invoice_items', 
-    }},
-    modeOfPayments() { return { 
-      type: 'list', 
-      doctype: 'Mode of Payment', 
-      fields: ['name', 'type'], 
-      auto: true,
-      orderBy: 'name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    posProfiles() { return { 
-      type: 'list', 
-      doctype: 'POS Profile', 
-      fields: ['name'], 
-      auto: true,
-      orderBy: 'name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    taxTemplates() { return { 
-      type: 'list', 
-      doctype: 'Sales Taxes and Charges Template', 
-      fields: ['name'], 
-      auto: true,
-      orderBy: 'name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
     }},
   },
   computed: {
@@ -723,34 +642,6 @@ export default {
           console.log('error', err);
         });
       })
-    },
-    transformData (keys, values) {
-      return values.map(row => {
-        const obj = {};
-        keys.forEach((key, index) => {
-          obj[key] = row[index];  // Map each key to its corresponding value
-        });
-        return obj;
-      });
-    },
-    handleSearch(query, resource, filters, initialFilters, orFilters) {
-      // Clear the previous timeout to avoid spamming requests
-      clearTimeout(this.searchTimeout);
-
-      // Set a new timeout (300ms) for debouncing
-      this.searchTimeout = setTimeout(() => {
-        if (query) {
-          // Update list resource options to fetch matching records from server
-          resource.update({filters, orFilters});
-
-          // Fetch the updated results
-          resource.reload();
-        } else {
-          // If no search query, load initial records
-          resource.update({filters: initialFilters, orFilters});
-          resource.reload();
-        }
-      }, 300);  // Debounce delay of 300ms
     },
   },
 };

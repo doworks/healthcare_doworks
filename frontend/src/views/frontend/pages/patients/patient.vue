@@ -54,21 +54,11 @@
                     <a-input v-model:value="form.custom_cpr" />
                   </a-form-item>
                   <a-form-item label="Gender" name="sex">
-                    <a-select 
-                    v-model:value="form.sex" 
-                    :options="$resources.genders.data?.options" 
-                    :fieldNames="{label: 'gender', value: 'gender'}"
-                    allowClear
-                    show-search
-                    :loading="$resources.genders.list.loading"
-                    @search="(value) => {handleSearch(
-                      value, 
-                      $resources.genders, 
-                      {gender: ['like', `%${value}%`]}, 
-                      {},
-                    )}"
-                    :filterOption="false"
-                    ></a-select>
+                    <LinkField 
+                    doctype="Gender" 
+                    :value="form.sex" 
+                    @change="(data) => { form.sex = data }"
+                    />
                   </a-form-item>
                   <a-form-item label="Blood Group" name="blood_group">
                     <a-select 
@@ -99,22 +89,11 @@
                     <a-input v-model:value="form.custom_file_number" />
                   </a-form-item>
                   <a-form-item label="Inpatient Record" name="inpatient_record" >
-                    <a-select 
-                    v-model:value="form.inpatient_record" 
-                    :options="$resources.inpatientRecords.data?.options" 
-                    :fieldNames="{label: 'name', value: 'name'}"
-                    allowClear
-                    show-search
-                    :loading="$resources.inpatientRecords.list.loading"
-                    @search="(value) => {handleSearch(
-                      value, 
-                      $resources.inpatientRecords, 
-                      {name: ['like', `%${value}%`]}, 
-                      {},
-                    )}"
-                    :filterOption="false"
-                    >
-                  </a-select>
+                  <LinkField 
+                    doctype="Inpatient Record" 
+                    :value="form.inpatient_record" 
+                    @change="(data) => { form.inpatient_record = data }"
+                    />
                   </a-form-item>
                   <a-form-item label="Inpatient Status" name="inpatient_status">
                     <a-select 
@@ -186,22 +165,12 @@
                 <v-col cols="12">
                   <a-checkbox class="mb-3" v-model:checked="form.custom_active">Active</a-checkbox>
                   <a-form-item label="Insurance Company Name">
-                    <a-select
-                    v-model:value="form.custom_insurance_company_name"
-                    style="width: 100%;"
-                    :options="$resources.customers.data?.options"
-                    :fieldNames="{label:'customer_name', value: 'name'}"
-                    show-search
-                    :loading="$resources.customers.list.loading"
-                    @search="(value) => {handleSearch(
-                      value, 
-                      $resources.customers, 
-                      {customer_group: 'Medical Insurance', disabled: 0, customer_name: ['like', `%${value}%`]}, 
-                      {customer_group: 'Medical Insurance', disabled: 0},
-                    )}"
-                    :filterOption="false"
-                    >
-                    </a-select>
+                    <LinkField 
+                    doctype="Customer" 
+                    :filters="{customer_group: 'Medical Insurance', disabled: 0}"
+                    :value="form.custom_insurance_company_name" 
+                    @change="(data) => { form.custom_insurance_company_name = data }"
+                    />
                   </a-form-item>
                   <a-form-item label="Policy Number">
                     <a-input v-model:value="form.custom_policy_number"/>
@@ -865,57 +834,12 @@ export default {
     }),
   },
   resources: {
-    genders() { return { 
-      type: 'list', 
-      doctype: 'Gender', 
-      fields: ['gender'], 
-      auto: true, 
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    customers() { return { 
-      type: 'list', 
-      doctype: 'Customer', 
-      fields: ['name', 'customer_name'], 
-      filters: {customer_group: 'Medical Insurance', disabled: 0},
-      auto: true, 
-      orderBy: 'customer_name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
     medicalHistories() { return { 
       type: 'list', 
       doctype: 'Medical History', 
       fields: ['name', 'medical_history_name'], 
       auto: true, 
       pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    inpatientRecords() { return { 
-      type: 'list', 
-      doctype: 'Inpatient Record', 
-      fields: ['name'], 
-      auto: true, 
       url: 'frappe.desk.reportview.get', 
       transform(data) {
         if(data.values.length == 0)

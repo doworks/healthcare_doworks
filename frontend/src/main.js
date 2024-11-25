@@ -49,6 +49,9 @@ import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 import patientappointment from '@/views/frontend/pages/patients/dashboard/patientappointment.vue'
 import DoctorSidebar from '@/views/frontend/layouts/doctorsidebar.vue'
 
+// Link Field
+import Link from '@/components/controls/Link.vue'
+
 //Dialogs
 import PatientAppointmentDialog from '@/components/dialogs/patientAppointment.vue'
 import VitalSignsDialog from '@/components/dialogs/vitalSigns.vue'
@@ -73,6 +76,8 @@ const app = createApp(App);
 const auth = reactive(new Auth());
 
 // My App (Again)
+app.component('LinkField',Link)
+
 app.component('patientappointment',patientappointment)
 app.component('doctorsidebar',DoctorSidebar)
 

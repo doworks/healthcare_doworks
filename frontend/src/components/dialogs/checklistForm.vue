@@ -13,23 +13,14 @@
                 <v-row>
                   <v-col cols="12" md="6">
                     <a-form-item label="Checklist Template">
-                      <a-select
-                      class="w-full"
-                      v-model:value="form.form_template"
-                      :options="$resources.checklistFormTemplates.data?.options"
-                      :fieldNames="{label: 'patient_name', value: 'name'}"
-                      show-search
-                      :loading="$resources.checklistFormTemplates.list.loading"
-                      @search="(value) => {handleSearch(
-                        value, 
-                        $resources.checklistFormTemplates, 
-                      )}"
-                      @change="(value, option) => {
-                        getChecklistFormItems(option.name)
+                      <LinkField 
+                      doctype="Checklist Form Template" 
+                      :value="form.form_template" 
+                      @change="(data) => {
+                        form.form_template = data
+                        getChecklistFormItems(data)
                       }"
-                      :filterOption="false"
-                      >
-                      </a-select>
+                      />
                     </a-form-item>
                   </v-col>
                 </v-row>
@@ -94,6 +85,8 @@ import { VDivider } from 'vuetify/components/VDivider';
 import { VInfiniteScroll } from 'vuetify/components/VInfiniteScroll';
 import { VItemGroup, VItem } from 'vuetify/components/VItemGroup';
 
+import { debounce } from 'frappe-ui'
+
 export default {
 	inject: ['$call'],
 	components: {
@@ -123,15 +116,15 @@ export default {
     checklistFormTemplates() { return { 
 			type: 'list', 
 			doctype: 'Checklist Form Template', 
-			fields: ['name', 'form_name'], 
-			auto: true, 
-      url: 'frappe.desk.reportview.get', 
+			filters: {
+				txt:'', 
+				reference_doctype: 'Checklist Form'
+			},
+      auto: true, 
+      pageLength: 10,
+      url: 'healthcare_doworks.api.general_methods.link', 
       transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
+        return data.map(val => {val.label = val.value; return val})
       }
 		}},
   },
@@ -313,32 +306,14 @@ export default {
         console.log('error', err);
       });
     },
-    transformData (keys, values) {
-      return values.map(row => {
-        const obj = {};
-        keys.forEach((key, index) => {
-          obj[key] = row[index];  // Map each key to its corresponding value
-        });
-        return obj;
-      });
-    },
-    handleSearch(query, resource, filters={}, initialFilters={}, orFilters=[]) {
+    handleSearch(txt, resource) {
       // Clear the previous timeout to avoid spamming requests
       clearTimeout(this.searchTimeout);
 
       // Set a new timeout (300ms) for debouncing
       this.searchTimeout = setTimeout(() => {
-        if (query) {
-          // Update list resource options to fetch matching records from server
-          resource.update({filters, orFilters});
-
-          // Fetch the updated results
-          resource.reload();
-        } else {
-          // If no search query, load initial records
-          resource.update({filters: initialFilters, orFilters});
-          resource.reload();
-        }
+        resource.update({filters: {...resource.filters, txt}});
+        resource.reload();
       }, 300);  // Debounce delay of 300ms
     },
 	},

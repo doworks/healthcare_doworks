@@ -21,7 +21,6 @@
 		:loading="loading"
 		>
 			<template #empty><v-empty-state v-if="!loading" title="No Appointments"></v-empty-state></template>
-			<template #loading> Loading Appointments data. Please wait.</template>
 			<Column header="Patient" 
 			field="patient_cpr" 
 			:showFilterMenu="false" 
@@ -65,6 +64,7 @@
 			</Column>
 			<Column header="Apt Time" 
 			field="appointment_time" 
+			sortable 
 			:showFilterMenu="false" 
 			:showClearButton="false" 
 			filterField="appointment_time_moment" 
@@ -90,14 +90,26 @@
 					/>
 				</template>
 			</Column>
-			<Column header="Arv Time" v-if="tab == 'arrived' || tab == 'ready'"
-			field="arriveTime" 
+			<Column header="Arrived" v-if="tab != 'scheduled'"
+			field="arrivalTime" 
+			sortable 
 			:showFilterMenu="false" 
 			:showClearButton="false" 
 			style="width: 5%"
 			>
 				<template #body="{ data }">
-					{{ data.timeSinceArrived }}
+					{{ data.arrivalTime }}
+				</template>
+			</Column>
+			<Column header="Waited" v-if="tab != 'scheduled'"
+			field="waitingTime" 
+			sortable 
+			:showFilterMenu="false" 
+			:showClearButton="false" 
+			style="width: 5%"
+			>
+				<template #body="{ data }">
+					{{ data.waitingTime }}
 				</template>
 			</Column>
 			<Column field="appointment_datetime" hidden :showFilterMenu="false" :showClearButton="false">
@@ -143,27 +155,16 @@
 					</div>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
-					<a-select
-					v-model:value="procedureFilter"
-					@change="(filterCallback())"
+					<LinkField 
+					doctype="Clinical Procedure Template" 
+					:value="procedureFilter" 
 					mode="multiple"
-					class="p-column-filter"
-					style="width: 100%; align-items: center;"
-					placeholder="Any Procedure"
-					max-tag-count="responsive"
-					:options="$resources.clinicalProcedureTemplates.data?.options"
-					:fieldNames="{label: 'template', value: 'name'}"
-					show-search
-                    :loading="$resources.clinicalProcedureTemplates.list.loading"
-                    @search="(value) => {handleSearch(
-						value, 
-						$resources.clinicalProcedureTemplates, 
-						{template: ['like', `%${value}%`]}, 
-						{},
-                    )}"
-                    :filterOption="false"
-					>
-					</a-select>
+					class="p-column-filter align-center"
+					@change="(data) => { 
+						procedureFilter = data 
+						filterCallback()
+					}"
+					/>
 				</template>
 			</Column>
 			<Column header="Practitioner" 
@@ -198,14 +199,14 @@
 					:options="$resources.practitioners.data?.options"
 					:fieldNames="{label: 'practitioner_name', value: 'name'}"
 					show-search
-                    :loading="$resources.practitioners.list.loading"
-                    @search="(value) => {handleSearch(
+					:loading="$resources.practitioners.list.loading"
+					@search="(value) => {handleSearch(
 						value, 
 						$resources.practitioners, 
 						{status: 'Active', practitioner_name: ['like', `%${value}%`]}, 
 						{status: 'Active'},
-                    )}"
-                    :filterOption="false"
+					)}"
+					:filterOption="false"
 					>
 						<template #option="{ practitioner_name, image }">
 							<v-avatar size="25" :color="!image ? colorCache[practitioner_name] : ''">
@@ -234,22 +235,7 @@
 					</a-select>
 				</template>
 			</Column>
-			<Column field="department" hidden :showFilterMenu="false" :showClearButton="false">
-				<template #filter="{ filterModel, filterCallback }">
-					<a-select
-						v-model:value="filterModel.value"
-						@change="(filterCallback())"
-						class="p-column-filter"
-						style="width: 100%; align-items: center;"
-						placeholder="Any"
-						allowClear
-					>
-						<template #option="{ value: val }">
-							<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
-						</template>
-					</a-select>
-				</template>
-			</Column>
+			<Column field="department" hidden></Column>
 			<Column header="Room" 
 			field="service_unit" 
 			:showFilterMenu="false" 
@@ -265,29 +251,17 @@
 					{{ data.service_unit }}
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
-					<a-select
-					v-model:value="filterModel.value"
-					@change="(filterCallback())"
-					class="p-column-filter"
-					style="width: 100%; align-items: center;"
-					placeholder="Any"
-					:options="$resources.serviceUnits.data?.options"
-					:fieldNames="{label: 'name', value: 'name'}"
-					allowClear
-					show-search
-                    :loading="$resources.serviceUnits.list.loading"
-                    @search="(value) => {handleSearch(
-						value, 
-						$resources.serviceUnits, 
-						{allow_appointments: 1, is_group: 0, name: ['like', `%${value}%`]}, 
-						{allow_appointments: 1, is_group: 0}, 
-                    )}"
-                    :filterOption="false"
-					>
-						<template #option="{ name: val }">
-							<v-chip class="ma-2" label size="small">{{ val }}</v-chip>
-						</template>
-					</a-select>
+					<LinkField 
+					doctype="Healthcare Service Unit" 
+					query="healthcare.controllers.queries.get_healthcare_service_units"
+					:filters="{allow_appointments: 1}"
+					:value="filterModel.value" 
+					class="p-column-filter items-center"
+					@change="(data) => { 
+						filterModel.value = data 
+						filterCallback()
+					}"
+					/>
 				</template>
 			</Column>
 			<Column header="Payment Type" 
@@ -534,23 +508,6 @@ export default {
 				return data
 			},
 		}},
-		serviceUnits() { return { 
-			type: 'list', 
-			doctype: 'Healthcare Service Unit', 
-			fields:['name'], 
-			filters:{'allow_appointments': 1, 'is_group': 0}, 
-			auto: true, 
-			orderBy: 'name',
-			pageLength: 10,
-			url: 'frappe.desk.reportview.get', 
-			transform(data) {
-				if(data.values.length == 0)
-					data.options = []
-				else
-					data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-				return data
-			}
-		}},
 		clinicalProcedureTemplates() { return { 
 			type: 'list', 
 			doctype: 'Clinical Procedure Template', 
@@ -567,18 +524,23 @@ export default {
 				return data
 			}
 		}},
-  	},
+	},
 	computed: {
 		updatedAppointments() {
 			return this.appointments.map(appointment => {
-				const arrivalTime = dayjs(appointment.arriveTime);
-				const diffInSeconds = this.currentTime.diff(arrivalTime, 'second');
+				let diffInSeconds;
+				if(appointment.readyTime){
+					diffInSeconds = dayjs(appointment.readyTime).diff(appointment.arriveTime, 'second');
+				}
+				else{
+					diffInSeconds = this.currentTime.diff(appointment.arriveTime, 'second');
+				}
 				const hours = Math.floor(diffInSeconds / 3600);
 				const minutes = Math.floor((diffInSeconds % 3600) / 60);
 				const seconds = diffInSeconds % 60;
 				return {
 					...appointment,
-					timeSinceArrived: `${hours}h ${minutes}m`
+					waitingTime: (hours ? (hours + 'h ') : '') + (minutes + 'm')
 				};
 			});
 		},
@@ -613,6 +575,41 @@ export default {
 					]
 				},
 				...(this.$route.name == 'appointments' && (this.tab == 'scheduled' || this.tab !== 'no show') ? [{
+					label: 'Send Reminder',
+					icon: 'mdi mdi-bullhorn-outline',
+					items: [
+						{
+							label: 'Whatsapp', 
+							icon: 'mdi mdi-whatsapp',
+							command: ({ item }) => {
+								let message = `Dear LAYLA ABBAS MOHAMED NOUROOZ JAMALI, 
+								your appointment with Derma One on ${dayjs(item.appointment_date).format('D MMMM YYYY')} is at ${item.appointment_time}. 
+								Kindly, send Yes to confirm, No to cancel. or call us on 17240042 to reschedule.\n\n`;
+								message += `عزيزي المراجع/عزيزتي المراجعة:
+								 نود تذكيركم بالموعد القادم في  عيادة ديرماون بتاريخ ${dayjs(item.appointment_date).format('D/MM/YYYY')}  ${item.appointment_time} الرجاء ارسال نعم للتاكيد و في حالة الالغاء ارسل لا
+								.ولحجز موعد آخر اتصل على 17240042 و شكرا`;
+
+								if (item.patient_details.mobile){
+									//send_sms(mobile, message);
+									var strWindowFeatures = "location=yes,height=570,width=520,scrollbars=no,status=yes";
+									var URL = "https://wa.me/" + item.patient_details.mobile + "?text=" + encodeURIComponent(message);
+									//URL = encodeURI(URL);
+									var win = window.open(URL, '_blank', strWindowFeatures);
+									
+								} else {
+									this.$emit('show-alert', "Did not send Whatsapp, missing mobile number or message content.", 'error')
+								}
+							}
+						},
+						{
+							label: 'Email', 
+							icon: 'mdi mdi-email-outline',
+							disabled: true,
+							// command: ({ item }) => this.updateStatus(item)
+						},
+					]
+				}] : []),
+				...(this.$route.name == 'appointments' && this.tab !== 'no show' ? [{
 					label: 'Visit Logs',
 					icon: 'mdi mdi-timetable',
 					disabled: this.selectedRow?.status_log.length == 0,
@@ -644,16 +641,16 @@ export default {
 					icon: 'mdi mdi-pulse',
 					command: () => {this.$emit('vital-sign-dialog', this.selectedRow)}
 				},
-				...(this.$route.name == 'nurse-dashboard' ? [{
+				{
 					label: 'Medical History',
 					icon: 'mdi mdi-medical-bag',
 					command: () => this.$emit('medical-history-dialog', this.selectedRow)
-				}] : []),
-				...(this.$route.name == 'nurse-dashboard' ? [{
+				},
+				{
 					label: 'Checklist Form',
 					icon: 'mdi mdi-format-list-checks',
 					command: () => this.$emit('checklist-form-dialog', this.selectedRow)
-				}] : []),
+				},
 				{
 					label: 'BIOCOM',
 					icon: 'mdi mdi-format-list-checks',
@@ -996,31 +993,31 @@ export default {
 				return obj;
 			});
 		},
-		handleSearch(query, resource, filters, initialFilters) {
-			// Clear the previous timeout to avoid spamming requests
-			clearTimeout(this.searchTimeout);
+		handleSearch(query, resource, filters, initialFilters, orFilters) {
+      // Clear the previous timeout to avoid spamming requests
+      clearTimeout(this.searchTimeout);
 
-			// Set a new timeout (300ms) for debouncing
-			this.searchTimeout = setTimeout(() => {
-				if (query) {
-					// Update list resource options to fetch matching records from server
-					resource.update({filters});
+      // Set a new timeout (300ms) for debouncing
+      this.searchTimeout = setTimeout(() => {
+        if (query) {
+          // Update list resource options to fetch matching records from server
+          resource.update({filters, orFilters});
 
-					// Fetch the updated results
-					resource.reload();
-				} else {
-					// If no search query, load initial records
-					resource.update({filters: initialFilters});
-					resource.reload();
-				}
-			}, 300);  // Debounce delay of 300ms
-		},
+          // Fetch the updated results
+          resource.reload();
+        } else {
+          // If no search query, load initial records
+          resource.update({filters: initialFilters, orFilters});
+          resource.reload();
+        }
+      }, 300);  // Debounce delay of 300ms
+    },
 		appointmentRowClass(data) {
-            return [{ '!bg-rose-50 hover:!bg-rose-100': data.custom_confirmed == 0 && (this.tab == 'scheduled' || this.tab == 'no show')}];
-        },
+			return [{ '!bg-rose-50 hover:!bg-rose-100': data.custom_confirmed == 0 && (this.tab == 'scheduled' || this.tab == 'no show')}];
+		},
 		noteRowClass(data) {
-            return [{ '!bg-yellow-100 hover:!bg-yellow-200': data.read}];
-        },
+			return [{ '!bg-yellow-100 hover:!bg-yellow-200': data.read}];
+		},
 		updateSeen(data) {
 			this.$call('healthcare_doworks.api.general_methods.modify_child_entry', {
 				parent_doctype: 'Patient Appointment', 

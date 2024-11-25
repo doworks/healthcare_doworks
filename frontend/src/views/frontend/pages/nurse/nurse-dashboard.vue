@@ -179,21 +179,14 @@
         title="Update Room"
       >
         <v-card-text>
-          <a-select
-          v-model:value="appointmentForm.service_unit"
-          :options="$resources.serviceUnits.data?.options"
-          :fieldNames="{label: 'name', value: 'name'}"
-          style="min-width: 400px; max-width: 600px;"
-          show-search
-          :loading="$resources.serviceUnits.list.loading"
-          @search="(value) => {handleSearch(
-            value, 
-            $resources.serviceUnits, 
-            {allow_appointments: 1, name: ['like', `%${value}%`]}, 
-            {allow_appointments: 1},
-          )}"
-          :filterOption="false"
-          ></a-select>
+          <LinkField 
+					doctype="Healthcare Service Unit" 
+					query="healthcare.controllers.queries.get_healthcare_service_units"
+          :filters="{allow_appointments: 1}"
+					:value="appointmentForm.service_unit" 
+          :style="{minWidth: '400px', maxWidth: '600px'}"
+					@change="(data) => { appointmentForm.service_unit = data }"
+					/>
         </v-card-text>
 
         <v-card-actions class="my-2 d-flex justify-end">
@@ -257,79 +250,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="paymentTypeOpen" width="auto">
-      <v-card
-        rounded="lg"
-        width="auto"
-        prepend-icon="pi pi-wallet"
-        title="Update Payment Type"
-      >
-        <v-card-text>
-          <a-form layout="vertical">
-            <a-form-item label="Payment Type">
-              <a-select
-                v-model:value="appointmentForm.custom_payment_type"
-                :options="[{label: '', value: ''}, {label: 'Self Payment', value: 'Self Payment'}, {label: 'Insurance', value: 'Insurance'}]"
-                style="min-width: 400px; max-width: 600px;"
-              ></a-select>
-            </a-form-item>
-  
-            <div v-if="appointmentForm.custom_payment_type == 'Insurance'">
-              <h4 class="mb-4 font-semibold">Insurance Details</h4>
-              <a-checkbox class="mb-3" v-model:checked="patientInsurance.custom_active">Active</a-checkbox>
-              <a-form-item label="Insurance Company Name">
-                <a-select
-                v-model:value="patientInsurance.custom_insurance_company_name"
-                style="width: 100%;"
-                :options="$resources.customers.data?.options"
-                :fieldNames="{label:'customer_name', value: 'name'}"
-                show-search
-                :loading="$resources.customers.list.loading"
-                @search="(value) => {handleSearch(
-                  value, 
-                  $resources.customers, 
-                  {customer_group: 'Medical Insurance', disabled: 0, customer_name: ['like', `%${value}%`]}, 
-                  {customer_group: 'Medical Insurance', disabled: 0},
-                )}"
-                :filterOption="false"
-                >
-                </a-select>
-              </a-form-item>
-              <a-form-item label="Policy Number">
-                <a-input v-model:value="patientInsurance.custom_policy_number"/>
-              </a-form-item>
-              <a-form-item label="Expiration Date">
-                <a-date-picker 
-                v-model:value="patientInsurance.custom_expiration_date"
-                format="DD MMM YYYY" 
-                style="z-index: 3000; width: 100%"
-                />
-              </a-form-item>
-              <a-form-item label="Copay Amount">
-                <a-input-number class="w-full" :controls="false" v-model:value="patientInsurance.custom_copay_amount"/>
-              </a-form-item>
-            </div>
-          </a-form>
-        </v-card-text>
-
-        <v-card-actions class="my-2 d-flex justify-end">
-          <v-btn
-          class="text-none"
-          text="Cancel"
-          @click="paymentTypeOpen = false"
-          ></v-btn>
-
-          <v-btn
-          class="text-none"
-          color="blue"
-          
-          text="Save"
-          variant="tonal"
-          @click="onSubmitPaymentType()"
-          ></v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
   <!-- /Main Wrapper -->
 </template>
@@ -387,58 +307,6 @@ export default {
         return data
       }
     }},
-    customers() { return { 
-      type: 'list', 
-      doctype: 'Customer', 
-      fields: ['name', 'customer_name'], 
-      filters: {customer_group: 'Medical Insurance', disabled: 0},
-      auto: true, 
-      orderBy: 'customer_name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    departments() { return { 
-      type: 'list', 
-      doctype: 'Medical Department', 
-      fields: ['name', 'department'], 
-      auto: true, 
-      orderBy: 'department',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    appointmentTypes() { return { 
-      type: 'list', 
-      doctype: 'Appointment Type', 
-      fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
-      auto: true, 
-      orderBy: 'appointment_type',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else{
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-          this.appointmentForm.appointment_type = data.options[0].appointment_type
-          this.appointmentForm.appointment_for = data.options[0].allow_booking_for
-        }
-        return data
-      }
-    }},
     practitioners() { return { 
       type: 'list', 
       doctype: 'Healthcare Practitioner', 
@@ -446,23 +314,6 @@ export default {
       filters: {status: 'Active'},
       auto: true, 
       orderBy: 'practitioner_name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    serviceUnits() { return { 
-      type: 'list', 
-      doctype: 'Healthcare Service Unit', 
-      fields:['name'], 
-      filters:{'allow_appointments': 1, 'is_group': 0}, 
-      auto: true, 
-      orderBy: 'name',
       pageLength: 10,
       url: 'frappe.desk.reportview.get', 
       transform(data) {
@@ -770,30 +621,50 @@ export default {
       });
     },
     adjustAppointments(data) {
-      return [...(data || [])].filter(value => {
-        const practitioner = value.practitioner === this.$myresources.user.practitioner;
-        const date = dayjs().isSame(dayjs(value.appointment_date), 'day')
-        return date
-      }).map((d) => {
+			return [...(data || [])].map((d) => {
         d.notes = this.stripHtml(d.notes)
+        d.patient_details.age = this.calculateAge(d.patient_details.date_of_birth)
 
-        d.visit_notes = d.visit_notes.map(note => {
+        d.visit_notes = d.visit_notes?.map(note => {
           note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
           note.dayTime = dayjs(note.time).format('h:mm A')
           return note
         })
         d.arriveTime = '-'
-        d.status_log.forEach(value => {
-          if(value.status == 'Arrived')
-          d.arriveTime = dayjs(value.time)
+        d.status_log?.forEach((value, index) => {
+          value.timeFormat = dayjs(value.time).format('h:mm a    D/MM/YYYY')
         })
+
+        const arvRow = d.status_log.filter(value => value.status == 'Arrived')
+				if(arvRow.length > 0){
+					d.arriveTime = dayjs(arvRow[0].time)
+					const difference = dayjs(arvRow[0].time).diff(dayjs(d.appointment_date + ' ' + d.appointment_time), 'minute')
+					let diffHours = parseInt(difference / 60)
+					let diffMinutes = difference % 60
+					if(difference < 5 && difference > -5){
+						d.arrivalTime = 'on time'
+					}
+					if(difference < 0){
+						diffHours *= -1
+						diffMinutes *= -1
+						d.arrivalTime = (diffHours ? (diffHours + 'h ') : '') + (diffMinutes + 'm') + ' early'
+					}
+					else{
+						d.arrivalTime = (diffHours ? (diffHours + 'h ') : '') + (diffMinutes + 'm') + ' late'
+					}
+				}
+				const readyRow = d.status_log.filter(value => value.status == 'Ready' || value.status == 'In Room')
+				if(readyRow.length > 0){
+					d.readyTime = dayjs(readyRow[0].time)
+				}
+
         d.appointment_date_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('D/MM/YYYY');
 				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
-        d.patient_cpr = d.patient_name + ' ' + d.patient_details.cpr
-        return d;
+				d.patient_cpr = d.patient_name + ' ' + d.patient_details?.cpr
 
-      });
-    },
+				return d;
+			});
+		},
     onPatientDetails(row) {
       this.isFlipped = !this.isFlipped;
       setTimeout(() => {

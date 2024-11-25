@@ -71,10 +71,6 @@ export default async function call(method, args) {
 		// Handle error response
 		updateState(this, null, e.messages.join('\n'));
 
-		if ([401, 403].includes(res.status) && router.currentRoute.name !== 'Login') {
-			router.push('/login');
-		}
-
 		throw { 
 			success: false, 
 			message: e.messages.join('\n') 

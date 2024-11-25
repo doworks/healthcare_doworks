@@ -12,21 +12,17 @@
             <v-row>
               <v-col cols="12" md="6">
                 <a-form-item label="Test Template" name="template">
-                  <a-select
-                    v-model:value="form.template"
-                    :options="$resources.labTestTemplates.data?.options"
-                    @change="(value, option) => {form.department = option.department}"
-                    :fieldNames="{label: 'name', value: 'name'}"
-                    show-search
-                    :loading="$resources.labTestTemplates.list.loading"
-                    @search="(value) => {handleSearch(
-                      value, 
-                      $resources.labTestTemplates, 
-                      {name: ['like', `%${value}%`]}, 
-                      {},
-                    )}"
-                    :filterOption="false"
-                  ></a-select>
+                  <LinkField 
+                  doctype="Lab Test Template" 
+                  :value="form.template" 
+                  @change="(data) => { 
+                    form.template = data 
+                    $getValue({doctype: 'Lab Test Template', fieldname:'department', filters:{name:data}})
+                    .then(response => {
+                      form.department = response.department
+                    })
+                  }"
+                  />
                 </a-form-item>
                 <a-form-item label="Department" name="department" v-if="form.department">
                   <a-input disabled v-model:value="form.department"/>
@@ -140,7 +136,7 @@ import { VExpansionPanels, VExpansionPanel, VExpansionPanelTitle, VExpansionPane
 
 
 export default {
-  inject: ['$call'],
+  inject: ['$call', '$getValue'],
   components: {
     VBtn, VDialog, VCard, VCardTitle, VCardText, VCardActions, VDivider, VContainer, VCol, VRow, VItemGroup, QuillEditor,
     VItem, VOverlay, VProgressCircular, VExpansionPanels, VExpansionPanel, VExpansionPanelTitle, VExpansionPanelText,
@@ -162,22 +158,6 @@ export default {
     }
   },
   resources: {
-    labTestTemplates() { return { 
-      type: 'list', 
-      doctype: 'Lab Test Template', 
-      fields: ['name', 'department'], 
-      auto: true,
-      orderBy: 'name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
   },
   computed: {
     dialogVisible: {

@@ -549,20 +549,44 @@ export default {
         return date
       }).map((d) => {
         d.notes = this.stripHtml(d.notes)
-        d.arriveTime = null
+        d.patient_details.age = this.calculateAge(d.patient_details.date_of_birth)
 
-        d.visit_notes = d.visit_notes.map(note => {
+        d.visit_notes = d.visit_notes?.map(note => {
           note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
           note.dayTime = dayjs(note.time).format('h:mm A')
           return note
         })
-
-        d.status_log.forEach(value => {
-          if(value.status == 'Arrived')
-          d.arriveTime = dayjs(value.time)
+        d.arriveTime = '-'
+        d.status_log?.forEach((value, index) => {
+          value.timeFormat = dayjs(value.time).format('h:mm a    D/MM/YYYY')
         })
 
+        const arvRow = d.status_log.filter(value => value.status == 'Arrived')
+				if(arvRow.length > 0){
+					d.arriveTime = dayjs(arvRow[0].time)
+					const difference = dayjs(arvRow[0].time).diff(dayjs(d.appointment_date + ' ' + d.appointment_time), 'minute')
+					let diffHours = parseInt(difference / 60)
+					let diffMinutes = difference % 60
+					if(difference < 5 && difference > -5){
+						d.arrivalTime = 'on time'
+					}
+					if(difference < 0){
+						diffHours *= -1
+						diffMinutes *= -1
+						d.arrivalTime = (diffHours ? (diffHours + 'h ') : '') + (diffMinutes + 'm') + ' early'
+					}
+					else{
+						d.arrivalTime = (diffHours ? (diffHours + 'h ') : '') + (diffMinutes + 'm') + ' late'
+					}
+				}
+				const readyRow = d.status_log.filter(value => value.status == 'Ready' || value.status == 'In Room')
+				if(readyRow.length > 0){
+					d.readyTime = dayjs(readyRow[0].time)
+				}
+
+        d.appointment_date_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('D/MM/YYYY');
 				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
+				d.patient_cpr = d.patient_name + ' ' + d.patient_details?.cpr
 
         return d;
 			});
@@ -619,6 +643,17 @@ export default {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
       return tempDiv.textContent || tempDiv.innerText || "";
+    },
+    calculateAge(dob) {
+      if(dob){
+        const today = dayjs();
+        const birthDate = dayjs(dob)
+        const years = today.diff(birthDate, 'year');
+        const months = today.diff(birthDate.add(years, 'year'), 'month');
+        const days = today.diff(birthDate.add(years, 'year').add(months, 'month'), 'day');
+        return `${years} Year(s) ${months} Month(s) ${days} Day(s)`;
+      }
+      return ''
     },
     transformData (keys, values) {
       return values.map(row => {

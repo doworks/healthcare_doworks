@@ -167,31 +167,25 @@
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Booking For" name="appointment_type">
-                  <a-select
-                  v-model:value="appointmentForm.appointment_type"
-                  :options="$resources.appointmentTypes.data?.options"
-                  @change="(value, option) => {
-                    appointmentForm.appointment_for = option.allow_booking_for;
+                  <LinkField 
+                  :disabled="appointmentForm.type == 'Edit Appointment'"
+                  doctype="Appointment Type" 
+                  :value="appointmentForm.appointment_type" 
+                  @change="(data) => { 
+                    appointmentForm.appointment_type = data 
                     appointmentForm.practitioner = '';
                     appointmentForm.practitioner_name = '';
                     appointmentForm.department = '';
                     appointmentForm.service_unit = '';
                     appointmentForm.appointment_time = '';
-                    if(appointmentForm.custom_appointment_category != 'Procedure')
-                      appointmentForm.duration = option.default_duration;
+                    $getValue({doctype: 'Appointment Type', fieldname:['allow_booking_for', 'default_duration'], filters:{name:data}})
+                    .then(response => {
+                      appointmentForm.appointment_for = response.allow_booking_for;
+                      if(appointmentForm.custom_appointment_category != 'Procedure')
+                        appointmentForm.duration = response.default_duration;
+                      })
                   }"
-                  :fieldNames="{label: 'appointment_type', value: 'name'}"
-                  show-search
-                  :loading="$resources.appointmentTypes.list.loading"
-                  @search="(value) => {handleSearch(
-                    value, 
-                    $resources.appointmentTypes, 
-                    {appointment_type: ['like', `%${value}%`]}, 
-                    {},
-                  )}"
-                  :filterOption="false"
-                  :disabled="appointmentForm.type == 'Edit Appointment'"
-                  ></a-select>
+                  />
                 </a-form-item>
                 <!-- <a-form-item label="Appointment For" v-if="appointmentForm.appointment_type">
                   <a-input v-model:value="appointmentForm.appointment_for" disabled/>
@@ -214,20 +208,11 @@
               </v-col>
               <v-col cols="12" md="6">
                 <a-form-item label="Branch" name="branch">
-                  <a-select
-                  v-model:value="appointmentForm.custom_branch"
-                  :options="$resources.branches.data?.options"
-                  :fieldNames="{label: 'name', value: 'name'}"
-                  show-search
-                  :loading="$resources.branches.list.loading"
-                  @search="(value) => {handleSearch(
-                    value, 
-                    $resources.branches, 
-                    {name: ['like', `%${value}%`]}, 
-                    {},
-                  )}"
-                  :filterOption="false"
-                  ></a-select>
+                  <LinkField 
+                  doctype="Branch" 
+                  :value="appointmentForm.custom_branch" 
+                  @change="(data) => { appointmentForm.custom_branch = data }"
+                  />
                 </a-form-item>
                 <a-form-item label="Practitioner" name="practitioner">
                   <a-select
@@ -253,36 +238,20 @@
                 name="department" 
                 v-if="appointmentForm.appointment_for === 'Department'" 
                 >
-                  <a-select
-                  v-model:value="appointmentForm.department"
-                  :options="$resources.departments.data?.options"
-                  :fieldNames="{label: 'department', value: 'name'}"
-                  show-search
-                  :loading="$resources.departments.list.loading"
-                  @search="(value) => {handleSearch(
-                    value, 
-                    $resources.departments, 
-                    {department: ['like', `%${value}%`]}, 
-                    {},
-                  )}"
-                  :filterOption="false"
-                  ></a-select>
+                  <LinkField 
+                  doctype="Medical Department" 
+                  :value="appointmentForm.department" 
+                  @change="(data) => { appointmentForm.department = data }"
+                  />
                 </a-form-item>
                 <a-form-item label="Room" name="service_unit">
-                  <a-select
-                  v-model:value="appointmentForm.service_unit"
-                  :options="$resources.serviceUnits.data?.options"
-                  :fieldNames="{label: 'name', value: 'name'}"
-                  show-search
-                  :loading="$resources.serviceUnits.list.loading"
-                  @search="(value) => {handleSearch(
-                    value, 
-                    $resources.serviceUnits, 
-                    {allow_appointments: 1, is_group: 0, name: ['like', `%${value}%`]}, 
-                    {allow_appointments: 1, is_group: 0},
-                  )}"
-                  :filterOption="false"
-                  ></a-select>
+                  <LinkField 
+                  doctype="Healthcare Service Unit" 
+                  :filters="{allow_appointments: 1}"
+                  query="healthcare.controllers.queries.get_healthcare_service_units"
+                  :value="appointmentForm.service_unit" 
+                  @change="(data) => { appointmentForm.service_unit = data }"
+                  />
                 </a-form-item>
                 <a-form-item 
                 label="Appointment Date" 
@@ -503,57 +472,6 @@ export default {
     },
 	},
   resources: {
-    departments() { return { 
-      type: 'list', 
-      doctype: 'Medical Department', 
-      fields: ['name', 'department'], 
-      auto: true, 
-      orderBy: 'department', 
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    branches() { return { 
-      type: 'list', 
-      doctype: 'Branch', 
-      fields: ['name'], 
-      auto: true, 
-      orderBy: 'name', 
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    appointmentTypes() { return { 
-      type: 'list', 
-      doctype: 'Appointment Type', 
-      fields: ['name', 'appointment_type', 'allow_booking_for', 'default_duration'], 
-      auto: true, 
-      orderBy: 'appointment_type',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else{
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-          this.appointmentForm.appointment_type = data.options[0].appointment_type
-          this.appointmentForm.appointment_for = data.options[0].allow_booking_for
-        }
-        return data
-			},
-    }},
     practitioners() { return { 
       type: 'list', 
       doctype: 'Healthcare Practitioner', 
@@ -561,23 +479,6 @@ export default {
       filters: {status: 'Active'},
       auto: true, 
       orderBy: 'practitioner_name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
-    serviceUnits() { return { 
-      type: 'list', 
-      doctype: 'Healthcare Service Unit', 
-      fields:['name'], 
-      filters:{'allow_appointments': 1, 'is_group': 0}, 
-      auto: true, 
-      orderBy: 'name',
       pageLength: 10,
       url: 'frappe.desk.reportview.get', 
       transform(data) {
@@ -676,7 +577,7 @@ export default {
         {label: 'First Time', value: 'First Time'}, 
         {label: 'Follow-up', value: 'Follow-up'}, 
         {label: 'Procedure', value: 'Procedure'},
-        {label: 'Session', value: 'Session'},
+      //  {label: 'Session', value: 'Session'},
       ],
       datePresets: ref([
         { label: 'Today', value: dayjs() },

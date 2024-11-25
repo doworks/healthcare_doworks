@@ -29,21 +29,11 @@
                   <a-input v-model:value="form.custom_cpr"/>
                 </a-form-item>
                 <a-form-item label="Gender" name="sex">
-                  <a-select 
-                  v-model:value="form.sex" 
-                  :options="$resources.genders.data?.options" 
-                  :fieldNames="{label: 'gender', value: 'name'}"
-                  allowClear
-                  show-search
-                    :loading="$resources.genders.list.loading"
-                    @search="(value) => {handleSearch(
-                      value, 
-                      $resources.genders, 
-                      {gender: ['like', `%${value}%`]}, 
-                      {},
-                    )}"
-                    :filterOption="false"
-                  ></a-select>
+                  <LinkField 
+                  doctype="Gender" 
+                  :value="form.sex" 
+                  @change="(data) => { form.sex = data }"
+                  />
                 </a-form-item>
                 <a-form-item label="Mobile" name="mobile">
                   <a-input v-model:value="form.mobile"/>
@@ -92,23 +82,6 @@ export default {
   components: {VInfiniteScroll, VItemGroup, VItem, VOverlay, VProgressCircular},
   props: {
     isOpen: {type: Boolean, required: true, default: false},
-  },
-  resources: {
-    genders() { return { 
-      type: 'list', 
-      doctype: 'Gender', 
-      fields: ['gender', 'name'], 
-      auto: true, 
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
   },
   computed: {
     dialogVisible: {
@@ -188,34 +161,6 @@ export default {
       this.form.patient_name = (this.form.first_name ? this.form.first_name : '' ) + 
       (this.form.middle_name ? ' ' + this.form.middle_name : '') + 
       (this.form.last_name ? ' ' + this.form.last_name : '')
-    },
-    transformData (keys, values) {
-      return values.map(row => {
-        const obj = {};
-        keys.forEach((key, index) => {
-          obj[key] = row[index];  // Map each key to its corresponding value
-        });
-        return obj;
-      });
-    },
-    handleSearch(query, resource, filters, initialFilters) {
-      // Clear the previous timeout to avoid spamming requests
-      clearTimeout(this.searchTimeout);
-
-      // Set a new timeout (300ms) for debouncing
-      this.searchTimeout = setTimeout(() => {
-        if (query) {
-          // Update list resource options to fetch matching records from server
-          resource.update({filters});
-
-          // Fetch the updated results
-          resource.reload();
-        } else {
-          // If no search query, load initial records
-          resource.update({filters: initialFilters});
-          resource.reload();
-        }
-      }, 300);  // Debounce delay of 300ms
     },
   },
 };

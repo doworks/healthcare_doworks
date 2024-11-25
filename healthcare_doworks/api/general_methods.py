@@ -1,4 +1,14 @@
 import frappe
+from frappe.desk.search import search_link
+
+@frappe.whitelist()
+def link(doctype, filters, limit_page_length=10):
+    params = {
+        "doctype": doctype,
+        "page_length": limit_page_length
+    }
+    params = {**params, **filters}
+    return search_link(**params)
 
 @frappe.whitelist()
 def add_child_entry(parent_doctype, parent_doc_name, child_table_fieldname, child_data):

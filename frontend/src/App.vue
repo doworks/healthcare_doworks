@@ -23,6 +23,15 @@ import 'frappe-ui/src/style.css';
 import { VLayout } from 'vuetify/components/VLayout'
 import { VMain } from 'vuetify/components/VMain'
 export default {
+	provide() {
+    return {
+      $getValue: (args) => {
+        return this.$call('frappe.client.get_value', args)
+				.then(response => response)
+				.catch(error => { console.log(error) });
+      },
+    };
+  },
 	inject: ['$auth', '$socket'],
 	components:{
 		VLayout,

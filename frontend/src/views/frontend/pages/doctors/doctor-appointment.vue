@@ -224,21 +224,14 @@
         title="Update Room"
       >
         <v-card-text>
-          <a-select
-          v-model:value="appointmentForm.service_unit"
-          :options="$resources.serviceUnits.data?.options"
-          :fieldNames="{label: 'name', value: 'name'}"
-          style="min-width: 400px; max-width: 600px;"
-          show-search
-          :loading="$resources.serviceUnits.list.loading"
-          @search="(value) => {handleSearch(
-            value, 
-            $resources.serviceUnits, 
-            {allow_appointments: 1, is_group: 0, name: ['like', `%${value}%`]}, 
-            {allow_appointments: 1, is_group: 0},
-          )}"
-          :filterOption="false"
-          ></a-select>
+          <LinkField 
+					doctype="Healthcare Service Unit" 
+					query="healthcare.controllers.queries.get_healthcare_service_units"
+          :filters="{allow_appointments: 1}"
+					:value="appointmentForm.service_unit" 
+          :style="{minWidth: '400px', maxWidth: '600px'}"
+					@change="(data) => { appointmentForm.service_unit = data }"
+					/>
         </v-card-text>
 
         <v-card-actions class="my-2 d-flex justify-end">
@@ -323,22 +316,12 @@
               <h4 class="mb-4 font-semibold">Insurance Details</h4>
               <a-checkbox class="mb-3" v-model:checked="patientInsurance.custom_active">Active</a-checkbox>
               <a-form-item label="Insurance Company Name">
-                <a-select
-                v-model:value="patientInsurance.custom_insurance_company_name"
-                style="width: 100%;"
-                :options="$resources.customers.data?.options"
-                :fieldNames="{label:'customer_name', value: 'name'}"
-                show-search
-                :loading="$resources.customers.list.loading"
-                @search="(value) => {handleSearch(
-                  value, 
-                  $resources.customers, 
-                  {customer_group: 'Medical Insurance', disabled: 0, customer_name: ['like', `%${value}%`]}, 
-                  {customer_group: 'Medical Insurance', disabled: 0},
-                )}"
-                :filterOption="false"
-                >
-                </a-select>
+                <LinkField 
+                doctype="Customer" 
+                :value="patientInsurance.custom_insurance_company_name" 
+                class="p-column-filter items-center"
+                @change="(data) => { patientInsurance.custom_insurance_company_name = data }"
+                />
               </a-form-item>
               <a-form-item label="Policy Number">
                 <a-input v-model:value="patientInsurance.custom_policy_number"/>
@@ -591,18 +574,16 @@ export default {
     customers() { return { 
       type: 'list', 
       doctype: 'Customer', 
-      fields: ['name', 'customer_name'], 
-      filters: {customer_group: 'Medical Insurance', disabled: 0},
+      filters: {
+				txt:'', 
+				filters:{customer_group: 'Medical Insurance', disabled: 0}, 
+				reference_doctype: 'Patient Appointment'
+			},
       auto: true, 
-      orderBy: 'customer_name',
       pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
+      url: 'healthcare_doworks.api.general_methods.link', 
       transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
+        return data.map(val => {val.label = val.value; return val})
       }
     }},
     departments() { return { 
@@ -663,23 +644,6 @@ export default {
         return data
       }
     }},
-    serviceUnits() { return { 
-      type: 'list', 
-      doctype: 'Healthcare Service Unit', 
-      fields:['name'], 
-      filters:{'allow_appointments': 1, 'is_group': 0}, 
-      auto: true, 
-      orderBy: 'name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
-    }},
     patients() { return { 
       type: 'list', 
       doctype: 'Patient', 
@@ -688,7 +652,6 @@ export default {
         'inpatient_record', 'inpatient_status', 'custom_default_payment_type', 'custom_file_number'
       ], 
       filters: {status: 'Active'},
-      limit_start: 0,
       pageLength: 10, 
       url: 'frappe.desk.reportview.get', 
       auto: true, 
@@ -909,11 +872,33 @@ export default {
           return note
         })
         d.arriveTime = '-'
-        d.status_log?.forEach(value => {
+        d.status_log?.forEach((value, index) => {
           value.timeFormat = dayjs(value.time).format('h:mm a    D/MM/YYYY')
-          if(value.status == 'Arrived')
-            d.arriveTime = dayjs(value.time)
         })
+
+        const arvRow = d.status_log.filter(value => value.status == 'Arrived')
+				if(arvRow.length > 0){
+					d.arriveTime = dayjs(arvRow[0].time)
+					const difference = dayjs(arvRow[0].time).diff(dayjs(d.appointment_date + ' ' + d.appointment_time), 'minute')
+					let diffHours = parseInt(difference / 60)
+					let diffMinutes = difference % 60
+					if(difference < 5 && difference > -5){
+						d.arrivalTime = 'on time'
+					}
+					if(difference < 0){
+						diffHours *= -1
+						diffMinutes *= -1
+						d.arrivalTime = (diffHours ? (diffHours + 'h ') : '') + (diffMinutes + 'm') + ' early'
+					}
+					else{
+						d.arrivalTime = (diffHours ? (diffHours + 'h ') : '') + (diffMinutes + 'm') + ' late'
+					}
+				}
+				const readyRow = d.status_log.filter(value => value.status == 'Ready' || value.status == 'In Room')
+				if(readyRow.length > 0){
+					d.readyTime = dayjs(readyRow[0].time)
+				}
+
         d.appointment_date_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('D/MM/YYYY');
 				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
 				d.patient_cpr = d.patient_name + ' ' + d.patient_details?.cpr

@@ -39,11 +39,6 @@ export default async function call(method, args = {}) {
 				errorMessage += `\n${error._error_message}`;
 			}
 
-			// Check for specific response status codes
-			if ([401, 403].includes(res.status) && router.currentRoute.name !== 'Login') {
-				router.push('/login');
-			}
-
 			// Throw the constructed error
 			throw new Error(errorMessage);
 		}

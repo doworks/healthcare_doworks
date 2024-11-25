@@ -19,38 +19,40 @@
             allow-clear
             mode="multiple"
             v-model:value="form.children.users"
-            :options="$resources.users.data?.options"
-            :fieldNames="{label: 'full_name', value: 'name'}"
+            :options="$resources.users.data"
             style="min-width: 400px; max-width: 600px;"
             show-search
             :loading="$resources.users.list.loading"
             @search="(value) => {handleSearch(
-              value, 
-              $resources.users, 
-              {enabled: 1, full_name: ['like', `%${value}%`]}, 
-              {enabled: 1},
+            value, 
+            $resources.users,
             )}"
             :filterOption="false"
-            ></a-select>
+            >
+              <template #option="{ value, description }">
+                <strong>{{ value }}</strong><br><span class="small">{{ description }}</span>
+              </template>
+            </a-select>
           </a-form-item>
           <a-form-item label="Roles" v-if="form.for == 'Roles'">
             <a-select
             allow-clear
             mode="multiple"
             v-model:value="form.children.roles"
-            :options="$resources.roles.data?.options"
-            :fieldNames="{label: 'role_name', value: 'name'}"
+            :options="$resources.roles.data"
             style="min-width: 400px; max-width: 600px;"
             show-search
             :loading="$resources.roles.list.loading"
             @search="(value) => {handleSearch(
-              value, 
-              $resources.roles, 
-              {disabled: 0, role_name: ['like', `%${value}%`]}, 
-              {disabled: 0},
+            value, 
+            $resources.roles,
             )}"
             :filterOption="false"
-            ></a-select>
+            >
+              <template #option="{ value, description }">
+                <strong>{{ value }}</strong><br><span class="small">{{ description }}</span>
+              </template>
+            </a-select>
           </a-form-item>
           <a-form-item label="Notes">
             <a-textarea v-model:value="form.note" placeholder="Notes" :rows="4" />
@@ -101,36 +103,32 @@ export default {
     users() { return { 
       type: 'list', 
       doctype: 'User', 
-      filters: {enabled: 1},
-      fields: ['name', 'full_name'], 
-      auto: true, 
-      orderBy: 'full_name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
+      filters: {
+				txt:'', 
+				filters:{enabled: 1}, 
+				reference_doctype: 'Patient Appointment'
+			},
+			auto: true, 
+			pageLength: 10,
+			url: 'healthcare_doworks.api.general_methods.link', 
+			transform(data) {
+				return data.map(val => {val.label = val.value; return val})
+			}
     }},
     roles() { return { 
       type: 'list', 
       doctype: 'Role', 
-      filters: {disabled: 0},
-      fields: ['name', 'role_name'], 
-      auto: true, 
-      orderBy: 'role_name',
-      pageLength: 10,
-      url: 'frappe.desk.reportview.get', 
-      transform(data) {
-        if(data.values.length == 0)
-          data.options = []
-        else
-          data.options = this.transformData(data.keys, data.values);  // Transform the result into objects
-        return data
-      }
+      filters: {
+				txt:'', 
+				filters:{disabled: 0}, 
+				reference_doctype: 'Patient Appointment'
+			},
+			auto: true, 
+			pageLength: 10,
+			url: 'healthcare_doworks.api.general_methods.link', 
+			transform(data) {
+				return data.map(val => {val.label = val.value; return val})
+			}
     }},
   },
   computed: {
@@ -229,23 +227,14 @@ export default {
         return obj;
       });
     },
-    handleSearch(query, resource, filters, initialFilters) {
+    handleSearch(txt, resource, filters, initialFilters, orFilters) {
       // Clear the previous timeout to avoid spamming requests
       clearTimeout(this.searchTimeout);
 
       // Set a new timeout (300ms) for debouncing
       this.searchTimeout = setTimeout(() => {
-        if (query) {
-          // Update list resource options to fetch matching records from server
-          resource.update({filters});
-
-          // Fetch the updated results
-          resource.reload();
-        } else {
-          // If no search query, load initial records
-          resource.update({filters: initialFilters});
-          resource.reload();
-        }
+        resource.update({filters: {...resource.filters, txt}});
+        resource.reload();
       }, 300);  // Debounce delay of 300ms
     },
   },

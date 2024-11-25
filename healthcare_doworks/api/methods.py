@@ -156,10 +156,10 @@ def transferToPractitioner(app, practitioner):
 def change_status(docname, status):
 	doc = frappe.get_doc('Patient Appointment', docname)
 	doc.custom_visit_status = status
-	doc.append("custom_appointment_time_logs", {
-		"status": status,
-		"time": datetime.datetime.now()
-	})
+	# doc.append("custom_appointment_time_logs", {
+	# 	"status": status,
+	# 	"time": datetime.datetime.now()
+	# })
 	doc.save()
 
 @frappe.whitelist()
@@ -185,7 +185,7 @@ def patient_encounter_name(appointment_id):
 			new_encounter.medical_department = appointment.department
 			new_encounter.appointment_type = appointment.appointment_type
 			new_encounter.custom_appointment_category = appointment.custom_appointment_category
-			if appointment.custom_appointment_category == 'First Time':
+			if appointment.custom_appointment_category == 'First Time' or (appointment.custom_appointment_category == 'Procedure' and len(appointment.custom_procedure_templates) == 0):
 				new_encounter.custom_encounter_state = 'Consultation'
 			else:
 				new_encounter.custom_encounter_state = appointment.custom_appointment_category
@@ -725,8 +725,6 @@ def get_invoice_items(**args):
 
 @frappe.whitelist()
 def edit_doc(form, children={}, submit=False):
-	print(form)
-	print(children)
 	# Fetch the document using the doctype and name
 	doc = frappe.get_doc(form['doctype'], form['name'])
 
