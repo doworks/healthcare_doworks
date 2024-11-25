@@ -574,7 +574,7 @@ export default {
 						...(this.tab !== 'cancelled' ? [{label: 'Cancelled', command: ({ item }) => this.updateStatus(item)}] : []),
 					]
 				},
-				...(this.$route.name == 'appointments' && (this.tab == 'scheduled' || this.tab !== 'no show') ? [{
+				...(this.$route.name == 'appointments' && (this.tab == 'scheduled' || this.tab == 'no show') ? [{
 					label: 'Send Reminder',
 					icon: 'mdi mdi-bullhorn-outline',
 					items: [
