@@ -583,16 +583,16 @@ export default {
 							icon: 'mdi mdi-whatsapp',
 							command: ({ item }) => {
 								let message = `Dear LAYLA ABBAS MOHAMED NOUROOZ JAMALI, 
-								your appointment with Derma One on ${dayjs(item.appointment_date).format('D MMMM YYYY')} is at ${item.appointment_time}. 
+								your appointment with Derma One on ${dayjs(this.selectedRow.appointment_date).format('D MMMM YYYY')} is at ${this.selectedRow.appointment_time}. 
 								Kindly, send Yes to confirm, No to cancel. or call us on 17240042 to reschedule.\n\n`;
 								message += `عزيزي المراجع/عزيزتي المراجعة:
-								 نود تذكيركم بالموعد القادم في  عيادة ديرماون بتاريخ ${dayjs(item.appointment_date).format('D/MM/YYYY')}  ${item.appointment_time} الرجاء ارسال نعم للتاكيد و في حالة الالغاء ارسل لا
+								 نود تذكيركم بالموعد القادم في  عيادة ديرماون بتاريخ ${dayjs(this.selectedRow.appointment_date).format('D/MM/YYYY')}  ${this.selectedRow.appointment_time} الرجاء ارسال نعم للتاكيد و في حالة الالغاء ارسل لا
 								.ولحجز موعد آخر اتصل على 17240042 و شكرا`;
 
-								if (item.patient_details.mobile){
+								if (this.selectedRow.patient_details.mobile){
 									//send_sms(mobile, message);
 									var strWindowFeatures = "location=yes,height=570,width=520,scrollbars=no,status=yes";
-									var URL = "https://wa.me/" + item.patient_details.mobile + "?text=" + encodeURIComponent(message);
+									var URL = "https://wa.me/" + this.selectedRow.patient_details.mobile + "?text=" + encodeURIComponent(message);
 									//URL = encodeURI(URL);
 									var win = window.open(URL, '_blank', strWindowFeatures);
 									
