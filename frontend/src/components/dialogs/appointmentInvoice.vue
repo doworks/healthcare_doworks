@@ -2,7 +2,10 @@
   <v-dialog v-model="dialogVisible" width="1400px" scrollable>
     <v-card rounded="lg">
         <v-card-title class="d-flex justify-space-between align-center">
-          <div class="text-h5 text-medium-emphasis ps-2"><br>{{ appointment.patient_name }}</br> Appointment Invoice</div>
+          <div class="text-h5 text-medium-emphasis ps-2">
+            <br>{{ appointment.patient_name }}</br> Appointment Invoice 
+            <!-- <Tag severity="secondary" value="Secondary"></Tag> -->
+          </div>
           <v-btn icon="mdi mdi-close" variant="text" @click="closeDialog"></v-btn>
         </v-card-title>
         <v-divider class="m-0"></v-divider>
@@ -30,6 +33,8 @@
                   {label: 'Service', key: 'item'},
                   {label: 'Quantity', key: 'quantity'},
                   {label: 'Rate', key: 'rate'},
+                  {label: 'Discount Percentage', key: 'discount_percentage'},
+                  {label: 'Discount Amount', key: 'discount_amount'},
                   {label: 'Amount', key: 'amount'},
                   ...(appointment.custom_payment_type == 'Insurance' ? [
                     {label: 'Patient Amount', key: 'customer_amount'},
@@ -136,6 +141,37 @@
                           else
                             row.customer_amount = row.amount;
                         }"
+                        disabled
+                        />
+                      </a-form-item>
+                      <a-form-item label="Discount Percentage">
+                        <a-input-number 
+                        class="w-full" 
+                        :controls="false" 
+                        v-model:value="row.discount_percentage"
+                        @change="(value, option) => {
+                          row.discount_amount = parseFloat(value) / 100 * parseFloat(row.rate)
+                          row.amount = (parseFloat(row.rate) - row.discount_amount) * parseFloat(row.quantity)
+                          if(appointment.custom_payment_type == 'Insurance')
+                            row.insurance_amount = row.amount - parseFloat(row.customer_amount);
+                          else
+                            row.customer_amount = row.amount;
+                        }"
+                        />
+                      </a-form-item>
+                      <a-form-item label="Discount Amount">
+                        <a-input-number 
+                        class="w-full" 
+                        :controls="false" 
+                        v-model:value="row.discount_amount"
+                        @change="(value, option) => {
+                          row.discount_percentage = parseFloat(value) / parseFloat(row.rate) * 100
+                          row.amount = (parseFloat(row.rate) - value) * parseFloat(row.quantity)
+                          if(appointment.custom_payment_type == 'Insurance')
+                            row.insurance_amount = row.amount - parseFloat(row.customer_amount);
+                          else
+                            row.customer_amount = row.amount;
+                        }"
                         />
                       </a-form-item>
                       <a-form-item label="Amount">
@@ -168,6 +204,110 @@
                 </EditableTable>
               </v-col>
             </v-row>
+            <h5 class="mt-4 mb-2">Taxes And Discounts</h5>
+            <v-row>          
+              <v-col cols="12" md="6">
+                <a-form layout="vertical">
+                  <a-form-item label="Tax Template">
+                    <LinkField 
+                    doctype="Sales Taxes and Charges Template" 
+                    :value="appointment.custom_invoice_tax_template" 
+                    @change="(data) => { 
+                      $setValue({doctype: 'Patient Appointment', name: appointment.name, fieldname:'custom_invoice_tax_template', value: data})
+                      .then(response => {
+                        appointment.custom_invoice_tax_template = response.custom_invoice_tax_template
+                        getPrices()
+                      })
+                    }"
+                    />
+                  </a-form-item>
+                  <a-form-item label="Total Taxes and Charges" v-if="mockInvoice?.total_taxes_and_charges" >
+                    <a-input class="w-full" disabled v-model:value="mockInvoice.total_taxes_and_charges"/>
+                  </a-form-item>
+                </a-form>
+              </v-col>
+              <v-col cols="12" md="6">
+                <a-form layout="vertical">
+                  <a-form-item label="Apply Discount On">
+                    <a-select
+                      class="w-full"
+                      v-model:value="appointment.custom_apply_discount_on"
+                      :options="[
+                        {label: '', value: ''}, 
+                        {label: 'Grand Total', value: 'Grand Total'}, 
+                        {label: 'Net Total', value: 'Net Total'}
+                      ]"
+                      @change="value => {
+                        $setValue({
+                          doctype: 'Patient Appointment', 
+                          name: appointment.name, 
+                          fieldname: 'custom_apply_discount_on',
+                          value: value
+                        })
+                        .then(response => {
+                          getPrices()
+                        })
+                      }"
+                    ></a-select>
+                  </a-form-item>
+                  <a-form-item label="Discount Percentage">
+                    <a-input-number 
+                    class="w-full" 
+                    :controls="false" 
+                    v-model:value="appointment.custom_invoice_discount_percentage"
+                    @change="(value, option) => {
+                      appointment.custom_invoice_discount_amount = parseFloat(value) / 100 * parseFloat(mockInvoice?.grand_total || 1)
+                      $setValue({
+                        doctype: 'Patient Appointment', 
+                        name: appointment.name, 
+                        fieldname:{
+                          custom_invoice_discount_percentage: appointment.custom_invoice_discount_percentage, 
+                          custom_invoice_discount_amount: appointment.custom_invoice_discount_amount, 
+                        }                    
+                      })
+                      .then(response => {
+                        getPrices()
+                      })
+                    }"
+                    />
+                  </a-form-item>
+                  <a-form-item label="Discount Amount">
+                    <a-input-number 
+                    class="w-full" 
+                    :controls="false" 
+                    v-model:value="appointment.custom_invoice_discount_amount"
+                    @change="(value, option) => {
+                      appointment.custom_invoice_discount_percentage = parseFloat(value) / parseFloat(mockInvoice?.grand_total || 1) * 100
+                      $setValue({
+                        doctype: 'Patient Appointment', 
+                        name: appointment.name, 
+                        fieldname:{
+                          custom_invoice_discount_percentage: appointment.custom_invoice_discount_percentage, 
+                          custom_invoice_discount_amount: appointment.custom_invoice_discount_amount, 
+                        }                    
+                      })
+                      .then(response => {
+                        getPrices()
+                      })
+                    }"
+                    />
+                  </a-form-item>
+                </a-form>
+              </v-col>
+            </v-row>
+            <h5 v-if="mockInvoice?.grand_total" class="mt-4 mb-2">Total</h5>
+            <v-row>
+              <v-col cols="12" md="6">
+                <a-form layout="vertical">
+                  <a-form-item label="Grand Total" v-if="mockInvoice?.grand_total" >
+                    <a-input class="w-full" disabled v-model:value="mockInvoice.grand_total"/>
+                  </a-form-item>
+                  <a-form-item label="Outstanding Amount" v-if="mockInvoice?.outstanding_amount" >
+                    <a-input class="w-full" disabled v-model:value="mockInvoice.outstanding_amount"/>
+                  </a-form-item>
+                </a-form>
+              </v-col>
+            </v-row>
           </v-container>
         </v-card-text>
         
@@ -184,20 +324,13 @@
           <v-divider class="m-0"></v-divider>
             <v-card-text>
               <a-form layout="vertical">
-                <a-form-item label="Tax Template">
-                  <LinkField 
-                  doctype="Sales Taxes and Charges Template" 
-                  :value="taxTemplate" 
-                  @change="(data) => { taxTemplate = data }"
-                  />
+                <a-form-item label="Grand Total" v-if="mockInvoice?.total" >
+                  <a-input class="w-full" disabled v-model:value="mockInvoice.grand_total"/>
                 </a-form-item>
-                <a-form-item label="Total (BHD)" v-if="mockInvoice?.total" >
-                  <a-input class="w-full" disabled v-model:value="mockInvoice.total"/>
-                </a-form-item>
-                <a-form-item label="Total Taxes and Charges (BHD)" v-if="mockInvoice?.total" >
+                <a-form-item label="Total Taxes and Charges" v-if="mockInvoice?.total" >
                   <a-input class="w-full" disabled v-model:value="mockInvoice.total_taxes_and_charges"/>
                 </a-form-item>
-                <a-form-item label="Outstanding Amount (BHD)" v-if="mockInvoice?.outstanding_amount" >
+                <a-form-item label="Outstanding Amount" v-if="mockInvoice?.outstanding_amount" >
                   <a-input class="w-full" disabled v-model:value="mockInvoice.outstanding_amount"/>
                 </a-form-item>
                 <v-divider class="m-0"></v-divider>
@@ -205,7 +338,10 @@
                   <LinkField 
                   doctype="POS Profile" 
                   :value="posProfile" 
-                  @change="(data) => { posProfile = data }"
+                  @change="(data) => { 
+                    posProfile = data 
+                    getPaymentMethods(data)
+                  }"
                   />
                 </a-form-item>
                 <!-- <a-form-item label="Amount" v-if="paymentMethods.length > 0" >
@@ -351,7 +487,7 @@
 </template>
 
 <script >
-import { Form } from 'ant-design-vue';
+import { Form, Tag } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { VDivider } from 'vuetify/components/VDivider';
@@ -362,7 +498,7 @@ import { VProgressCircular } from 'vuetify/components/VProgressCircular';
 import EditableTable from '../editableTable.vue';
 
 export default {
-  inject: ['$call'],
+  inject: ['$call', '$setValue'],
   components: {
     VDivider, VInfiniteScroll, VItemGroup, VItem, VOverlay, VProgressCircular,
   },
@@ -409,7 +545,7 @@ export default {
           label: 'Create Invoices',
           icon: 'pi pi-plus',
           command: () => {
-            // this.getPrices()
+            this.getPrices()
             this.posProfile = '';
             this.paymentMethods = []
             this.taxTemplate = '';
@@ -456,6 +592,8 @@ export default {
 			handler(newValue) {
 				if(newValue){
           this.invoiceItems = newValue.invoice_items
+          if(newValue.name)
+          this.getPrices()
         }
 			}
 		},
@@ -491,7 +629,7 @@ export default {
     },
     getPrices(value) {
       this.lodingOverlay = true;
-      this.$call('healthcare_doworks.api.methods.create_mock_invoice', {appointment: this.appointment.name, tax: value})
+      this.$call('healthcare_doworks.api.methods.create_mock_invoice', {appointment: this.appointment.name})
       .then(response => {
         this.lodingOverlay = false;
         this.mockInvoice = response
@@ -530,6 +668,7 @@ export default {
               value.insurance_invoice = response.insurance_invoice
             return value
           })
+          this.getPrices()
       }).catch(error => {
         this.lodingOverlay = false;
         this.$emit('show-alert', error.message, 'error')
@@ -594,6 +733,7 @@ export default {
               detail: 'Item row added',
               life: 3000 // Duration in ms
             });
+            this.getPrices()
           }).catch(error => {
             this.$emit('show-alert', error.message, 'error')
           });
@@ -612,6 +752,7 @@ export default {
               detail: 'Item row saved',
               life: 3000 // Duration in ms
             });
+            this.getPrices()
           }).catch(error => {
             this.$emit('show-alert', error.message, 'error')
           });
@@ -635,6 +776,7 @@ export default {
             detail: 'Item row deleted',
             life: 3000 // Duration in ms
           });
+          this.getPrices()
         }).catch(error => {
           this.$emit('show-alert', error.message, 'error')
         })
@@ -642,6 +784,25 @@ export default {
           console.log('error', err);
         });
       })
+    },
+    handleSearch(query, resource, filters, initialFilters, orFilters) {
+      // Clear the previous timeout to avoid spamming requests
+      clearTimeout(this.searchTimeout);
+
+      // Set a new timeout (300ms) for debouncing
+      this.searchTimeout = setTimeout(() => {
+        if (query) {
+          // Update list resource options to fetch matching records from server
+          resource.update({filters, orFilters});
+
+          // Fetch the updated results
+          resource.reload();
+        } else {
+          // If no search query, load initial records
+          resource.update({filters: initialFilters, orFilters});
+          resource.reload();
+        }
+      }, 300);  // Debounce delay of 300ms
     },
   },
 };

@@ -120,17 +120,29 @@
                 
                 <v-card-actions class="my-2 d-flex justify-end">
                 <v-btn
+                v-if="form.docstatus != 1"
                 class="text-none"
                 text="Cancel"
                 @click="closeDialog"
                 ></v-btn>
                 <v-btn
+                v-if="form.docstatus != 1"
                 class="text-none"
-                color="blue"
+                color="green"
                 
                 text="Save"
                 variant="tonal"
                 @click="onSubmit()"
+                type="submit"
+                ></v-btn>
+
+                <v-btn
+                class="text-none"
+                color="blue"
+                
+                text="Submit"
+                variant="tonal"
+                @click="onSubmit(true)"
                 type="submit"
                 ></v-btn>
                 </v-card-actions>
@@ -337,7 +349,7 @@ export default {
                 this.form.nutrition_note = ''
             }
         },
-        onSubmit() {
+        onSubmit(submit) {
             const { validate } = Form.useForm(this.form, this.rules);
             validate().then(() => {
                 this.lodingOverlay = true;
@@ -346,7 +358,7 @@ export default {
                 formClone.signs_time = dayjs(this.form.signs_time).format('HH:mm')
                 const old = !!formClone.name
                 if(old){
-                    this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone})
+                    this.$call('healthcare_doworks.api.methods.edit_doc', {form: formClone, submit})
                     .then(response => {
                         this.$toast.add({
                             severity: 'success',

@@ -15,44 +15,26 @@
             ></a-select>
           </a-form-item>
           <a-form-item label="Users" v-if="form.for == 'Users'">
-            <a-select
-            allow-clear
+            <LinkField 
+            doctype="User" 
+            :value="form.children.users" 
             mode="multiple"
-            v-model:value="form.children.users"
-            :options="$resources.users.data"
-            style="min-width: 400px; max-width: 600px;"
-            show-search
-            :loading="$resources.users.list.loading"
-            @search="(value) => {handleSearch(
-            value, 
-            $resources.users,
-            )}"
-            :filterOption="false"
-            >
-              <template #option="{ value, description }">
-                <strong>{{ value }}</strong><br><span class="small">{{ description }}</span>
-              </template>
-            </a-select>
+            :style="{minWidth: '400px', maxWidth: '600px'}"
+            @change="(data) => { 
+              form.children.users = data 
+            }"
+            />
           </a-form-item>
           <a-form-item label="Roles" v-if="form.for == 'Roles'">
-            <a-select
-            allow-clear
+            <LinkField 
+            doctype="Role" 
+            :value="form.children.roles" 
             mode="multiple"
-            v-model:value="form.children.roles"
-            :options="$resources.roles.data"
-            style="min-width: 400px; max-width: 600px;"
-            show-search
-            :loading="$resources.roles.list.loading"
-            @search="(value) => {handleSearch(
-            value, 
-            $resources.roles,
-            )}"
-            :filterOption="false"
-            >
-              <template #option="{ value, description }">
-                <strong>{{ value }}</strong><br><span class="small">{{ description }}</span>
-              </template>
-            </a-select>
+            :style="{minWidth: '400px', maxWidth: '600px'}"
+            @change="(data) => { 
+              form.children.roles = data 
+            }"
+            />
           </a-form-item>
           <a-form-item label="Notes">
             <a-textarea v-model:value="form.note" placeholder="Notes" :rows="4" />

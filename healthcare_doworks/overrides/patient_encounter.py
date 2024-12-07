@@ -18,3 +18,13 @@ class CustomPatientEncounter(PatientEncounter):
 		# if self.appointment:
 		# 	frappe.db.set_value("Patient Appointment", self.appointment, "status", "Closed")
 		pass
+
+	def on_cancel(self):
+		self.db_set("status", "Cancelled")
+
+		if self.appointment:
+			# frappe.db.set_value("Patient Appointment", self.appointment, "status", "Open")
+			frappe.db.set_value("Patient Appointment", self.appointment, "custom_visit_status", "Cancelled")
+
+		if self.inpatient_record and self.drug_prescription:
+			delete_ip_medication_order(self)

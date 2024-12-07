@@ -345,10 +345,9 @@
         </div>
       </a-affix>
       <div class="col-xl-9 col-12 ps-0 left-column row h-100" style="margin-right: calc(.5 * var(--bs-gutter-x)); padding: 0">
-        <div class="mb-3 col-6 pe-0">
+        <!-- <div class="mb-3 col-6 pe-0">
           <Card class="p-0" id="past-encounters" style="overflow: hidden;">
             <template #title>Visit Logs
-              <!-- <a class="fs-6 float-end" :class="{'d-none': records.encounters.length <= 5}">See All</a> -->
               <v-btn class="float-end text-orange text-none" variant="plain">See All</v-btn>
             </template>
             <template #content>
@@ -374,8 +373,8 @@
               </DataTable>
             </template>
           </Card>
-        </div>
-        <div class="mb-3 col-6 pe-0">
+        </div> -->
+        <!-- <div class="mb-3 col-6 pe-0">
           <Card class="p-0" id="services" style="overflow: hidden;">
             <template #title>
               <span class="align-middle">Service Requests / Results ({{ records.services && records.services.length }})</span>
@@ -388,6 +387,188 @@
                 <Column field="order_date" header="Ordered On"></Column>
                 <Column field="status" header="Status"></Column>
                 <Column field="practitioner" header="Ordered By"></Column>
+              </DataTable>
+            </template>
+          </Card>
+        </div> -->
+        <div class="mb-3 col-6 pe-0">
+          <Card class="p-0" id="appointments" style="overflow: hidden;">
+            <template #title>Appointments ({{ $resources.appointments.data?.length || '0' }})</template>
+            <template #content>
+              <DataTable 
+              :value="$resources.appointments.data" 
+              selectionMode="single" 
+              :metaKeySelection="true" 
+              @row-click="({data}) => {appointmentDialog('Edit Appointment', false, data)}"
+              dataKey="id" 
+              class="max-h-72 overflow-y-auto"
+              :loading="$resources.appointments.list.loading"
+              >
+                <template #empty><v-empty-state title="No Appointments"></v-empty-state></template>
+                <Column header="#">
+                  <template #body="slotProps">
+                    {{ slotProps.index + 1 }}
+                  </template>
+                </Column>
+                <Column header="Time" field="appointment_time">
+                  <template #body="{ data }">
+                    <div>
+                      <div>
+                        {{ data.appointment_date_moment }}
+                      </div>
+                      <div>
+                        {{ data.appointment_time_moment }}
+                      </div>
+                    </div>
+                  </template>
+                </Column>
+                <Column header="Confirmed?" field="custom_confirmed">
+                  <template #body="{ data }">
+                    <div class="text-center">
+                      <i v-if="data.custom_confirmed" class="mdi mdi-check"/>
+                      <!-- <i v-else class="mdi mdi-close"/> -->
+                    </div>
+                  </template>
+                </Column>
+                <Column field="appointment_datetime" hidden></Column>
+                <Column header="Status" field="custom_visit_status"></Column>
+                <Column header="Practitioner" field="practitioner_name">
+                  <template #body="{ data }">
+                    <div class="flex align-items-center gap-2" v-if="data.practitioner_name">
+                      <v-avatar v-if="data.practitioner_image">
+                        <img
+                        class="h-100 w-100"
+                        :src="data.practitioner_image"
+                        />
+                      </v-avatar>
+                      <span>{{ data.practitioner_name }}</span>
+                    </div>
+                  </template>
+                </Column>
+                <Column header="Type">
+                  <template #body="{ data }">
+                    <div>
+                      <div>
+                        {{ data.custom_appointment_category }}
+                      </div>
+                      <div v-if="data.custom_appointment_category == 'Procedure'">
+                        <div v-if="data.procedure_templates.length > 0">
+                          <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
+                        </div>
+                        <div v-else>
+                          {{ data.notes }}
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </Column>
+                <Column header="Paid Amount" field="paid_amount">
+                  <template #body="{ data }">
+                    BD {{ data.paid_amount }}
+                  </template>
+                </Column>
+              </DataTable>
+            </template>
+          </Card>
+        </div>
+        <div class="mb-3 col-6 pe-0">
+          <Card class="p-0" id="Invoices" style="overflow: hidden;">
+            <template #title>Invoices ({{ $resources.invoices.data?.length || '0' }})</template>
+            <template #content>
+              <DataTable 
+              :value="$resources.invoices.data" 
+              selectionMode="single" 
+              :metaKeySelection="true" 
+              dataKey="id" 
+              @row-click="invoiceSelect"
+              class="max-h-72 overflow-y-auto"
+              :loading="$resources.invoices.list.loading"
+              >
+                <template #empty><v-empty-state title="No invoices"></v-empty-state></template>
+                <Column header="#">
+                  <template #body="slotProps">
+                    {{ slotProps.index + 1 }}
+                  </template>
+                </Column>
+                <Column header="Date">
+                  <template #body="{ data }">
+                    {{ formatDate(data.posting_date) }}
+                  </template>
+                </Column>
+                <Column header="Total Amount" field="grand_total"></Column>
+                <Column header="Paid Amount" field="paid_amount"></Column>
+                <Column header="Services" field="services"></Column>
+                <Column header="Status" field="status"></Column>
+              </DataTable>
+            </template>
+          </Card>
+        </div>
+        <div class="mb-3 col-6 pe-0">
+          <Card class="p-0" id="consultations" style="overflow: hidden;">
+            <template #title>Consultations ({{ $resources.consultations.data?.length || '0' }})</template>
+            <template #content>
+              <DataTable 
+              :value="$resources.consultations.data" 
+              selectionMode="single" 
+              :metaKeySelection="true" 
+              dataKey="id" 
+              @row-click="({data}) => {encounterSelect(data.name)}"
+              class="max-h-72 overflow-y-auto"
+              :loading="$resources.consultations.list.loading"
+              >
+                <template #empty><v-empty-state title="No Consultations"></v-empty-state></template>
+                <Column header="#">
+                  <template #body="slotProps">
+                    {{ slotProps.index + 1 }}
+                  </template>
+                </Column>
+                <Column header="Date">
+                  <template #body="{ data }">
+                    {{ formatDate(data.encounter_date) }}
+                  </template>
+                </Column>
+                <Column header="Practitioner" field="practitioner_name"></Column>
+                <Column header="Type" field="custom_appointment_category"></Column>
+                <Column header="Status">
+                  <template #body="{ data }">
+                    {{ data.status || 'Draft' }}
+                  </template>
+                </Column>
+              </DataTable>
+            </template>
+          </Card>
+        </div>
+        <div class="mb-3 col-6 pe-0">
+          <Card class="p-0" id="procedures" style="overflow: hidden;">
+            <template #title>Procedures ({{ $resources.procedures.data?.length || '0' }})</template>
+            <template #content>
+              <DataTable 
+              :value="$resources.procedures.data" 
+              selectionMode="single" 
+              :metaKeySelection="true" 
+              dataKey="id" 
+              @row-click="({data}) => {encounterSelect(data.custom_patient_encounter)}"
+              class="max-h-72 overflow-y-auto"
+              :loading="$resources.procedures.list.loading"
+              >
+                <template #empty><v-empty-state title="No Clinical Procedures"></v-empty-state></template>
+                <Column header="#">
+                  <template #body="slotProps">
+                    {{ slotProps.index + 1 }}
+                  </template>
+                </Column>
+                <Column header="Start Date">
+                  <template #body="{ data }">
+                    {{ formatDate(data.start_date) }}
+                  </template>
+                </Column>
+                <Column header="Practitioner" field="practitioner_name"></Column>
+                <Column header="Procedure" field="procedure_template"></Column>
+                <Column header="Status">
+                  <template #body="{ data }">
+                    {{ data.status || 'Draft' }}
+                  </template>
+                </Column>
               </DataTable>
             </template>
           </Card>
@@ -1645,7 +1826,7 @@
                     <AccordionContent>
                       <v-container>
                         <Accordion :value="procedureForms.map((p,i) => i)" multiple>
-                          <AccordionPanel v-for="(procedure, index) in procedureForms" :value="index" :disabled="procedureForms.length == 1">
+                          <AccordionPanel v-for="(procedure, index) in procedureForms" :value="index">
                             <AccordionHeader>{{ procedure.procedure_template }}</AccordionHeader>
                             <AccordionContent>
                               <v-container>
@@ -2330,6 +2511,47 @@ export default {
         return data
       }
     }},
+    
+    appointments() { return { 
+      type: 'list', 
+      doctype: 'Patient Appointment', 
+      fields: ['*'], 
+      filters: {patient: this.records.patient.name},
+      auto: true,
+      orderBy: 'appointment_date desc',
+      url:'healthcare_doworks.api.methods.check_availability',
+      pageLength: 1000,
+      transform(data) {
+        return this.adjustAppointments(data)
+      },
+    }},
+    consultations() { return { 
+      type: 'list', 
+      doctype: 'Patient Encounter', 
+      fields: ['name', 'encounter_date', 'practitioner_name', 'custom_appointment_category', 'status'], 
+      filters: {patient: this.records.patient.name, custom_appointment_category: ['!=', 'Procedure']},
+      auto: true,
+      orderBy: 'encounter_date desc',
+      pageLength: 1000,
+    }},
+    procedures() { return { 
+      type: 'list', 
+      doctype: 'Clinical Procedure', 
+      fields: ['name', 'start_date', 'practitioner_name', 'procedure_template', 'custom_patient_encounter', 'status'], 
+      filters: {patient: this.records.patient.name},
+      auto: true,
+      orderBy: 'start_date desc',
+      pageLength: 1000,
+    }},
+    invoices() { return { 
+      type: 'list', 
+      doctype: 'Sales Invoice', 
+      filters: {customer: this.records.patient.customer},
+      auto: true,
+      orderBy: 'posting_date desc',
+      pageLength: 1000,
+      url:'healthcare_doworks.api.methods.invoices',
+    }},
   },
   setup() {
     let encounterForm = reactive({
@@ -2338,7 +2560,7 @@ export default {
       custom_encounter_start_time: dayjs(),
       procedure_date: dayjs(),
       symptoms: [],
-      custom_symptom_duration: 0,
+      custom_symptom_duration: '',
       custom_symptoms_notes: '',
       custom_physicalExamination: '',
       custom_otherExamination: '',
@@ -2487,7 +2709,13 @@ export default {
           command: () => {
             this.submitEncounter()
           }
-        }] : []),
+        }] : [{
+          label: 'Cancel',
+          icon: 'mdi mdi-cancel',
+          command: () => {
+            this.cancelEncounter()
+          }
+        }]),
         {
           label: 'Invoice',
           icon: 'mdi mdi-invoice-text-outline',
@@ -2643,6 +2871,19 @@ export default {
       this.alertType = type;
       this.alertActive = true;
     },
+    cancelEncounter() {
+      this.$call('healthcare_doworks.api.methods.cancel_encounter', {encounter: this.$route.params.encounterId})
+      .then(response => {
+        this.$toast.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: 'Encounter cancelled',
+          life: 3000 // Duration in ms
+        });
+      }).catch(error => {
+        this.showAlert(error.message, 'error')
+      });
+    },
     submitEncounter() {
       this.$call('healthcare_doworks.api.methods.submit_encounter', {encounter: this.$route.params.encounterId})
       .then(response => {
@@ -2713,6 +2954,64 @@ export default {
         })
       })
     },
+    encounterSelect(encounter) {
+      this.$router.push({ name: 'patient-encounter', params: { encounterId: encounter } });
+    },
+    invoiceSelect({data}) { 
+      window.open(`/app/sales-invoice/${data.name}`) 
+    },
+    formatDate(date) {
+      return dayjs(date).format('DD/MM/YYYY')
+    },
+    adjustAppointments(data) {
+			return [...(data || [])].map((d) => {
+        d.visit_notes = d.visit_notes?.map(note => {
+          note.dayDate = dayjs(note.time).format('DD/MM/YYYY')
+          note.dayTime = dayjs(note.time).format('h:mm A')
+          return note
+        })
+        d.arriveTime = '-'
+        d.status_log?.forEach(value => {
+          value.timeFormat = dayjs(value.time).format('h:mm a    D/MM/YYYY')
+          if(value.status == 'Arrived')
+            d.arriveTime = dayjs(value.time)
+        })
+        d.appointment_date_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('D/MM/YYYY');
+				d.appointment_time_moment = dayjs(d.appointment_date + ' ' + d.appointment_time).format('h:mm a');
+				d.patient_cpr = d.patient_name + ' ' + d.patient_details?.cpr
+
+				return d;
+			});
+    },
+    appointmentDialog(formType, isNew, row) {
+      this.appointmentForm.name = row.name;
+      this.appointmentForm.duration = row.duration;
+      this.appointmentForm.appointment_type = row.appointment_type;
+      this.appointmentForm.appointment_for = row.appointment_for;
+      this.appointmentForm.custom_appointment_category = row.custom_appointment_category;
+      this.appointmentForm.custom_branch = row.custom_branch;
+      this.appointmentForm.procedure_templates = row.procedure_templates;
+      this.appointmentForm.custom_payment_type = row.custom_payment_type;
+      this.appointmentForm.custom_confirmed = row.custom_confirmed;
+      this.appointmentForm.practitioner = row.practitioner;
+      this.appointmentForm.practitioner_name = row.practitioner_name;
+      this.appointmentForm.patient = row.patient_details.id;
+      this.appointmentForm.patient_name = row.patient_name;
+      this.appointmentForm.patient_sex = row.patient_details.gender;
+      this.appointmentForm.patient_mobile = row.patient_details.mobile;
+      this.appointmentForm.patient_age = row.patient_details.age;
+      this.appointmentForm.department = row.department;
+      this.appointmentForm.service_unit = row.service_unit;
+      this.appointmentForm.notes = row.notes;
+      this.appointmentForm.appointment_date = dayjs(row.appointment_date)
+      this.appointmentForm.appointment_time = row.appointment_time;
+
+      this.appointmentForm.doctype = 'Patient Appointment';
+      // this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
+			this.appointmentForm.type = formType
+      this.appointmentForm.custom_is_walked_in = false;
+			this.appointmentOpen = true
+		},
     visitLogSelect(row) {
       this.pastVisitEditRow = row.data;
       this.pastVisitsActive = true;

@@ -90,7 +90,7 @@
 					/>
 				</template>
 			</Column>
-			<Column header="Arrived" v-if="tab != 'scheduled'"
+			<Column header="Arrived" v-if="tab != 'scheduled' && tab != 'no show'"
 			field="arrivalTime" 
 			sortable 
 			:showFilterMenu="false" 
@@ -101,7 +101,7 @@
 					{{ data.arrivalTime }}
 				</template>
 			</Column>
-			<Column header="Waited" v-if="tab != 'scheduled'"
+			<Column header="Waited" v-if="tab != 'scheduled' && tab != 'no show'"
 			field="waitingTime" 
 			sortable 
 			:showFilterMenu="false" 
@@ -121,8 +121,8 @@
 			style="width: 10%"
 			>
 				<template #body="{ data }">
-					<v-chip v-if="tab == 'scheduled' || tab == 'no show'" class="ma-2" label size="small" :color="data.custom_confirmed ? 'green' : 'red'">{{ data.custom_confirmed ? 'Confirmed' : 'Unconfirmed' }}</v-chip>
-					<v-chip v-else class="ma-2" label size="small" :color="getSeverity(data.status)">{{ data.status }}</v-chip>
+					<!-- <v-chip v-if="tab == 'scheduled' || tab == 'no show'" class="ma-2" label size="small" :color="data.custom_confirmed ? 'green' : 'red'">{{ data.custom_confirmed ? 'Confirmed' : 'Unconfirmed' }}</v-chip> -->
+					<v-chip class="ma-2" label size="small" :color="getSeverity(data.status)">{{ data.status }}</v-chip>
 				</template>
 				<template #filter="{ filterModel, filterCallback }">
 					<a-select
@@ -562,9 +562,9 @@ export default {
 					label: 'Status',
 					icon: 'mdi mdi-clipboard-edit-outline',
 					items: [
-						...(this.selectedRow?.custom_confirmed ? [{label: 'Unconfirmed', command: ({ item }) => this.changeConfirmation(0)}] : 
+						...(this.tab == 'scheduled' ? [...(this.selectedRow?.custom_confirmed ? [{label: 'Unconfirmed', command: ({ item }) => this.changeConfirmation(0)}] : 
 							[{label: 'Confirmed', command: ({ item }) => this.changeConfirmation(1)}]
-						),
+						)] : []),
 						...(this.tab !== 'scheduled' ? [{label: 'Scheduled', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'arrived' ? [{label: 'Arrived', command: ({ item }) => this.updateStatus(item)}] : []),
 						...(this.tab !== 'ready' ? [{label: 'Ready', command: ({ item }) => this.updateStatus(item)}] : []),

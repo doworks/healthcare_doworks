@@ -1,59 +1,5 @@
 <template>
   <v-dialog v-model="dialogVisible" width="auto" scrollable>
-    <!-- <OverlayPanel ref="popover" :dismissable="false" :baseZIndex="2000">
-      <v-card min-width="300" >
-        <DataTable 
-        :value="pastAppointments" 
-        selectionMode="single" 
-        :metaKeySelection="true" 
-        dataKey="id" 
-        >
-          <template #empty><v-empty-state title="No available appoiontments for this patient"></v-empty-state></template>
-          <Column header="Time" field="appointment_time">
-            <template #body="{ data }">
-              <div @click="() => {$emit('appointment-dialog', 'Edit Appointment', false, data)}">
-                <div class="text-center">
-                  {{ data.appointment_date_moment }}
-                </div>
-                <div class="text-center">
-                  {{ data.appointment_time_moment }}
-                </div>
-              </div>
-            </template>
-          </Column>
-          <Column header="Confirmed?" field="custom_confirmed">
-            <template #body="{ data }">
-              <div class="text-center">
-                <i v-if="data.custom_confirmed" class="mdi mdi-check"/>
-                <i v-else class="mdi mdi-close"/>
-              </div>
-            </template>
-          </Column>
-          <Column field="appointment_datetime" hidden></Column>
-          <Column header="Visit Status" field="custom_visit_status"></Column>
-          <Column header="Practitioner" field="practitioner_name">
-            <template #body="{ data }">
-              <div class="flex align-items-center gap-2" v-if="data.practitioner_name">
-                <v-avatar v-if="data.practitioner_image">
-                  <img
-                  class="h-100 w-100"
-                  :src="data.practitioner_image"
-                  />
-                </v-avatar>
-                <span>{{ data.practitioner_name }}</span>
-              </div>
-            </template>
-          </Column>
-          <Column header="Type" field="custom_appointment_category"></Column>
-          <Column header="Procedures" field="procedure_templates">
-            <template #body="{ data }">
-              <v-chip v-for="(procedure, index) in data.procedure_templates" :key="index" class="mr-1" label size="small">{{ procedure.template }}</v-chip>
-            </template>
-          </Column>
-          <Column header="Room" field="service_unit"></Column>
-        </DataTable>
-      </v-card>
-    </OverlayPanel> -->
     <v-card rounded="lg">
       <a-form layout="vertical" :model="appointmentForm" :rules="rulesRef">
         <v-card-title class="d-flex justify-space-between align-center">
@@ -63,6 +9,26 @@
         <v-divider class="m-0"></v-divider>
         <v-card-text>
           <v-container>
+            <div v-if="appointmentForm.patient" class="flex mb-4">
+              <v-btn 
+              class="text-none" 
+              color="blue" 
+              variant="tonal" 
+              size="small" 
+              @click="() => {$emit('open-procedure-plan', appointmentForm.patient)}"
+              >
+                New Procedure Plan
+              </v-btn>
+              <v-btn 
+              class="text-none ml-4 animate-bounce" 
+              color="green" 
+              variant="tonal" 
+              size="small" 
+              v-if="procedurePlans.length > 0"
+              >
+                Available Procedure Plans
+              </v-btn>
+            </div>
             <h3>Patient Details</h3>
             <v-row>
               <v-col cols="12" md="6">
@@ -73,7 +39,7 @@
                     ref="patientRef"
                     v-model:value="appointmentForm.patient_name"
                     :options="$resources.patients.data?.options"
-                    :fieldNames="{label: 'patient_name', value: 'name'}"
+                    :fieldNames="{label: 'patient_name', value: 'patient_name'}"
                     @change="(value, option) => {
                       appointmentForm.custom_payment_type = option.custom_default_payment_type
                       
@@ -81,7 +47,12 @@
                       appointmentForm.patient_sex = option.sex;
                       appointmentForm.patient_mobile = option.mobile
                       appointmentForm.patient_age = calculateAge(option.dob)
-                      getPastAppointments(option.name)
+                      // getPastAppointments(option.name)
+
+                      $getList({doctype: 'Procedure Plan', filters: {patient: option.name}})
+                      .then(response => {
+                        procedurePlans = response
+                      })
                     }"
                     show-search
                     :loading="$resources.patients.list.loading"
@@ -105,7 +76,7 @@
                           <span v-if="patient_name" class="ms-2"><strong>Name:</strong> {{ patient_name }}</span>
                           <span v-if="custom_cpr" class="ms-2 text-xs"><strong>CPR:</strong> {{ custom_cpr }}</span>
                           <span v-if="mobile" class="ms-2 text-xs"><strong>Mobile:</strong> {{ mobile }}</span>
-                          <span v-if="mobile" class="ms-2 text-xs"><strong>File#:</strong> {{ custom_file_number }}</span>
+                          <span v-if="custom_file_number" class="ms-2 text-xs"><strong>File#:</strong> {{ custom_file_number }}</span>
                         </div>
                       </template>
                     </a-select>
@@ -163,7 +134,6 @@
                     appointmentForm.duration -= option.custom_default_duration
                   }"
                   :filterOption="false"
-                  :disabled="appointmentForm.type == 'Edit Appointment'"
                   ></a-select>
                 </a-form-item>
                 <a-form-item label="Booking For" name="appointment_type">
@@ -183,7 +153,7 @@
                       appointmentForm.appointment_for = response.allow_booking_for;
                       if(appointmentForm.custom_appointment_category != 'Procedure')
                         appointmentForm.duration = response.default_duration;
-                      })
+                    })
                   }"
                   />
                 </a-form-item>
@@ -434,7 +404,7 @@ import { VChip } from 'vuetify/components/VChip';
 import { VEmptyState } from 'vuetify/labs/VEmptyState';
 
 export default {
-	inject: ['$call'],
+	inject: ['$call', '$getValue', '$getList'],
 	components: {ListView, VDivider, VContainer, VCol, VRow, VItemGroup, VItem, VMenu, VList, VListItem, VListItemTitle, VAvatar, VChip, VEmptyState},
 	props: {
 		isOpen: {
@@ -573,6 +543,7 @@ export default {
       patientSearch: '',
       popoverPatient: '',
       pastAppointments: [],
+      procedurePlans: [],
       categoryOptions: [
         {label: 'First Time', value: 'First Time'}, 
         {label: 'Follow-up', value: 'Follow-up'}, 

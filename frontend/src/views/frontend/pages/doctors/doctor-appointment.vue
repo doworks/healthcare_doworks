@@ -176,6 +176,10 @@
     @update:isOpen="appointmentOpen = $event" 
     @show-alert="showAlert" 
     @show-slots="showSlots"
+    @open-procedure-plan="patient => {
+      selectedRow.patient = patient
+      procedurePlanOpen = true
+    }"
     :form="appointmentForm"
     :slots="slots"
     :adjustAppointments="adjustAppointments"
@@ -214,6 +218,12 @@
     :isOpen="biocomOpen" 
     :appointment="selectedRow"
     @update:isOpen="biocomOpen = $event" 
+    @show-alert="showAlert" 
+    />
+    <procedurePlanDialog 
+    :isOpen="procedurePlanOpen" 
+    :patient="selectedRow?.patient"
+    @update:isOpen="procedurePlanOpen = $event" 
     @show-alert="showAlert" 
     />
     <v-dialog v-model="serviceUnitOpen" width="auto">
@@ -686,6 +696,7 @@ export default {
       medicalHistoryOpen: false,
       checklistFormOpen: false,
       biocomOpen: false,
+      procedurePlanOpen: false,
       lodingOverlay: false,
       slots: {},
 
@@ -989,9 +1000,9 @@ export default {
           defalutType[0] = this.$resources.appointmentTypes.data.options[0]
 
         this.appointmentForm.name = '';
-				this.appointmentForm.duration = defalutType[0].default_duration
-				this.appointmentForm.appointment_type = defalutType[0].appointment_type;
-				this.appointmentForm.appointment_for = defalutType[0].allow_booking_for;
+				this.appointmentForm.duration = defalutType[0]?.default_duration
+				this.appointmentForm.appointment_type = defalutType[0]?.appointment_type;
+				this.appointmentForm.appointment_for = defalutType[0]?.allow_booking_for;
 				this.appointmentForm.custom_appointment_category = 'First Time';
         this.appointmentForm.custom_branch = this.$myresources.user.branch || '';
         this.appointmentForm.procedure_templates = [];
@@ -1031,8 +1042,8 @@ export default {
         this.appointmentForm.appointment_date = dayjs(row.appointment_date)
         this.appointmentForm.appointment_time = row.appointment_time;
 			}
-      if(formType == 'Reschedule Appointment')
-        this.showSlots()
+      // if(formType == 'Reschedule Appointment')
+      //   this.showSlots()
       this.appointmentForm.doctype = 'Patient Appointment';
       // this.appointmentForm.appointment_date = this.appointmentForm.appointment_time = undefined;
 			this.appointmentForm.type = formType

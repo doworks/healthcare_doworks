@@ -25,8 +25,42 @@ import { VMain } from 'vuetify/components/VMain'
 export default {
 	provide() {
     return {
-      $getValue: (args) => {
+      $getList: (args) => {
+		`Returns a list of records by filters, fields, ordering and limit
+
+		:param doctype: DocType of the data to be queried
+		:param fields: fields to be returned. Default is 'name'
+		:param filters: filter list by this dict
+		:param order_by: Order by this fieldname
+		:param limit_start: Start at this index
+		:param limit_page_length: Number of records to be returned (default 20)`
+        return this.$call('frappe.client.get_list', args)
+				.then(response => response)
+				.catch(error => { console.log(error) });
+      },
+	  $getValue: (args) => {
+		`Returns a value form a document
+
+		:param doctype: DocType to be queried
+		:param fieldname: Field to be returned (default 'name')
+		:param filters: dict or string for identifying the record`
         return this.$call('frappe.client.get_value', args)
+				.then(response => response)
+				.catch(error => { console.log(error) });
+      },
+	  $validateLink: (args) => {
+        return this.$call('frappe.client.validate_link', args)
+				.then(response => response)
+				.catch(error => { console.log(error) });
+      },
+	  $setValue: (args) => {
+		`Set a value using get_doc, group of values
+
+		:param doctype: DocType of the document
+		:param name: name of the document
+		:param fieldname: fieldname string or JSON / dict with key value pair
+		:param value: value if fieldname is JSON / dict`
+        return this.$call('frappe.client.set_value', args)
 				.then(response => response)
 				.catch(error => { console.log(error) });
       },
@@ -68,7 +102,7 @@ export default {
 
 <style>
 html {
-	font-size: 70% !important;
+	font-size: 75% !important;
 }
 #body-main{
 	background-color: papayawhip;

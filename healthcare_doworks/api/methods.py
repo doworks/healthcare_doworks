@@ -5,6 +5,7 @@ import frappe.query_builder
 import frappe.query_builder.functions
 from frappe.utils import add_to_date, get_datetime, get_datetime_str
 from frappe.utils.file_manager import save_file
+from frappe.desk.form.save import cancel
 # from healthcare.healthcare.doctype.patient_appointment.patient_appointment import update_status
 from frappe.utils.pdf import get_pdf
 import os
@@ -62,7 +63,8 @@ def fetch_patient_appointments(filters=None, or_filters=None, start=0, limit=50)
 			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
 			'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner', 'appointment_datetime',
 			'department', 'service_unit', 'duration', 'notes', 'appointment_date', 'appointment_time',
-			'custom_payment_type', 'patient_age', 'patient', 'custom_confirmed', 'custom_customer'
+			'custom_payment_type', 'patient_age', 'patient', 'custom_confirmed', 'custom_customer', 
+			'custom_invoice_tax_template', 'custom_apply_discount_on', 'custom_invoice_discount_percentage', 'custom_invoice_discount_amount'
 		],
 		order_by='appointment_date asc, appointment_time asc',
 		start=start,
@@ -297,6 +299,23 @@ def patient_encounter_records(encounter_id):
 		}
 
 @frappe.whitelist()
+def cancel_encounter(encounter):
+	cancel('Patient Encounter', encounter)
+	doc = frappe.get_doc('Patient Encounter', encounter)
+	# doc.docstatus = 0
+	doc.save()
+	# procedures = frappe.get_list('Clinical Procedure', filters={'custom_patient_encounter': encounter}, pluck='name')
+	# for procedure in procedures:
+		# cancel('Clinical Procedure', procedure)
+		# procedure_doc = frappe.get_doc('Clinical Procedure', procedure)
+		# # procedure_doc.cancel()
+		# # procedure_doc.amend()
+		# procedure_doc.docstatus = 0  # Draft state
+		# procedure_doc.status = 'Draft'
+		# procedure_doc.save()
+	return doc
+
+@frappe.whitelist()
 def submit_encounter(encounter):
 	doc = frappe.get_doc('Patient Encounter', encounter)
 	doc.submit()
@@ -528,7 +547,7 @@ def pos_payment_method(pos_profile):
 	)
 
 @frappe.whitelist()
-def create_invoice(appointment, profile, payment_methods, tax):
+def create_invoice(appointment, profile, payment_methods):
 	appointment_doc = frappe.get_doc('Patient Appointment', appointment)
 	patient = frappe.get_doc('Patient', appointment_doc.patient)
 	branches = frappe.db.get_all('Branch', order_by='creation', pluck='name')
@@ -548,10 +567,13 @@ def create_invoice(appointment, profile, payment_methods, tax):
 		invoice.is_pos = 1
 		invoice.pos_profile = profile
 		invoice.customer = patient.customer
-		invoice.taxes_and_charges = tax
 		invoice.posting_date = frappe.utils.now()
 		invoice.due_date = frappe.utils.now()
 		invoice.service_unit = appointment_doc.service_unit
+		invoice.taxes_and_charges = appointment_doc.custom_invoice_tax_template
+		invoice.apply_discount_on = appointment_doc.custom_apply_discount_on
+		invoice.additional_discount_percentage = appointment_doc.custom_invoice_discount_percentage
+		invoice.discount_amount = appointment_doc.custom_invoice_discount_amount
 		invoice.branch = appointment_doc.custom_branch or branch or ''
 		invoice.selling_price_list = 'Standard Selling'
 		for invoice_item in appointment_doc.custom_invoice_items:
@@ -559,10 +581,9 @@ def create_invoice(appointment, profile, payment_methods, tax):
 				invoice.append('items', {
 					'item_code': invoice_item.item,
 					'item_name': invoice_item.item_name,
-					'uom': invoice_item.item_uom,
 					'qty': invoice_item.quantity,
-					'rate': invoice_item.rate,
-					'amount': invoice_item.amount,
+					'discount_percentage': invoice_item.discount_percentage,
+					'discount_amount': invoice_item.discount_amount,
 				})
 		for method in payment_methods:
 			invoice.append('payments', {
@@ -586,19 +607,23 @@ def create_invoice(appointment, profile, payment_methods, tax):
 			patient_invoice.is_pos = 1
 			patient_invoice.pos_profile = profile
 			patient_invoice.customer = patient.customer
-			patient_invoice.taxes_and_charges = tax
 			patient_invoice.posting_date = frappe.utils.now()
 			patient_invoice.due_date = frappe.utils.now()
 			patient_invoice.service_unit = appointment_doc.service_unit
 			patient_invoice.branch = appointment_doc.custom_branch or branch or ''
+			patient_invoice.taxes_and_charges = appointment_doc.custom_invoice_tax_template
+			patient_invoice.apply_discount_on = appointment_doc.custom_apply_discount_on
+			patient_invoice.additional_discount_percentage = appointment_doc.custom_invoice_discount_percentage
+			patient_invoice.discount_amount = appointment_doc.custom_invoice_discount_amount
 			patient_invoice.selling_price_list = 'Insurance Price' or 'Standard Selling'
 			for invoice_item in appointment_doc.custom_invoice_items:
 				if not invoice_item.customer_invoice:
 					patient_invoice.append('items', {
 						'item_code': invoice_item.item,
 						'item_name': invoice_item.item_name,
-						'uom': invoice_item.item_uom,
 						'qty': invoice_item.quantity,
+						'discount_percentage': invoice_item.discount_percentage,
+						'discount_amount': invoice_item.discount_amount,
 						'rate': float(invoice_item.customer_amount) / float(invoice_item.quantity),
 						'amount': invoice_item.customer_amount,
 					})
@@ -618,11 +643,11 @@ def create_invoice(appointment, profile, payment_methods, tax):
 			insurance_invoice.patient_name = patient.patient_name
 			insurance_invoice.is_pos = 0
 			insurance_invoice.customer = patient.custom_insurance_company_name
-			insurance_invoice.taxes_and_charges = tax
 			insurance_invoice.posting_date = frappe.utils.now()
 			insurance_invoice.due_date = frappe.utils.now()
 			insurance_invoice.service_unit = appointment_doc.service_unit
 			insurance_invoice.branch = appointment_doc.custom_branch or branch or ''
+			insurance_invoice.taxes_and_charges = appointment_doc.custom_invoice_tax_template
 			insurance_invoice.selling_price_list = 'Insurance Price' or 'Standard Selling'
 			for invoice_item in appointment_doc.custom_invoice_items:
 				if not invoice_item.insurance_invoice:
@@ -648,7 +673,7 @@ def create_invoice(appointment, profile, payment_methods, tax):
 		return {'insurance_invoice': insurance_invoice.name, 'customer_invoice': patient_invoice.name}
 
 @frappe.whitelist()
-def create_mock_invoice(appointment, tax):
+def create_mock_invoice(appointment):
 	appointment_doc = frappe.get_doc('Patient Appointment', appointment)
 	patient = frappe.get_doc('Patient', appointment_doc.patient)
 	branches = frappe.db.get_all('Branch', order_by='creation', pluck='name')
@@ -662,12 +687,14 @@ def create_mock_invoice(appointment, tax):
 		invoice.patient = patient.name
 		invoice.patient_name = patient.patient_name
 		invoice.is_pos = 0
-		# invoice.pos_profile = profile
 		invoice.customer = patient.customer
 		invoice.posting_date = frappe.utils.now()
 		invoice.due_date = frappe.utils.now()
 		invoice.service_unit = appointment_doc.service_unit
-		invoice.taxes_and_charges = tax
+		invoice.taxes_and_charges = appointment_doc.custom_invoice_tax_template
+		invoice.apply_discount_on = appointment_doc.custom_apply_discount_on
+		invoice.additional_discount_percentage = appointment_doc.custom_invoice_discount_percentage
+		invoice.discount_amount = appointment_doc.custom_invoice_discount_amount
 		invoice.branch = appointment_doc.custom_branch or branch or ''
 		if appointment_doc.custom_payment_type == 'Insurance':
 			invoice.selling_price_list = 'Standard Selling'
@@ -676,10 +703,9 @@ def create_mock_invoice(appointment, tax):
 					invoice.append('items', {
 						'item_code': invoice_item.item,
 						'item_name': invoice_item.item_name,
-						'uom': invoice_item.item_uom,
 						'qty': invoice_item.quantity,
-						'rate': invoice_item.rate,
-						'amount': invoice_item.amount,
+						'discount_percentage': invoice_item.discount_percentage,
+						'discount_amount': invoice_item.discount_amount,
 					})
 		else:
 			invoice.selling_price_list = 'Insurance Price' or 'Standard Selling'
@@ -688,8 +714,9 @@ def create_mock_invoice(appointment, tax):
 					invoice.append('items', {
 						'item_code': invoice_item.item,
 						'item_name': invoice_item.item_name,
-						'uom': invoice_item.item_uom,
 						'qty': invoice_item.quantity,
+						'discount_percentage': invoice_item.discount_percentage,
+						'discount_amount': invoice_item.discount_amount,
 						'rate': float(invoice_item.customer_amount) / float(invoice_item.quantity),
 						'amount': invoice_item.customer_amount,
 					})

@@ -750,7 +750,7 @@
                 </v-card>
               </v-col>
               <v-col cols="12" md="6">
-                <v-card id="vital-signs" variant="tonal" color="brown">
+                <v-card id="invoices" variant="tonal" color="brown">
                   <template v-slot:title>Invoices ({{ $resources.invoices.data?.length || '0' }})</template>
                   <template v-slot:text>
                     <DataTable 
