@@ -46,7 +46,7 @@ def get_tabs_count(filters):
 	return total_count
 
 @frappe.whitelist()
-def fetch_patient_appointments(filters=None, or_filters=None, start=0, limit=50):
+def fetch_patient_appointments(filters=None, start=0, limit=50):
 	dic = {}
 	total_count = {'Scheduled': 0, 'Arrived': 0, 'Ready': 0, 'In Room': 0, 'Completed': 0, 'No Show': 0, 'Cancelled': 0}
 	for key, value in total_count.items():
@@ -58,7 +58,6 @@ def fetch_patient_appointments(filters=None, or_filters=None, start=0, limit=50)
 	appointments = frappe.get_list(
 		'Patient Appointment',
 		filters=filters,
-		or_filters=or_filters,
 		fields=[
 			'name', 'patient_name', 'status', 'custom_visit_status', 'custom_appointment_category',
 			'appointment_type', 'appointment_for', 'practitioner_name', 'practitioner', 'appointment_datetime',
