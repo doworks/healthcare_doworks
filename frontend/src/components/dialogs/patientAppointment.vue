@@ -24,7 +24,7 @@
               color="green" 
               variant="tonal" 
               size="small" 
-              v-if="procedurePlans.length > 0"
+              v-if="procedurePlans?.length > 0"
               >
                 Available Procedure Plans
               </v-btn>
@@ -51,7 +51,8 @@
 
                       $getList({doctype: 'Procedure Plan', filters: {patient: option.name}})
                       .then(response => {
-                        procedurePlans = response
+                        if(response)
+                          procedurePlans = response || []
                       })
                     }"
                     show-search
