@@ -847,11 +847,11 @@ export default {
       this.selectedRangeDates = [dayjs().startOf('isoWeek').subtract(1, 'day'), dayjs().endOf('isoWeek').subtract(1, 'day')]
     },
     getFormatedDates() {return this.selectedDates.map(date => date.format('YYYY-MM-DD'))},
-    fetchRecords(filters={appointment_date: ['in', this.getFormatedDates()], custom_visit_status: this.tab}, orFilters=undefined) {
+    fetchRecords(filters={appointment_date: ['in', this.getFormatedDates()], custom_visit_status: this.tab}) {
       this.appointmentsLoading = true;
       const dates = this.selectedDates.map(date => date.format('YYYY-MM-DD'))
       this.$call('healthcare_doworks.api.methods.fetch_patient_appointments', {
-        filters: filters, start: this.start, limit: this.limit[this.tab], or_filters: orFilters
+        filters: filters, start: this.start, limit: this.limit[this.tab]
       })
       .then(response => {
         if(response.total_count)
