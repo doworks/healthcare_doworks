@@ -564,6 +564,7 @@ def create_invoice(appointment, profile, payment_methods):
 		invoice = frappe.new_doc('Sales Invoice')
 		invoice.patient = patient.name
 		invoice.patient_name = patient.patient_name
+		invoice.ref_practitioner = appointment_doc.practitioner
 		invoice.is_pos = 1
 		invoice.pos_profile = profile
 		invoice.customer = patient.customer
@@ -604,6 +605,7 @@ def create_invoice(appointment, profile, payment_methods):
 			patient_invoice = frappe.new_doc('Sales Invoice')
 			patient_invoice.patient = patient.name
 			patient_invoice.patient_name = patient.patient_name
+			patient_invoice.ref_practitioner = appointment_doc.practitioner
 			patient_invoice.is_pos = 1
 			patient_invoice.pos_profile = profile
 			patient_invoice.customer = patient.customer
@@ -641,6 +643,7 @@ def create_invoice(appointment, profile, payment_methods):
 			insurance_invoice = frappe.new_doc('Sales Invoice')
 			insurance_invoice.patient = patient.name
 			insurance_invoice.patient_name = patient.patient_name
+			insurance_invoice.ref_practitioner = appointment_doc.practitioner
 			insurance_invoice.is_pos = 0
 			insurance_invoice.customer = patient.custom_insurance_company_name
 			insurance_invoice.posting_date = frappe.utils.now()

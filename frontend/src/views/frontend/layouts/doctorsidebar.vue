@@ -39,7 +39,7 @@
         to="/nurse-dashboard"
         :class="{ 'v-list-item--active': $route.name == 'nurse-dashboard' }"
         ></v-list-item>
-        <v-list-item 
+        <!-- <v-list-item 
         v-if="isPharmacist" 
         prepend-icon="fa fa-display" 
         title="Pharmacy Dashboard" 
@@ -47,8 +47,33 @@
         to="/pharmacy-dashboard"
         :class="{ 'v-list-item--active': $route.name == 'pharmacy-dashboard' }"
         ></v-list-item>
+        <v-list-group v-if="isReceptionist" value="Appointments">
+          <template v-slot:activator="{ props }">
+            <v-list-item
+              v-bind="props"
+              prepend-icon="mdi mdi-calendar-check"
+              title="Appointments"
+              :class="{ 'v-list-item--active': $route.name == 'appointments' || $route.name == 'appointment-management' }"
+            ></v-list-item>
+          </template>
+
+          <v-list-item 
+          prepend-icon="mdi mdi-calendar-edit" 
+          title="Appointment Management" 
+          value="appointmentManagement" 
+          to="/appointment-management"
+          :class="{ 'v-list-item--active': $route.name == 'appointment-management' }"
+          ></v-list-item>
+          <v-list-item 
+          prepend-icon="mdi mdi-calendar" 
+          title="Appointment Dashboard" 
+          value="appointments" 
+          to="/appointments"
+          :class="{ 'v-list-item--active': $route.name == 'appointments' }"
+          ></v-list-item>
+        </v-list-group> -->
         <v-list-item 
-        prepend-icon="fa fa-calendar-check" 
+        prepend-icon="mdi mdi-calendar" 
         title="Appointments" 
         value="appointments" 
         to="/appointments"
@@ -92,11 +117,12 @@
   import { VList, VListItem } from 'vuetify/components/VList';
   import { VDivider } from 'vuetify/components/VDivider';
   import { VAvatar } from 'vuetify/components/VAvatar';
+import { VListGroup } from 'vuetify/components';
 
   export default{
     inject:['$auth', '$call'],
     components:{
-      VNavigationDrawer, VList, VListItem, VDivider, VAvatar,
+      VNavigationDrawer, VList, VListItem, VDivider, VAvatar, VListGroup
     },
     data() {
       return {
@@ -104,6 +130,7 @@
         currenColor: '',
         isNurse: false,
         isPharmacist: false,
+        isReceptionist: false,
         isHealthcareAdministrator: false
       };
     },
@@ -117,6 +144,7 @@
             this.isHealthcareAdministrator = this.$myresources.user.roles.some(value => value.role == 'Practitioner')
             this.isNurse = this.$myresources.user.roles.some(value => value.role == 'Nursing User')
             this.isPharmacist = this.$myresources.user.roles.some(value => value.role == 'Pharmacist')
+            this.isReceptionist = this.$myresources.user.roles.some(value => value.role == 'Reception')
           }
         },
         immediate: true,

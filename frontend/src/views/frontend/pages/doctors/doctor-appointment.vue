@@ -896,7 +896,7 @@ export default {
 					if(difference < 5 && difference > -5){
 						d.arrivalTime = 'on time'
 					}
-					if(difference < 0){
+					else if(difference < 0){
 						diffHours *= -1
 						diffMinutes *= -1
 						d.arrivalTime = (diffHours ? (diffHours + 'h ') : '') + (diffMinutes + 'm') + ' early'

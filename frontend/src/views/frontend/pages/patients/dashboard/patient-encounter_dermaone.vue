@@ -1212,7 +1212,7 @@
                         </a-form-item>
                       </v-col>
                     </v-row>
-                    <v-row>
+                    <v-row v-if="encounterForm.custom_encounter_state === 'Consultation'">
                       <v-col>
                         <a-form-item label="Past Medical History">
                           <a-textarea 
@@ -2621,6 +2621,7 @@ export default {
       stomachImage:stomachImage,
       tongueImage:tongueImage,
 
+      appointmentForm: {},
       quillEditorOptions: {
         theme: 'snow',
         modules: {
@@ -2956,6 +2957,7 @@ export default {
     },
     encounterSelect(encounter) {
       this.$router.push({ name: 'patient-encounter', params: { encounterId: encounter } });
+      this.fetchRecords()
     },
     invoiceSelect({data}) { 
       window.open(`/app/sales-invoice/${data.name}`) 
@@ -3102,7 +3104,7 @@ export default {
     },
     setStepperValue({event, value}) {
       if(value === 'Procedure' && !this.procedureForms[this.selectedProcedure]?.name){
-        if(this.records.current_encounter.status != 'Completed'){
+        if(this.records.current_encounter.status != 'Completed' && this.records.current_encounter.status != 'Cancelled'){
           this.encounterForm.custom_encounter_state = this.previousState
           this.newProcedure(event)
           return;
@@ -3113,7 +3115,7 @@ export default {
         }
       }
       this.previousState = value;
-      if(this.records.current_encounter.status != 'Completed')
+      if(this.records.current_encounter.status != 'Completed' && this.records.current_encounter.status != 'Cancelled')
         this.autoSave('Patient Encounter', this.encounterForm.name, 'custom_encounter_state', value)
     },
     newProcedure(event) {

@@ -91,8 +91,8 @@
                         @search="(value) => {handleSearch(
                           value, 
                           $resources.items, 
-                          {}, 
-                          {},
+                          {disabled: 0, has_variants: 0, is_sales_item: 1}, 
+                          {disabled: 0, has_variants: 0, is_sales_item: 1},
                           [
                             ['name', 'like', `%${value}%`],
                             ['item_code', 'like', `%${value}%`], 
@@ -520,7 +520,7 @@ export default {
       type: 'list', 
       doctype: 'Item', 
       fields: ['name', 'item_code', 'item_name', 'weight_uom', 'item_group', 'description'], 
-      filters: {},
+      filters: {disabled: 0, has_variants: 0, is_sales_item: 1},
       orFilters: [],
       auto: true,
       orderBy: 'name',

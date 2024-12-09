@@ -7,11 +7,14 @@ app_publisher = "S.Mohamed"
 app_description = "An extention for the healthcare frappe app"
 app_email = "sayed10998@gmail.com"
 app_license = "mit"
+app_icon_url = "/assets/healthcare/images/healthcare.png"
+app_icon_title = "Healthcare"
+app_icon_route = "/frontend"
 
 # required_apps = []
 add_to_apps_screen = [
 	{
-		"name": "frontend",
+		"name": "healthcare_doworks",
 		"logo": "/assets/healthcare/images/healthcare.png",
 		"title": "Healthcare",
 		"route": "/frontend",

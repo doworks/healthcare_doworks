@@ -9,6 +9,7 @@ import DoctorDashBoard from '@/views/frontend/pages/doctors/doctor-dashboard.vue
 import NurseDashBoard from '@/views/frontend/pages/nurse/nurse-dashboard.vue';
 import PharmacyDashBoard from '@/views/frontend/pages/pharmacy/pharmacy-dashboard.vue';
 import Appointments from '@/views/frontend/pages/doctors/doctor-appointment.vue';
+// import AppointmentMangement from '@/views/frontend/pages/patients/appointment-management.vue';
 
 const routes = [
   {
@@ -65,6 +66,11 @@ const routes = [
     name: 'appointments',
     component: Appointments 
   },
+  // {
+  //   path: '/appointment-management',
+  //   name: 'appointment-management',
+  //   component: AppointmentMangement 
+  // },
 ];
 
 const router = createRouter({

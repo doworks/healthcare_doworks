@@ -644,7 +644,7 @@ export default {
 					if(difference < 5 && difference > -5){
 						d.arrivalTime = 'on time'
 					}
-					if(difference < 0){
+					else if(difference < 0){
 						diffHours *= -1
 						diffMinutes *= -1
 						d.arrivalTime = (diffHours ? (diffHours + 'h ') : '') + (diffMinutes + 'm') + ' early'
@@ -725,6 +725,17 @@ export default {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
       return tempDiv.textContent || tempDiv.innerText || "";
+    },
+    calculateAge(dob) {
+      if(dob){
+        const today = dayjs();
+        const birthDate = dayjs(dob)
+        const years = today.diff(birthDate, 'year');
+        const months = today.diff(birthDate.add(years, 'year'), 'month');
+        const days = today.diff(birthDate.add(years, 'year').add(months, 'month'), 'day');
+        return `${years} Year(s) ${months} Month(s) ${days} Day(s)`;
+      }
+      return ''
     },
     transformData (keys, values) {
       return values.map(row => {
