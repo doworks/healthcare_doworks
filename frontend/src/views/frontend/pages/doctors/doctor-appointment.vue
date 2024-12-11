@@ -123,6 +123,13 @@
           </template>
           Check appointment logs for a patient
         </v-tooltip>
+
+        <v-tooltip location="bottom" open-delay="500">
+          <template v-slot:activator="{ props }">
+            <v-btn icon="mdi mdi-calendar-question" rounded="0" v-bind="props" @click="openCalendar"></v-btn>
+          </template>
+          Open appointments calendar
+        </v-tooltip>
       </v-toolbar>
 
       <!-- Appointment Tab -->
@@ -1316,6 +1323,9 @@ export default {
       }).catch(error => {
         this.showAlert(error.message, 'error')
       });
+    },
+    openCalendar() {
+      window.open('/app/patient-appointment/view/calendar/default', '_blank');
     },
     pageChanged(event) {
       this.start = event.first;

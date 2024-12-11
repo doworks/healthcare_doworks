@@ -1019,8 +1019,12 @@ def mark_no_show_appointments():
 	for appointment in appointments:
 		change_status(appointment.name, 'No Show')
 
-def on_logout(): 
-	frappe.publish_realtime("session_logout")
+# def on_logout(): 
+# 	frappe.publish_realtime("session_logout")
+
+@frappe.whitelist()
+def get_copilot_api_key():
+	return frappe.get_site_config().get("copilot_api_key")
  
 @frappe.whitelist()
 def get_events_full_calendar(start, end, filters=None,field_map=None):

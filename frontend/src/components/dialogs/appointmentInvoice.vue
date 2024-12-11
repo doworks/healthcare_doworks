@@ -135,13 +135,22 @@
                         :min="0"
                         v-model:value="row.rate" 
                         @change="(value, option) => {
-                          row.amount = parseFloat(value) * parseFloat(row.quantity)
+                          if(!value){
+                            row.rate = 0
+                            row.amount = 0
+                          }
+                          else if(row.discount_amount){
+                            row.amount = (parseFloat(value) - parseFloat(row.discount_amount)) * parseFloat(row.quantity)
+                          }
+                          else{
+                            row.amount = parseFloat(value) * parseFloat(row.quantity)
+                          }
+                          
                           if(appointment.custom_payment_type == 'Insurance')
                             row.insurance_amount = row.amount - parseFloat(row.customer_amount);
                           else
                             row.customer_amount = row.amount;
                         }"
-                        disabled
                         />
                       </a-form-item>
                       <a-form-item label="Discount Percentage">
@@ -150,8 +159,16 @@
                         :controls="false" 
                         v-model:value="row.discount_percentage"
                         @change="(value, option) => {
-                          row.discount_amount = parseFloat(value) / 100 * parseFloat(row.rate)
-                          row.amount = (parseFloat(row.rate) - row.discount_amount) * parseFloat(row.quantity)
+                          if(value){
+                            row.discount_amount = parseFloat(value) / 100 * parseFloat(row.rate)
+                            row.amount = (parseFloat(row.rate) - row.discount_amount) * parseFloat(row.quantity)
+                          }
+                          else{
+                            row.discount_percentage = undefined
+                            row.discount_amount = undefined
+                            row.amount = parseFloat(row.rate) * parseFloat(row.quantity)
+                          }
+
                           if(appointment.custom_payment_type == 'Insurance')
                             row.insurance_amount = row.amount - parseFloat(row.customer_amount);
                           else
@@ -165,8 +182,16 @@
                         :controls="false" 
                         v-model:value="row.discount_amount"
                         @change="(value, option) => {
-                          row.discount_percentage = parseFloat(value) / parseFloat(row.rate) * 100
-                          row.amount = (parseFloat(row.rate) - value) * parseFloat(row.quantity)
+                          if(value){
+                            row.discount_percentage = parseFloat(value) / parseFloat(row.rate) * 100
+                            row.amount = (parseFloat(row.rate) - value) * parseFloat(row.quantity)
+                          }
+                          else{
+                            row.discount_percentage = undefined
+                            row.discount_amount = undefined
+                            row.amount = parseFloat(row.rate) * parseFloat(row.quantity)
+                          }
+
                           if(appointment.custom_payment_type == 'Insurance')
                             row.insurance_amount = row.amount - parseFloat(row.customer_amount);
                           else

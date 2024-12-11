@@ -582,6 +582,7 @@
                 :options="formOptions" 
                 optionLabel="label"
                 optionValue="value"
+                optionDisabled="disabled"
                 class="!block text-center" 
                 :allowEmpty="false" 
                 @change="setStepperValue"
@@ -1340,6 +1341,34 @@
                       </v-col>
                     </v-row>
                   </v-container>
+
+                  <Fieldset class="mb-5" legend="Copilot" :toggleable="true">
+                    <v-container>
+                      <v-row>
+                        <v-col>
+                          <div class="d-flex gap-2">
+                            <v-btn class="text-none" variant="flat" @click="startCopilotRecording">Start Copilot Recording</v-btn>
+
+                            <v-btn class="text-none" variant="flat"
+                            :disabled="!encounterForm.custom_audio_file"
+                            @click="sendCopilotRequest">Send Copilot Request</v-btn>
+
+                          </div>
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
+                          <a-form-item label="Copilot Response">
+                            <a-textarea 
+                            :disabled="records.current_encounter.status == 'Completed'"
+                            v-model:value="encounterForm.custom_copilot_response" 
+                            :rows="12" 
+                            />
+                          </a-form-item>
+                        </v-col>
+                      </v-row>
+                    </v-container>
+                  </Fieldset>
                   
                   <Fieldset class="mb-5" legend="Annotations" :toggleable="true">
                     <v-container>
@@ -2355,12 +2384,36 @@
         </v-card>
 
       </v-dialog>
+
+      <v-dialog v-model="copilotRecorderActive" max-width="400" persistent>
+        <v-card
+        prepend-icon="mdi mdi-account-voice"
+        title="Copilot Recorder"
+        >
+          <v-card-text>
+            <span class='copilot-record-time mr-2'>
+              {{`${copilotMinutes.toString().padStart(2, '0')}:${copilotSeconds.toString().padStart(2, '0')}`}}
+            </span> 
+            <!-- <a href='#' class='btn btn-danger btn-xs stop-recording'>Stop Recording</a> -->
+            <v-btn
+              class="stop-recording text-none"
+              color="danger"
+              density="comfortable"
+              variant="plain"
+              @click="stopCopilotRecording"
+            >
+              Stop Recording
+            </v-btn>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
     </div>
   </div>
 </template>
 
 <script>
 import dayjs from 'dayjs';
+import axios from 'axios';
 import { VEmptyState } from 'vuetify/labs/VEmptyState';
 import { VSlideGroup, VSlideGroupItem } from 'vuetify/components/VSlideGroup';
 import { VProgressLinear } from 'vuetify/components/VProgressLinear';
@@ -2679,6 +2732,12 @@ export default {
       appointmentNoteActive: false,
       appointmentInvoiceActive: false,
       sergicalProcedureActive: false,
+      copilotRecorderActive: false,
+
+      copilotMediaRecorder: null,
+      copilotMinutes: 0,
+      copilotSeconds: 0,
+      copilotInterval: null,
 
       procedureProcedureName: [],
       procedureIndication: [],
@@ -2693,7 +2752,7 @@ export default {
         {label:'Consultation', value:'Consultation'}, 
         {label:'Procedure', value:'Procedure'}, 
         {label:'Follow-up', value:'Follow-up'}, 
-        {label:'Session', value:'Session'}
+        {label:'Session', value:'Session', disabled: true}
       ],
       previousState: '',
       annotationDoctype: '',
@@ -2954,6 +3013,199 @@ export default {
           this.showAlert(error.message, 'error')
         })
       })
+    },
+    startCopilotRecording() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        this.showAlert('Audio recording is not supported by your browser.', 'info')
+        return;
+      }
+
+      navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        this.copilotMediaRecorder = new MediaRecorder(stream);
+        this.copilotStream = stream
+        const audioChunks = [];
+
+        this.copilotMediaRecorder.ondataavailable = event => {
+          audioChunks.push(event.data);
+        };
+
+        this.copilotMediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks);
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
+
+          // Upload the audio file
+          const formData = new FormData();
+          formData.append('file', audioFile);
+          formData.append('is_private', 1);
+
+          // Use frappe's file upload API
+          let xhr = new XMLHttpRequest();
+          xhr.onreadystatechange = () => {
+            if (xhr.readyState == XMLHttpRequest.DONE) {
+              if (xhr.status === 200) {
+                let r = null;
+                let file_doc = null;
+                try {
+                  r = JSON.parse(xhr.responseText);
+                  if (r.message.doctype === 'File') {
+                    file_doc = r.message;
+                    this.$call('frappe.client.set_value', {
+                      doctype: 'Patient Encounter', 
+                      name: this.encounterForm.name, 
+                      fieldname: 'custom_audio_file', 
+                      value: file_doc.file_url
+                    }).then(response => {
+                      this.$toast.add({ severity: 'success', summary: 'Copilot Audio Saved', life: 3000 });
+                    }).catch(error => {
+                      this.showAlert(error.message, 'error')
+                    });
+                  }
+                } catch(e) {
+                  r = xhr.responseText;
+                }
+              } else {
+                let error = null;
+                try {
+                  error = JSON.parse(xhr.responseText);
+                } catch(e) {
+                  // pass
+                }
+                console.log(error)
+              }
+            }
+          }
+          xhr.open('POST', '/api/method/upload_file', true);
+          xhr.setRequestHeader('Accept', 'application/json');
+          // xhr.setRequestHeader('X-Frappe-CSRF-Token', frappe.csrf_token);
+
+          formData.append('doctype', this.encounterForm.doctype);
+          formData.append('docname', this.encounterForm.name);
+
+          // if (this.method) {
+          //   formData.append('method', this.method);
+          // }
+
+          xhr.send(formData);
+          
+          var form = new FormData();
+          form.append("audio", audioFile, "");
+
+          this.$call('healthcare_doworks.api.methods.get_copilot_api_key')
+          .then(apiKey => {
+            var settings = {
+              "url": "https://historian-api.test01.infiniteware.net/transcribe",
+              "method": "POST",
+              "timeout": 0,
+              "headers": {
+                "api-key": 'Sssa22dj@jXkasdjSssa22dj@jXkasdj82yajsDDJDJasdi82yajsDDJDJasdi'
+              },
+              "processData": false,
+              "mimeType": "multipart/form-data",
+              "contentType": false,
+              "data": form,
+              "statusCode": {
+                404: function() {
+                  alert( "page not found" );
+                }
+              }
+            };
+              
+            axios(settings).then(function (response) {
+              this.$call('frappe.client.set_value', {
+                doctype: 'Patient Encounter', 
+                name: this.encounterForm.name, 
+                fieldname: 'custom_copilot_response', 
+                value: response.summary_string
+              }).then(r => {
+                this.$toast.add({ severity: 'success', summary: 'Saved', life: 3000 });
+              }).catch(error => {
+                this.showAlert(error.message, 'error')
+              });
+            })
+          }).catch(error => {
+            this.showAlert(error.message, 'error')
+          });
+        };
+
+        this.copilotMediaRecorder.start();
+        this.copilotRecorderActive = true
+        this.copilotSeconds = 0;
+        this.copilotMinutes = 0;
+        
+        this.copilotInterval = setInterval(() => {
+          this.copilotSeconds++;
+          if (this.copilotSeconds >= 60) {
+            this.copilotSeconds = 0;
+            this.copilotMinutes++;
+          }
+        }, 1000);
+      })
+      .catch(error => {
+        this.showAlert('Error accessing microphone: ' + error.message, 'error')
+      });
+    },
+    stopCopilotRecording() {
+      this.copilotMediaRecorder.stop();
+      this.copilotStream.getTracks().forEach(track => track.stop());
+      clearInterval(this.copilotInterval);
+      this.copilotRecorderActive = false;
+      // $(`[data-label="Start%20Copilot%20Recording"]`).removeAttr("disabled");
+    },
+    async sendCopilotRequest() {
+      try {
+        // Step 1: Fetch the audio file as a Blob
+        const response = await fetch(this.encounterForm.custom_audio_file);
+        if (!response.ok) {
+          throw new Error("Failed to fetch the audio file.");
+        }
+        const blob = await response.blob();
+
+        // Step 2: Prepare the audio file and FormData
+        const file = new File([blob], "recording.webm", { type: blob.type });
+        const formData = new FormData();
+        formData.append("audio", file);
+
+        // Step 3: Configure the API request
+        const apiKey = await this.$call('healthcare_doworks.api.methods.get_copilot_api_key')
+        const apiUrl = "https://historian-api.test01.infiniteware.net/transcribe";
+
+        // Step 4: Send the request
+        const apiResponse = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "api-key": apiKey, // Use a server-side endpoint to proxy this for better security
+          },
+          body: formData,
+        });
+
+        if (!apiResponse.ok) {
+          throw new Error("Failed to process the copilot response.");
+        }
+
+        // Step 5: Handle the response
+        const result = await apiResponse.json();
+        if (result && result.summary_string) {
+          // Assuming you have a method to update Frappe fields
+          await this.$call("frappe.client.set_value", {
+            doctype: "Patient Encounter",
+            name: this.encounterForm.name,
+            fieldname: "custom_copilot_response",
+            value: result.summary_string,
+          });
+
+          // Show success message
+          this.$toast.add({
+            severity: "success",
+            summary: "Copilot Response Saved",
+            life: 3000,
+          });
+        }
+      } catch (error) {
+        console.error("Error:", error.message);
+        this.showAlert(error.message, "error");
+      }
     },
     encounterSelect(encounter) {
       this.$router.push({ name: 'patient-encounter', params: { encounterId: encounter } });
